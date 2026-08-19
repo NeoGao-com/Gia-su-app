@@ -12,12 +12,13 @@ export declare class ClassesController {
         };
     } & {
         id: string;
-        status: import(".prisma/client").$Enums.ClassStatus;
-        createdAt: Date;
         title: string;
         description: string | null;
         subject: string;
         price: number;
+        status: import(".prisma/client").$Enums.ClassStatus;
+        createdAt: Date;
+        updatedAt: Date;
         tutorId: string;
     }>;
     findAllClasses(): Promise<({
@@ -26,18 +27,40 @@ export declare class ClassesController {
             email: string;
             role: import(".prisma/client").$Enums.Role;
         };
+        enrollments: {
+            id: string;
+            status: import(".prisma/client").$Enums.EnrollmentStatus;
+            classId: string;
+            studentId: string;
+            enrolledAt: Date;
+        }[];
+        lessons: {
+            id: string;
+            title: string;
+            status: import(".prisma/client").$Enums.LessonStatus;
+            classId: string;
+            startTime: Date;
+            endTime: Date;
+            meetingLink: string | null;
+        }[];
     } & {
         id: string;
-        status: import(".prisma/client").$Enums.ClassStatus;
-        createdAt: Date;
         title: string;
         description: string | null;
         subject: string;
         price: number;
+        status: import(".prisma/client").$Enums.ClassStatus;
+        createdAt: Date;
+        updatedAt: Date;
         tutorId: string;
     })[]>;
     findClassById(id: string): Promise<{
-        schedules: ({
+        tutor: {
+            id: string;
+            email: string;
+            role: import(".prisma/client").$Enums.Role;
+        };
+        enrollments: ({
             student: {
                 id: string;
                 email: string;
@@ -45,109 +68,111 @@ export declare class ClassesController {
             };
         } & {
             id: string;
-            status: import(".prisma/client").$Enums.ScheduleStatus;
+            status: import(".prisma/client").$Enums.EnrollmentStatus;
             classId: string;
             studentId: string;
+            enrolledAt: Date;
+        })[];
+        lessons: {
+            id: string;
+            title: string;
+            status: import(".prisma/client").$Enums.LessonStatus;
+            classId: string;
             startTime: Date;
             endTime: Date;
-        })[];
-        tutor: {
-            id: string;
-            email: string;
-            role: import(".prisma/client").$Enums.Role;
-        };
+            meetingLink: string | null;
+        }[];
     } & {
         id: string;
-        status: import(".prisma/client").$Enums.ClassStatus;
-        createdAt: Date;
         title: string;
         description: string | null;
         subject: string;
         price: number;
+        status: import(".prisma/client").$Enums.ClassStatus;
+        createdAt: Date;
+        updatedAt: Date;
         tutorId: string;
     }>;
     updateClass(req: any, id: string, dto: UpdateClassDto): Promise<{
         id: string;
-        status: import(".prisma/client").$Enums.ClassStatus;
-        createdAt: Date;
         title: string;
         description: string | null;
         subject: string;
         price: number;
+        status: import(".prisma/client").$Enums.ClassStatus;
+        createdAt: Date;
+        updatedAt: Date;
         tutorId: string;
     }>;
     deleteClass(req: any, id: string): Promise<{
         id: string;
-        status: import(".prisma/client").$Enums.ClassStatus;
-        createdAt: Date;
         title: string;
         description: string | null;
         subject: string;
         price: number;
+        status: import(".prisma/client").$Enums.ClassStatus;
+        createdAt: Date;
+        updatedAt: Date;
         tutorId: string;
     }>;
     createSchedule(req: any, dto: CreateScheduleDto): Promise<{
         class: {
             id: string;
-            status: import(".prisma/client").$Enums.ClassStatus;
-            createdAt: Date;
             title: string;
             description: string | null;
             subject: string;
             price: number;
+            status: import(".prisma/client").$Enums.ClassStatus;
+            createdAt: Date;
+            updatedAt: Date;
             tutorId: string;
-        };
-        student: {
-            id: string;
-            email: string;
-            role: import(".prisma/client").$Enums.Role;
         };
     } & {
         id: string;
-        status: import(".prisma/client").$Enums.ScheduleStatus;
+        title: string;
+        status: import(".prisma/client").$Enums.LessonStatus;
         classId: string;
-        studentId: string;
         startTime: Date;
         endTime: Date;
+        meetingLink: string | null;
     }>;
     findSchedules(req: any): Promise<({
         class: {
             id: string;
-            status: import(".prisma/client").$Enums.ClassStatus;
-            createdAt: Date;
             title: string;
             description: string | null;
             subject: string;
             price: number;
+            status: import(".prisma/client").$Enums.ClassStatus;
+            createdAt: Date;
+            updatedAt: Date;
             tutorId: string;
-        };
-        student: {
-            id: string;
-            email: string;
-            role: import(".prisma/client").$Enums.Role;
         };
     } & {
         id: string;
-        status: import(".prisma/client").$Enums.ScheduleStatus;
+        title: string;
+        status: import(".prisma/client").$Enums.LessonStatus;
         classId: string;
-        studentId: string;
         startTime: Date;
         endTime: Date;
+        meetingLink: string | null;
     })[]>;
     updateSchedule(req: any, id: string, dto: UpdateScheduleDto): Promise<{
         id: string;
-        status: import(".prisma/client").$Enums.ScheduleStatus;
+        title: string;
+        status: import(".prisma/client").$Enums.LessonStatus;
         classId: string;
-        studentId: string;
         startTime: Date;
         endTime: Date;
+        meetingLink: string | null;
     }>;
     deleteSchedule(req: any, id: string): Promise<{
         id: string;
-        status: import(".prisma/client").$Enums.ScheduleStatus;
+        title: string;
+        status: import(".prisma/client").$Enums.LessonStatus;
         classId: string;
-        studentId: string;
         startTime: Date;
         endTime: Date;
+        meetingLink: string | null;
     }>;
 }

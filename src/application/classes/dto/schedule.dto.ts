@@ -1,5 +1,5 @@
 import { IsString, IsNotEmpty, IsDateString, IsEnum, IsOptional } from 'class-validator';
-import { ScheduleStatus } from '@prisma/client';
+import { LessonStatus } from '@prisma/client';
 
 export class CreateScheduleDto {
   @IsString()
@@ -7,8 +7,8 @@ export class CreateScheduleDto {
   classId: string;
 
   @IsString()
-  @IsNotEmpty()
-  studentId: string;
+  @IsOptional()
+  title?: string;
 
   @IsDateString()
   @IsNotEmpty()
@@ -17,9 +17,17 @@ export class CreateScheduleDto {
   @IsDateString()
   @IsNotEmpty()
   endTime: string;
+
+  @IsString()
+  @IsOptional()
+  meetingLink?: string;
 }
 
 export class UpdateScheduleDto {
+  @IsString()
+  @IsOptional()
+  title?: string;
+
   @IsDateString()
   @IsOptional()
   startTime?: string;
@@ -28,7 +36,11 @@ export class UpdateScheduleDto {
   @IsOptional()
   endTime?: string;
 
-  @IsEnum(ScheduleStatus)
+  @IsEnum(LessonStatus)
   @IsOptional()
-  status?: ScheduleStatus;
+  status?: LessonStatus;
+
+  @IsString()
+  @IsOptional()
+  meetingLink?: string;
 }

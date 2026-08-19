@@ -1,12 +1,15 @@
-import { ScheduleStatus } from '@prisma/client';
+import { LessonStatus } from '@prisma/client';
 export declare class CreateScheduleDto {
     classId: string;
-    studentId: string;
+    title?: string;
     startTime: string;
     endTime: string;
+    meetingLink?: string;
 }
 export declare class UpdateScheduleDto {
+    title?: string;
     startTime?: string;
     endTime?: string;
-    status?: ScheduleStatus;
+    status?: LessonStatus;
+    meetingLink?: string;
 }

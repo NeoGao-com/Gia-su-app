@@ -28,6 +28,8 @@ export class ClassesService {
         tutor: {
           select: { id: true, email: true, role: true },
         },
+        lessons: true,
+        enrollments: true,
       },
     });
   }
@@ -39,7 +41,8 @@ export class ClassesService {
         tutor: {
           select: { id: true, email: true, role: true },
         },
-        schedules: {
+        lessons: true,
+        enrollments: {
           include: {
             student: {
               select: { id: true, email: true, role: true },
@@ -80,82 +83,79 @@ export class ClassesService {
     if (userRole !== Role.ADMIN && classEntity.tutorId !== userId) {
       throw new ForbiddenException('Only the class tutor or admin can schedule lessons');
     }
-    return this.prisma.lessonSchedule.create({
+    return this.prisma.lesson.create({
       data: {
         classId: dto.classId,
-        studentId: dto.studentId,
+        title: dto.title || 'Class Lesson',
         startTime: new Date(dto.startTime),
         endTime: new Date(dto.endTime),
+        meetingLink: dto.meetingLink,
       },
       include: {
         class: true,
-        student: {
-          select: { id: true, email: true, role: true },
-        },
       },
     });
   }
 
   async findSchedules(userId: string, userRole: Role) {
     if (userRole === Role.ADMIN) {
-      return this.prisma.lessonSchedule.findMany({
+      return this.prisma.lesson.findMany({
         include: {
           class: true,
-          student: { select: { id: true, email: true, role: true } },
         },
       });
     }
     if (userRole === Role.TUTOR) {
-      return this.prisma.lessonSchedule.findMany({
+      return this.prisma.lesson.findMany({
         where: { class: { tutorId: userId } },
         include: {
           class: true,
-          student: { select: { id: true, email: true, role: true } },
         },
       });
     }
-    return this.prisma.lessonSchedule.findMany({
-      where: { studentId: userId },
+    return this.prisma.lesson.findMany({
+      where: { class: { enrollments: { some: { studentId: userId, status: 'ACCEPTED' } } } },
       include: {
         class: true,
-        student: { select: { id: true, email: true, role: true } },
       },
     });
   }
 
   async updateSchedule(id: string, userId: string, userRole: Role, dto: UpdateScheduleDto) {
-    const schedule = await this.prisma.lessonSchedule.findUnique({
+    const lesson = await this.prisma.lesson.findUnique({
       where: { id },
       include: { class: true },
     });
-    if (!schedule) {
+    if (!lesson) {
       throw new NotFoundException('Schedule not found');
     }
-    if (userRole !== Role.ADMIN && schedule.class.tutorId !== userId) {
+    if (userRole !== Role.ADMIN && lesson.class.tutorId !== userId) {
       throw new ForbiddenException('Only the class tutor or admin can update schedules');
     }
-    return this.prisma.lessonSchedule.update({
+    return this.prisma.lesson.update({
       where: { id },
       data: {
+        ...(dto.title && { title: dto.title }),
         ...(dto.startTime && { startTime: new Date(dto.startTime) }),
         ...(dto.endTime && { endTime: new Date(dto.endTime) }),
         ...(dto.status && { status: dto.status }),
+        ...(dto.meetingLink && { meetingLink: dto.meetingLink }),
       },
     });
   }
 
   async deleteSchedule(id: string, userId: string, userRole: Role) {
-    const schedule = await this.prisma.lessonSchedule.findUnique({
+    const lesson = await this.prisma.lesson.findUnique({
       where: { id },
       include: { class: true },
     });
-    if (!schedule) {
+    if (!lesson) {
       throw new NotFoundException('Schedule not found');
     }
-    if (userRole !== Role.ADMIN && schedule.class.tutorId !== userId) {
+    if (userRole !== Role.ADMIN && lesson.class.tutorId !== userId) {
       throw new ForbiddenException('Only the class tutor or admin can delete schedules');
     }
-    return this.prisma.lessonSchedule.delete({
+    return this.prisma.lesson.delete({
       where: { id },
     });
   }

@@ -1,10 +1,11 @@
-import { PrismaClient, Role, UserStatus } from '@prisma/client';
+import { PrismaClient, Role, UserStatus, ClassStatus, EnrollmentStatus, LessonStatus } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
 
 const prisma = new PrismaClient();
 
 async function main() {
-  await prisma.lessonSchedule.deleteMany();
+  await prisma.lesson.deleteMany();
+  await prisma.classEnrollment.deleteMany();
   await prisma.class.deleteMany();
   await prisma.studentProfile.deleteMany();
   await prisma.tutorProfile.deleteMany();
@@ -62,7 +63,48 @@ async function main() {
     include: { studentProfile: true },
   });
 
-  console.log({ admin, tutorUser, studentUser });
+  const mathClass = await prisma.class.create({
+    data: {
+      title: 'Advanced Mathematics Grade 10',
+      description: 'Comprehensive math course covering algebra and trigonometry.',
+      subject: 'Math',
+      price: 150.0,
+      tutorId: tutorUser.id,
+      status: ClassStatus.OPEN,
+      lessons: {
+        create: [
+          {
+            title: 'Lesson 1: Introduction to Advanced Algebra',
+            startTime: new Date('2026-09-01T09:00:00Z'),
+            endTime: new Date('2026-09-01T11:00:00Z'),
+            status: LessonStatus.SCHEDULED,
+            meetingLink: 'https://meet.google.com/abc-defg-hij',
+          },
+          {
+            title: 'Lesson 2: Quadratic Equations Deep Dive',
+            startTime: new Date('2026-09-03T09:00:00Z'),
+            endTime: new Date('2026-09-03T11:00:00Z'),
+            status: LessonStatus.SCHEDULED,
+            meetingLink: 'https://meet.google.com/abc-defg-hij',
+          },
+        ],
+      },
+      enrollments: {
+        create: [
+          {
+            studentId: studentUser.id,
+            status: EnrollmentStatus.PENDING,
+          },
+        ],
+      },
+    },
+    include: {
+      lessons: true,
+      enrollments: true,
+    },
+  });
+
+  console.log({ admin, tutorUser, studentUser, mathClass });
 }
 
 main()
