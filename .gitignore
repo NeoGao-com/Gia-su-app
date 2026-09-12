@@ -1,0 +1,9 @@
+dist/
+pgdata/
+node_modules/
+__pycache__/
+*.pyc
+*.log
+.env
+.DS_Store
+test-results/

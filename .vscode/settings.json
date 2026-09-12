@@ -1,0 +1,13 @@
+{
+    "files.exclude": {
+        "**/.git": true,
+        "**/.svn": true,
+        "**/.hg": true,
+        "**/.DS_Store": true,
+        "**/Thumbs.db": true,
+        "**/c:\\Users\\ugaoc\\Downloads\\PRC2026_1\\PRC2026_1\\deform4.aux": true,
+        "**/c:\\Users\\ugaoc\\Downloads\\PRC2026_1\\PRC2026_1\\deform4.log": true,
+        "**/c:\\Users\\ugaoc\\Downloads\\PRC2026_1\\PRC2026_1\\deform4.gz": true,
+        "**/c:\\Users\\ugaoc\\Downloads\\PRC2026_1\\PRC2026_1\\deform4.out": true
+    }
+}
