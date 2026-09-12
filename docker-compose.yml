@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 services:
   postgres:
     image: postgres:16-alpine
@@ -77,3 +78,23 @@ volumes:
   redis_data:
   backend_uploads:
   backend_data:
+=======
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: edtech_postgres
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: edtech_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+volumes:
+  pgdata:
+    driver: local
+>>>>>>> 1be244b3bd964efb7ff56a54e8a3e7512181aa55

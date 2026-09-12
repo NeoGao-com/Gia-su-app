@@ -1,0 +1,26 @@
+{
+  "version": 2,
+  "sessionId": "session-17da2d03-ed6c-42b0-9403-52cecf8a975a",
+  "cwd": "D:\\quiz-app-main",
+  "updatedAt": 1789231734463,
+  "checkpoints": [
+    {
+      "turn": 96,
+      "commit": "7476848991f64ecc4f7c9327c7f5a29aacfa7230",
+      "parent": "7476848991f64ecc4f7c9327c7f5a29aacfa7230",
+      "time": 1789231547563,
+      "untracked": [],
+      "truncated": false
+    },
+    {
+      "turn": 97,
+      "commit": "7476848991f64ecc4f7c9327c7f5a29aacfa7230",
+      "parent": "7476848991f64ecc4f7c9327c7f5a29aacfa7230",
+      "time": 1789231731762,
+      "untracked": [],
+      "truncated": false
+    }
+  ],
+  "rolls": [],
+  "undos": []
+}
