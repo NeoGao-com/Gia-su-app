@@ -10,7 +10,6 @@ SAFE_METHODS = {"GET", "HEAD", "OPTIONS", "TRACE"}
 EXEMPT_PATHS = {
     "/api/auth/login",
     "/api/auth/register",
-    "/api/admin/users",
     "/docs",
     "/redoc",
     "/openapi.json",

@@ -2,16 +2,29 @@ import React, { useEffect, useState } from 'react';
 import { Navbar } from '../../components/Navbar';
 import { Sidebar } from '../../components/Sidebar';
 import api from '../../api/axios';
-import { BookOpen, CheckCircle, ArrowRight, KeyRound, Users, Clock, Sparkles, Trophy, TrendingUp, FileText, History } from 'lucide-react';
+import { 
+  BookOpen, CheckCircle, ArrowRight, KeyRound, Users, Clock, 
+  Sparkles, Trophy, TrendingUp, FileText, Send, AlertTriangle, 
+  Eye, GraduationCap, Flame
+} from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { useToast } from '../../context/ToastContext';
+import { SubmissionReviewModal } from '../../components/SubmissionReviewModal';
 
 export function StudentDashboard() {
-  const [stats, setStats] = useState({ total_exams: 0, completed_exams: 0, avg_score: 0 });
+  const { toast } = useToast();
+  const [loading, setLoading] = useState(true);
+  const [summary, setSummary] = useState(null);
   const [recentExams, setRecentExams] = useState([]);
+  const [recentSubmissions, setRecentSubmissions] = useState([]);
   const [myClassrooms, setMyClassrooms] = useState([]);
-  const [historyList, setHistoryList] = useState([]);
+  
+  // Join classroom
   const [joinCode, setJoinCode] = useState('');
-  const [joinStatus, setJoinStatus] = useState({ loading: false, error: null, success: null });
+  const [joinLoading, setJoinLoading] = useState(false);
+
+  // Review modal
+  const [selectedSubmissionId, setSelectedSubmissionId] = useState(null);
 
   const userStr = localStorage.getItem('user');
   let studentName = 'Học sinh';
@@ -20,29 +33,29 @@ export function StudentDashboard() {
     if (user?.full_name) studentName = user.full_name;
   } catch {}
 
-  const loadData = () => {
-    Promise.all([
-      api.get('/student/exams').catch(() => ({ data: [] })),
-      api.get('/student/history?limit=100').catch(() => ({ data: { items: [] } })),
-      api.get('/classrooms/?limit=20').catch(() => ({ data: { items: [] } })),
-    ]).then(([examsRes, historyRes, classRes]) => {
-      const examsList = Array.isArray(examsRes.data) ? examsRes.data : (examsRes.data?.items || []);
-      const historyItems = Array.isArray(historyRes.data?.items) ? historyRes.data.items : (Array.isArray(historyRes.data) ? historyRes.data : []);
-      const classList = Array.isArray(classRes.data?.items) ? classRes.data.items : (Array.isArray(classRes.data) ? classRes.data : []);
+  const loadData = async () => {
+    try {
+      setLoading(true);
+      const [sumRes, examsRes, subRes, classRes] = await Promise.all([
+        api.get('/student/dashboard-summary').catch(() => ({ data: null })),
+        api.get('/student/exams').catch(() => ({ data: [] })),
+        api.get('/student/history?limit=6').catch(() => ({ data: { items: [] } })),
+        api.get('/student/classrooms').catch(() => ({ data: [] })),
+      ]);
 
-      setRecentExams(examsList.slice(0, 6));
-      setMyClassrooms(classList);
-      setHistoryList(historyItems);
+      const exams = Array.isArray(examsRes.data) ? examsRes.data : (examsRes.data?.items || []);
+      const subs = Array.isArray(subRes.data?.items) ? subRes.data.items : (Array.isArray(subRes.data) ? subRes.data : []);
+      const classes = Array.isArray(classRes.data) ? classRes.data : (classRes.data?.items || []);
 
-      const scores = historyItems.filter(h => h.score !== null && h.score !== undefined).map(h => Number(h.score));
-      const avg = scores.length > 0 ? (scores.reduce((a, b) => a + b, 0) / scores.length).toFixed(1) : 0;
-
-      setStats({
-        total_exams: examsList.length,
-        completed_exams: historyItems.length,
-        avg_score: avg,
-      });
-    });
+      setSummary(sumRes.data);
+      setRecentExams(exams.slice(0, 6));
+      setRecentSubmissions(subs.slice(0, 5));
+      setMyClassrooms(classes.slice(0, 4));
+    } catch {
+      toast.error('Không thể tải dữ liệu trang tổng quan.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   useEffect(() => {
@@ -54,23 +67,24 @@ export function StudentDashboard() {
     const code = joinCode.trim().toUpperCase();
     if (!code) return;
 
-    setJoinStatus({ loading: true, error: null, success: null });
+    setJoinLoading(true);
     try {
       const res = await api.post('/classrooms/join', { code });
-      setJoinStatus({ loading: false, error: null, success: `Chúc mừng bạn đã vào nhóm "${res.data?.name || code}"!` });
+      toast.success(`Chúc mừng bạn đã vào lớp "${res.data?.name || code}"!`);
       setJoinCode('');
       loadData();
     } catch (err) {
-      setJoinStatus({ 
-        loading: false, 
-        error: err.response?.data?.detail || 'Mã nhóm học không hợp lệ hoặc đã hết hạn', 
-        success: null 
-      });
+      toast.error(err.response?.data?.detail || 'Mã lớp không hợp lệ hoặc đã hết hạn');
+    } finally {
+      setJoinLoading(false);
     }
   };
 
-  const completionRate = stats.total_exams > 0 ? Math.round((stats.completed_exams / Math.max(stats.total_exams, 1)) * 100) : 0;
-  const bestScore = historyList.length > 0 ? Math.max(...historyList.map(h => Number(h.score || 0))).toFixed(1) : '—';
+  // Urgent pending count
+  const pendingAssignmentsCount = summary?.pending_assignments_count ?? 0;
+  const urgentCount = summary?.urgent_assignments_count ?? 0;
+  const gpa = summary?.average_gpa ?? 0;
+  const totalCompleted = summary?.total_completed ?? recentSubmissions.length;
 
   return (
     <div className="min-h-screen bg-pastel-bg">
@@ -78,26 +92,186 @@ export function StudentDashboard() {
       <div className="flex">
         <Sidebar role="student" />
         <main className="flex-1 p-6 lg:p-8 max-w-7xl">
-          {/* Welcome Banner — matches TeacherDashboard */}
-          <div className="bg-gradient-to-r from-pastel-purple to-pastel-purpleDark text-white p-6 sm:p-8 rounded-3xl shadow-sm mb-8 relative overflow-hidden">
+          {/* Welcome Banner */}
+          <div className="bg-gradient-to-r from-pastel-purple via-pastel-purpleDark to-indigo-700 text-white p-6 sm:p-8 rounded-3xl shadow-sm mb-8 relative overflow-hidden">
             <div className="relative z-10 max-w-2xl">
-              <div className="inline-flex items-center space-x-2 bg-white/20 backdrop-blur-md px-3 py-1 rounded-full text-xs font-semibold mb-3">
-                <Sparkles className="w-3.5 h-3.5" />
-                <span>Góc học tập & Luyện thi trực tuyến</span>
+              <div className="inline-flex items-center space-x-2 bg-white/20 backdrop-blur-md px-3.5 py-1 rounded-full text-xs font-semibold mb-3">
+                <Sparkles className="w-3.5 h-3.5 text-yellow-300" />
+                <span>Không gian học tập & Ôn luyện thông minh</span>
               </div>
               <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight">
-                Chào {studentName}!
+                Xin chào, {studentName}! 👋
               </h1>
-              <p className="mt-2 text-white/90 text-sm sm:text-base leading-relaxed">
-                Hoàn thành các bài tập về nhà và đề kiểm tra do thầy cô giao để củng cố kiến thức mỗi ngày.
+              <p className="mt-2 text-white/90 text-xs sm:text-sm leading-relaxed">
+                {pendingAssignmentsCount > 0 
+                  ? `Bạn có ${pendingAssignmentsCount} bài tập cần hoàn thành. Hãy sắp xếp thời gian làm bài trước hạn chót nhé!`
+                  : 'Tuyệt vời! Bạn đã hoàn thành tất cả bài tập được giao. Hãy tự luyện thêm hoặc thư giãn nhé!'}
               </p>
             </div>
-            <div className="absolute right-0 bottom-0 opacity-10 pointer-events-none transform translate-x-8 translate-y-8">
-              <BookOpen className="w-64 h-64" />
+            <div className="absolute right-0 bottom-0 opacity-15 pointer-events-none transform translate-x-8 translate-y-8">
+              <GraduationCap className="w-64 h-64" />
             </div>
           </div>
 
-          {/* Join Tutoring Group Box */}
+          {/* Urgent Homework Callout (if any urgent) */}
+          {urgentCount > 0 && (
+            <div className="bg-gradient-to-r from-rose-50 via-amber-50 to-orange-50 p-5 rounded-3xl border border-rose-200 shadow-sm mb-8 flex items-center justify-between gap-4 animate-in fade-in">
+              <div className="flex items-center space-x-3.5">
+                <div className="p-3 bg-rose-500 text-white rounded-2xl shadow-sm animate-pulse">
+                  <Flame className="w-6 h-6" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-rose-900 text-sm sm:text-base flex items-center space-x-2">
+                    <span>Cảnh báo: Có {urgentCount} bài tập sắp đến hạn chót (dưới 24h)!</span>
+                  </h3>
+                  <p className="text-xs text-rose-700 mt-0.5">
+                    Nộp bài trước hạn để tránh bị khóa lượt nộp hoặc trừ điểm chuyên cần.
+                  </p>
+                </div>
+              </div>
+              <Link
+                to="/student/assignments"
+                className="px-4 py-2.5 bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs rounded-2xl transition shadow-sm whitespace-nowrap flex items-center space-x-1.5"
+              >
+                <span>Xem & Làm ngay</span>
+                <ArrowRight className="w-3.5 h-3.5" />
+              </Link>
+            </div>
+          )}
+
+          {/* KPI Stats Grid */}
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-8">
+            {/* Card 1: Pending Assignments */}
+            <Link
+              to="/student/assignments"
+              className="bg-white p-5 rounded-3xl border border-gray-100 shadow-sm hover:shadow-md hover:border-purple-200 transition group"
+            >
+              <div className="flex items-center space-x-3 mb-3">
+                <div className="bg-blue-50 text-blue-600 p-2.5 rounded-2xl group-hover:scale-105 transition">
+                  <Send className="w-5 h-5" />
+                </div>
+                <span className="text-xs sm:text-sm text-gray-500 font-medium">Bài tập về nhà</span>
+              </div>
+              <h3 className="text-2xl sm:text-3xl font-bold text-gray-800">{pendingAssignmentsCount}</h3>
+              <p className="text-[11px] text-gray-400 mt-1 flex items-center space-x-1">
+                <span>Cần nộp</span>
+                <ArrowRight className="w-3 h-3 group-hover:translate-x-0.5 transition" />
+              </p>
+            </Link>
+
+            {/* Card 2: Completed Exmas */}
+            <Link
+              to="/student/history"
+              className="bg-white p-5 rounded-3xl border border-gray-100 shadow-sm hover:shadow-md hover:border-purple-200 transition group"
+            >
+              <div className="flex items-center space-x-3 mb-3">
+                <div className="bg-emerald-50 text-emerald-600 p-2.5 rounded-2xl group-hover:scale-105 transition">
+                  <CheckCircle className="w-5 h-5" />
+                </div>
+                <span className="text-xs sm:text-sm text-gray-500 font-medium">Đã hoàn thành</span>
+              </div>
+              <h3 className="text-2xl sm:text-3xl font-bold text-gray-800">{totalCompleted}</h3>
+              <p className="text-[11px] text-emerald-600 font-semibold mt-1">Bài đã nộp</p>
+            </Link>
+
+            {/* Card 3: GPA */}
+            <div className="bg-white p-5 rounded-3xl border border-gray-100 shadow-sm">
+              <div className="flex items-center space-x-3 mb-3">
+                <div className="bg-amber-50 text-amber-600 p-2.5 rounded-2xl">
+                  <Trophy className="w-5 h-5" />
+                </div>
+                <span className="text-xs sm:text-sm text-gray-500 font-medium">Điểm trung bình</span>
+              </div>
+              <h3 className="text-2xl sm:text-3xl font-bold text-gray-800">
+                {gpa > 0 ? gpa.toFixed(1) : '—'}
+                <span className="text-xs font-normal text-gray-400 ml-1">/ 10</span>
+              </h3>
+              <p className="text-[11px] text-gray-400 mt-1">
+                {gpa >= 8.0 ? 'Học lực Xuất sắc' : gpa >= 6.5 ? 'Học lực Khá' : gpa > 0 ? 'Đang cải thiện' : 'Chưa có điểm'}
+              </p>
+            </div>
+
+            {/* Card 4: Classrooms */}
+            <Link
+              to="/student/classrooms"
+              className="bg-white p-5 rounded-3xl border border-gray-100 shadow-sm hover:shadow-md hover:border-purple-200 transition group"
+            >
+              <div className="flex items-center space-x-3 mb-3">
+                <div className="bg-purple-50 text-pastel-purpleDark p-2.5 rounded-2xl group-hover:scale-105 transition">
+                  <Users className="w-5 h-5" />
+                </div>
+                <span className="text-xs sm:text-sm text-gray-500 font-medium">Lớp đang theo học</span>
+              </div>
+              <h3 className="text-2xl sm:text-3xl font-bold text-gray-800">{summary?.classrooms_count ?? myClassrooms.length}</h3>
+              <p className="text-[11px] text-gray-400 mt-1 flex items-center space-x-1">
+                <span>Nhóm học & Lớp kèm</span>
+                <ArrowRight className="w-3 h-3 group-hover:translate-x-0.5 transition" />
+              </p>
+            </Link>
+          </div>
+
+          {/* Quick Actions Bar */}
+          <div className="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm mb-8">
+            <h3 className="font-bold text-gray-800 text-sm sm:text-base mb-4 flex items-center space-x-2">
+              <Sparkles className="w-4 h-4 text-pastel-purpleDark" />
+              <span>Lối tắt học tập</span>
+            </h3>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3.5">
+              <Link
+                to="/student/assignments"
+                className="p-4 rounded-2xl bg-gray-50 hover:bg-white hover:shadow-sm border border-gray-100 hover:border-pastel-purple/20 transition group flex flex-col justify-between"
+              >
+                <div className="w-9 h-9 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center mb-2 group-hover:scale-110 transition">
+                  <Send className="w-4 h-4" />
+                </div>
+                <div>
+                  <div className="font-bold text-xs sm:text-sm text-gray-800">Bài tập về nhà</div>
+                  <div className="text-[11px] text-gray-400 mt-0.5">Thời hạn & nộp bài</div>
+                </div>
+              </Link>
+
+              <Link
+                to="/student/exams"
+                className="p-4 rounded-2xl bg-gray-50 hover:bg-white hover:shadow-sm border border-gray-100 hover:border-pastel-purple/20 transition group flex flex-col justify-between"
+              >
+                <div className="w-9 h-9 rounded-xl bg-purple-50 text-pastel-purpleDark flex items-center justify-center mb-2 group-hover:scale-110 transition">
+                  <FileText className="w-4 h-4" />
+                </div>
+                <div>
+                  <div className="font-bold text-xs sm:text-sm text-gray-800">Phòng thi online</div>
+                  <div className="text-[11px] text-gray-400 mt-0.5">Kiểm tra chính thức</div>
+                </div>
+              </Link>
+
+              <Link
+                to="/student/practice"
+                className="p-4 rounded-2xl bg-gradient-to-br from-purple-50 to-indigo-50/50 hover:bg-white hover:shadow-sm border border-purple-100 transition group flex flex-col justify-between"
+              >
+                <div className="w-9 h-9 rounded-xl bg-pastel-purple text-white flex items-center justify-center mb-2 group-hover:scale-110 transition shadow-2xs">
+                  <Sparkles className="w-4 h-4" />
+                </div>
+                <div>
+                  <div className="font-bold text-xs sm:text-sm text-pastel-purpleDark">Tự luyện & Ôn tập</div>
+                  <div className="text-[11px] text-gray-500 mt-0.5">Tạo đề giải chi tiết</div>
+                </div>
+              </Link>
+
+              <Link
+                to="/student/classrooms"
+                className="p-4 rounded-2xl bg-gray-50 hover:bg-white hover:shadow-sm border border-gray-100 hover:border-pastel-purple/20 transition group flex flex-col justify-between"
+              >
+                <div className="w-9 h-9 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center mb-2 group-hover:scale-110 transition">
+                  <Users className="w-4 h-4" />
+                </div>
+                <div>
+                  <div className="font-bold text-xs sm:text-sm text-gray-800">Lớp học của tôi</div>
+                  <div className="text-[11px] text-gray-400 mt-0.5">Thông tin giáo viên</div>
+                </div>
+              </Link>
+            </div>
+          </div>
+
+          {/* Quick Join Classroom Form Box */}
           <div className="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm mb-8">
             <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
               <div className="flex items-center space-x-3.5">
@@ -105,8 +279,8 @@ export function StudentDashboard() {
                   <KeyRound className="w-6 h-6" />
                 </div>
                 <div>
-                  <h3 className="font-bold text-gray-800 text-base">Tham gia lớp / nhóm kèm mới</h3>
-                  <p className="text-xs text-gray-400 mt-0.5">Nhập mã 6 ký tự do giáo viên hoặc gia sư cấp để nhận bài tập</p>
+                  <h3 className="font-bold text-gray-800 text-base">Vào lớp học bằng mã</h3>
+                  <p className="text-xs text-gray-400 mt-0.5">Nhập mã tham gia 6 ký tự để nhận ngay đề bài từ thầy cô</p>
                 </div>
               </div>
 
@@ -115,227 +289,159 @@ export function StudentDashboard() {
                   type="text"
                   required
                   maxLength={6}
-                  placeholder="ABC123"
+                  placeholder="MÃ LỚP (VD: TOAN9A)"
                   value={joinCode}
                   onChange={(e) => setJoinCode(e.target.value.toUpperCase())}
-                  className="px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-2xl text-sm font-mono uppercase font-bold focus:outline-none focus:border-pastel-purple text-center tracking-wider w-full md:w-48"
+                  className="px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-2xl text-xs sm:text-sm font-mono uppercase font-bold focus:outline-none focus:border-pastel-purple text-center tracking-wider w-full md:w-48"
                 />
                 <button
                   type="submit"
-                  disabled={joinStatus.loading || !joinCode.trim()}
+                  disabled={joinLoading || !joinCode.trim()}
                   className="px-5 py-2.5 bg-pastel-purple text-white text-xs font-bold rounded-2xl hover:bg-pastel-purpleDark transition shadow-sm disabled:opacity-50 whitespace-nowrap"
                 >
-                  {joinStatus.loading ? 'Đang vào...' : 'Tham gia'}
+                  {joinLoading ? 'Đang vào...' : 'Gia nhập'}
                 </button>
               </form>
             </div>
-
-            {joinStatus.error && (
-              <div className="mt-3 text-xs text-red-600 bg-red-50 p-2.5 rounded-xl font-medium border border-red-100">
-                {joinStatus.error}
-              </div>
-            )}
-            {joinStatus.success && (
-              <div className="mt-3 text-xs text-emerald-600 bg-emerald-50 p-2.5 rounded-xl font-medium border border-emerald-100">
-                {joinStatus.success}
-              </div>
-            )}
           </div>
 
-          {/* Quick Stats Grid — 4 cards like TeacherDashboard */}
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-8">
-            <div className="bg-white p-5 rounded-3xl border border-gray-100 shadow-sm hover:shadow-md transition">
-              <div className="flex items-center space-x-3 mb-3">
-                <div className="bg-blue-50 text-blue-600 p-2.5 rounded-2xl">
-                  <FileText className="w-5 h-5" />
-                </div>
-                <span className="text-xs sm:text-sm text-gray-500 font-medium">Bài được giao</span>
-              </div>
-              <h3 className="text-2xl sm:text-3xl font-bold text-gray-800">{stats.total_exams}</h3>
-              <p className="text-[11px] text-gray-400 mt-1">Đề thi khả dụng</p>
-            </div>
-
-            <div className="bg-white p-5 rounded-3xl border border-gray-100 shadow-sm hover:shadow-md transition">
-              <div className="flex items-center space-x-3 mb-3">
-                <div className="bg-emerald-50 text-emerald-600 p-2.5 rounded-2xl">
-                  <CheckCircle className="w-5 h-5" />
-                </div>
-                <span className="text-xs sm:text-sm text-gray-500 font-medium">Đã hoàn thành</span>
-              </div>
-              <h3 className="text-2xl sm:text-3xl font-bold text-gray-800">{stats.completed_exams}</h3>
-              <p className="text-[11px] text-gray-400 mt-1">{completionRate}% tiến độ</p>
-            </div>
-
-            <div className="bg-white p-5 rounded-3xl border border-gray-100 shadow-sm hover:shadow-md transition">
-              <div className="flex items-center space-x-3 mb-3">
-                <div className="bg-amber-50 text-amber-600 p-2.5 rounded-2xl">
-                  <Trophy className="w-5 h-5" />
-                </div>
-                <span className="text-xs sm:text-sm text-gray-500 font-medium">Điểm trung bình</span>
-              </div>
-              <h3 className="text-2xl sm:text-3xl font-bold text-gray-800">{stats.avg_score}</h3>
-              <p className="text-[11px] text-gray-400 mt-1">Cao nhất: {bestScore} điểm</p>
-            </div>
-
-            <div className="bg-white p-5 rounded-3xl border border-gray-100 shadow-sm hover:shadow-md transition">
-              <div className="flex items-center space-x-3 mb-3">
-                <div className="bg-purple-50 text-pastel-purpleDark p-2.5 rounded-2xl">
-                  <Users className="w-5 h-5" />
-                </div>
-                <span className="text-xs sm:text-sm text-gray-500 font-medium">Nhóm đang học</span>
-              </div>
-              <h3 className="text-2xl sm:text-3xl font-bold text-gray-800">{myClassrooms.length}</h3>
-              <p className="text-[11px] text-gray-400 mt-1">Lớp & nhóm kèm</p>
-            </div>
-          </div>
-
-          {/* Action Center — mirrors TeacherDashboard */}
-          <div className="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm mb-8">
-            <h3 className="font-bold text-gray-800 text-base mb-4 flex items-center space-x-2">
-              <Sparkles className="w-5 h-5 text-pastel-purpleDark" />
-              <span>Thao tác nhanh</span>
-            </h3>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-              <Link 
-                to="/student/exams" 
-                className="p-4 rounded-2xl bg-gray-50 hover:bg-white hover:shadow-md border border-gray-100 hover:border-pastel-purple/20 transition group flex items-start space-x-3"
-              >
-                <div className="p-2.5 rounded-xl bg-blue-50 text-blue-600 group-hover:scale-110 transition">
-                  <BookOpen className="w-5 h-5" />
-                </div>
-                <div>
-                  <div className="font-bold text-sm text-gray-800">Làm bài ngay</div>
-                  <div className="text-[11px] text-gray-400 mt-0.5">Vào danh sách đề thi</div>
-                </div>
-              </Link>
-
-              <Link 
-                to="/student/history" 
-                className="p-4 rounded-2xl bg-gray-50 hover:bg-white hover:shadow-md border border-gray-100 hover:border-pastel-purple/20 transition group flex items-start space-x-3"
-              >
-                <div className="p-2.5 rounded-xl bg-emerald-50 text-emerald-600 group-hover:scale-110 transition">
-                  <History className="w-5 h-5" />
-                </div>
-                <div>
-                  <div className="font-bold text-sm text-gray-800">Xem kết quả</div>
-                  <div className="text-[11px] text-gray-400 mt-0.5">Lịch sử & điểm số</div>
-                </div>
-              </Link>
-
-              <a 
-                href="#join-group"
-                onClick={(e) => { e.preventDefault(); document.querySelector('input[placeholder="ABC123"]')?.focus(); }}
-                className="p-4 rounded-2xl bg-gray-50 hover:bg-white hover:shadow-md border border-gray-100 hover:border-pastel-purple/20 transition group flex items-start space-x-3 cursor-pointer"
-              >
-                <div className="p-2.5 rounded-xl bg-purple-50 text-pastel-purpleDark group-hover:scale-110 transition">
-                  <KeyRound className="w-5 h-5" />
-                </div>
-                <div>
-                  <div className="font-bold text-sm text-gray-800">Nhập mã nhóm</div>
-                  <div className="text-[11px] text-gray-400 mt-0.5">Tham gia lớp mới</div>
-                </div>
-              </a>
-
-              <div className="p-4 rounded-2xl bg-amber-50/50 border border-amber-100 flex items-start space-x-3">
-                <div className="p-2.5 rounded-xl bg-amber-50 text-amber-600">
-                  <TrendingUp className="w-5 h-5" />
-                </div>
-                <div>
-                  <div className="font-bold text-sm text-gray-800">{completionRate}% hoàn thành</div>
-                  <div className="text-[11px] text-gray-500 mt-0.5">{stats.completed_exams}/{stats.total_exams} bài đã làm</div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Two-Column Grid: My Classes & Assigned Exams — matches TeacherDashboard panels */}
+          {/* Two-Column Grid: Assigned Exams & Recent Submissions */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            {/* My Tutoring Classes */}
-            <div className="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="font-bold text-gray-800 text-base flex items-center space-x-2">
-                  <Users className="w-5 h-5 text-pastel-purpleDark" />
-                  <span>Nhóm học của bạn</span>
-                </h3>
-                <span className="text-xs font-bold bg-gray-50 text-gray-500 px-2.5 py-1 rounded-full border">{myClassrooms.length} nhóm</span>
-              </div>
+            {/* Left: Assigned Exams / Homework */}
+            <div className="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm flex flex-col justify-between">
+              <div>
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="font-bold text-gray-800 text-base flex items-center space-x-2">
+                    <BookOpen className="w-5 h-5 text-pastel-purpleDark" />
+                    <span>Bài tập & Đề thi cần làm</span>
+                  </h3>
+                  <Link to="/student/assignments" className="text-xs font-semibold text-pastel-purpleDark hover:underline flex items-center space-x-1">
+                    <span>Xem tất cả</span>
+                    <ArrowRight className="w-3.5 h-3.5" />
+                  </Link>
+                </div>
 
-              {myClassrooms.length === 0 ? (
-                <div className="text-center py-8 bg-gray-50 rounded-2xl border border-dashed border-gray-200">
-                  <Users className="w-8 h-8 text-gray-300 mx-auto mb-2" />
-                  <p className="text-sm text-gray-500 font-medium">Chưa tham gia nhóm nào</p>
-                  <p className="text-xs text-gray-400 mt-1">Nhập mã nhóm ở trên để bắt đầu nhận bài tập</p>
-                </div>
-              ) : (
-                <div className="space-y-3">
-                  {myClassrooms.map((c) => (
-                    <div key={c.id} className="p-4 rounded-2xl bg-gray-50 hover:bg-white hover:shadow-sm border border-gray-100 transition flex items-center justify-between">
-                      <div className="flex items-center space-x-3 min-w-0 flex-1 pr-3">
-                        <div className="w-9 h-9 rounded-xl bg-purple-100 text-pastel-purpleDark font-extrabold flex items-center justify-center text-sm shrink-0">
-                          {(c.name || '?').charAt(0).toUpperCase()}
+                {recentExams.length === 0 ? (
+                  <div className="text-center py-10 bg-gray-50 rounded-2xl border border-dashed border-gray-200">
+                    <BookOpen className="w-8 h-8 text-gray-300 mx-auto mb-2" />
+                    <p className="text-sm text-gray-500 font-medium">Hiện không có bài tập nào cần làm</p>
+                    <p className="text-xs text-gray-400 mt-1">Khi thầy cô giao bài, danh sách sẽ hiển thị ở đây.</p>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {recentExams.map(exam => {
+                      const isAssignment = exam.exam_type === 'ASSIGNMENT';
+                      return (
+                        <div key={exam.id} className="p-4 rounded-2xl bg-gray-50 hover:bg-white hover:shadow-sm border border-gray-100 transition flex items-center justify-between gap-3">
+                          <div className="min-w-0 flex-1">
+                            <div className="flex items-center space-x-2 mb-1">
+                              <span className={`text-[10px] font-bold px-2 py-0.5 rounded-md ${
+                                isAssignment ? 'bg-blue-100 text-blue-700' : 'bg-purple-100 text-pastel-purpleDark'
+                              }`}>
+                                {isAssignment ? 'Bài tập' : 'Đề thi'}
+                              </span>
+                              {exam.classroom_name && (
+                                <span className="text-[10px] text-gray-500 truncate max-w-[120px]">
+                                  {exam.classroom_name}
+                                </span>
+                              )}
+                            </div>
+                            <h4 className="font-bold text-sm text-gray-800 truncate">{exam.title}</h4>
+                            <div className="flex items-center space-x-3 text-xs text-gray-400 mt-1">
+                              <span className="flex items-center space-x-1">
+                                <Clock className="w-3 h-3" />
+                                <span>{exam.duration_minutes ? `${exam.duration_minutes} phút` : 'Tự do'}</span>
+                              </span>
+                              <span>• {exam.question_count || 0} câu</span>
+                              {exam.subject && <span>• {exam.subject}</span>}
+                            </div>
+                          </div>
+
+                          <Link
+                            to={`/take-exam/${exam.id}`}
+                            className="px-4 py-2 bg-pastel-purple text-white text-xs font-bold rounded-xl hover:bg-pastel-purpleDark transition shadow-sm whitespace-nowrap"
+                          >
+                            Làm bài
+                          </Link>
                         </div>
-                        <div className="min-w-0">
-                          <h4 className="font-bold text-sm text-gray-800 truncate">{c.name}</h4>
-                          <p className="text-xs text-gray-400 truncate">{c.description || 'Lớp dạy kèm'}</p>
-                        </div>
-                      </div>
-                      <span className="text-[11px] bg-emerald-50 text-emerald-600 font-bold px-3 py-1 rounded-full border border-emerald-100 whitespace-nowrap">
-                        Đang học
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              )}
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
             </div>
 
-            {/* Assigned Quizzes / Exams */}
-            <div className="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="font-bold text-gray-800 text-base flex items-center space-x-2">
-                  <BookOpen className="w-5 h-5 text-pastel-purpleDark" />
-                  <span>Bài tập cần làm</span>
-                </h3>
-                <Link to="/student/exams" className="text-xs font-semibold text-pastel-purpleDark hover:underline flex items-center space-x-1">
-                  <span>Xem tất cả</span>
-                  <ArrowRight className="w-3.5 h-3.5" />
-                </Link>
-              </div>
+            {/* Right: Recent Submissions with Review Modal */}
+            <div className="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm flex flex-col justify-between">
+              <div>
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="font-bold text-gray-800 text-base flex items-center space-x-2">
+                    <Trophy className="w-5 h-5 text-amber-500" />
+                    <span>Kết quả bài nộp gần đây</span>
+                  </h3>
+                  <Link to="/student/history" className="text-xs font-semibold text-pastel-purpleDark hover:underline flex items-center space-x-1">
+                    <span>Xem sổ điểm</span>
+                    <ArrowRight className="w-3.5 h-3.5" />
+                  </Link>
+                </div>
 
-              {recentExams.length === 0 ? (
-                <div className="text-center py-8 bg-gray-50 rounded-2xl border border-dashed border-gray-200">
-                  <BookOpen className="w-8 h-8 text-gray-300 mx-auto mb-2" />
-                  <p className="text-sm text-gray-500 font-medium">Chưa có bài tập nào</p>
-                  <p className="text-xs text-gray-400 mt-1">Khi thầy cô giao bài, đề thi sẽ hiện ở đây</p>
-                </div>
-              ) : (
-                <div className="space-y-3">
-                  {recentExams.map(exam => (
-                    <div key={exam.id} className="p-4 rounded-2xl bg-gray-50 hover:bg-white hover:shadow-sm border border-gray-100 transition flex items-center justify-between">
-                      <div className="min-w-0 flex-1 pr-3">
-                        <h4 className="font-bold text-sm text-gray-800 truncate">{exam.title}</h4>
-                        <div className="flex items-center flex-wrap gap-2 text-xs text-gray-400 mt-1">
-                          <span className="flex items-center space-x-1">
-                            <Clock className="w-3 h-3" />
-                            <span>{exam.duration_minutes ? `${exam.duration_minutes} phút` : 'Tự do'}</span>
-                          </span>
-                          <span>• {exam.question_count || exam.questions?.length || exam.question_ids?.length || 0} câu</span>
-                          {exam.subject && <span className="px-2 py-0.5 bg-white border rounded-full text-[10px] font-bold text-gray-600">{exam.subject}</span>}
+                {recentSubmissions.length === 0 ? (
+                  <div className="text-center py-10 bg-gray-50 rounded-2xl border border-dashed border-gray-200">
+                    <Trophy className="w-8 h-8 text-gray-300 mx-auto mb-2" />
+                    <p className="text-sm text-gray-500 font-medium">Bạn chưa nộp bài thi nào</p>
+                    <p className="text-xs text-gray-400 mt-1">Làm bài tập hoặc đề kiểm tra đầu tiên để xem kết quả.</p>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {recentSubmissions.map(sub => {
+                      const scoreNum = Number(sub.score ?? 0);
+                      const isPassed = scoreNum >= 5.0;
+
+                      return (
+                        <div key={sub.id} className="p-4 rounded-2xl bg-gray-50 hover:bg-white hover:shadow-sm border border-gray-100 transition flex items-center justify-between gap-3">
+                          <div className="min-w-0 flex-1">
+                            <h4 className="font-bold text-sm text-gray-800 truncate">{sub.exam_title || 'Bài thi'}</h4>
+                            <div className="flex items-center space-x-2 text-xs text-gray-400 mt-1">
+                              <span>Nộp: {sub.submitted_at ? new Date(sub.submitted_at).toLocaleDateString('vi-VN') : '—'}</span>
+                              {sub.attempt_number && <span>• Lần {sub.attempt_number}</span>}
+                            </div>
+                          </div>
+
+                          <div className="flex items-center space-x-3 shrink-0">
+                            <div className="text-right">
+                              <span className={`text-base font-black ${isPassed ? 'text-emerald-600' : 'text-rose-600'}`}>
+                                {sub.score ?? 0}
+                              </span>
+                              <span className="text-[10px] text-gray-400">/10</span>
+                            </div>
+
+                            <button
+                              type="button"
+                              onClick={() => setSelectedSubmissionId(sub.id)}
+                              className="p-2 rounded-xl bg-white border border-gray-200 text-gray-600 hover:text-pastel-purpleDark hover:border-purple-200 transition shadow-2xs"
+                              title="Xem chi tiết & lời giải"
+                            >
+                              <Eye className="w-4 h-4" />
+                            </button>
+                          </div>
                         </div>
-                      </div>
-                      <Link
-                        to={`/take-exam/${exam.id}`}
-                        className="px-4 py-2 bg-pastel-purple text-white text-xs font-bold rounded-xl hover:bg-pastel-purpleDark transition shadow-sm whitespace-nowrap"
-                      >
-                        Làm bài
-                      </Link>
-                    </div>
-                  ))}
-                </div>
-              )}
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         </main>
       </div>
+
+      {/* Review Modal for Submission Details */}
+      {selectedSubmissionId && (
+        <SubmissionReviewModal
+          submissionId={selectedSubmissionId}
+          onClose={() => setSelectedSubmissionId(null)}
+        />
+      )}
     </div>
   );
 }

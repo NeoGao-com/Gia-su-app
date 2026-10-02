@@ -64,7 +64,7 @@ class GradingService:
                     if ans is not None and q.correct_option is not None:
                         ans_int = int(ans)
                         corr_int = int(q.correct_option)
-                        if ans_int == corr_int or ans_int + 1 == corr_int or ans_int == corr_int + 1:
+                        if ans_int == corr_int:
                             is_correct = True
                 except (ValueError, TypeError):
                     continue  # non-numeric answer cannot match numeric correct_option

@@ -72,7 +72,6 @@ async def get_current_user(request: Request, db: AsyncSession = Depends(get_db))
     return user
 
 async def get_current_teacher(current_user: User = Depends(get_current_user)):
-    # Allow both TEACHER and ADMIN for management operations
-    if current_user.role not in ["TEACHER", "ADMIN"]:
-        raise HTTPException(status_code=403, detail="Bạn không có quyền truy cập chức năng này (yêu cầu quyền Giáo viên hoặc Quản trị viên)")
+    if current_user.role != "TEACHER":
+        raise HTTPException(status_code=403, detail="Bạn không có quyền truy cập chức năng này (yêu cầu quyền Giáo viên)")
     return current_user

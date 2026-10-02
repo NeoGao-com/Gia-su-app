@@ -1,14 +1,16 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
+from sqlalchemy.orm import selectinload
 from sqlalchemy import func, or_
-from typing import List, Any
+from typing import List, Any, Optional, Dict
+from pydantic import BaseModel
 from datetime import datetime, timezone
 from app.database import get_db
 from app.models.exam import Exam, ExamSubmission, exam_questions
 from app.models.question import Question
 from app.models.user import User
-from app.models.classroom import Assignment, ClassroomStudent
+from app.models.classroom import Classroom, Assignment, ClassroomStudent, ClassroomExam
 from app.core.security import get_current_user
 from app.schemas.exam import ExamSubmissionRequest, ExamSubmissionResponse, ExamResponse, ExamSubmissionSaveRequest, StudentExamResponse
 from app.services.grading import GradingService
@@ -24,14 +26,34 @@ async def start_exam(
 ):
     result = await db.execute(select(Exam).filter(Exam.id == exam_id))
     exam = result.scalars().first()
-    if not exam:
+    if not exam or exam.is_deleted:
         raise HTTPException(status_code=404, detail="Không tìm thấy bài thi")
 
     if not exam.is_published:
-        assign_res = await db.execute(select(Assignment).filter(Assignment.exam_id == exam_id))
-        is_assigned = assign_res.scalars().first()
-        if not is_assigned:
-            raise HTTPException(status_code=404, detail="Không tìm thấy bài thi")
+        allowed = exam.created_by_id == current_user.id
+        if not allowed:
+            assign_res = await db.execute(
+                select(Assignment)
+                .join(ClassroomStudent, ClassroomStudent.classroom_id == Assignment.classroom_id)
+                .filter(
+                    Assignment.exam_id == exam_id,
+                    ClassroomStudent.student_id == current_user.id,
+                    or_(ClassroomStudent.is_active == True, ClassroomStudent.is_active == None),
+                    or_(Assignment.is_active == True, Assignment.is_active == None)
+                )
+            )
+            if not assign_res.scalars().first():
+                ce_res = await db.execute(
+                    select(ClassroomExam)
+                    .join(ClassroomStudent, ClassroomStudent.classroom_id == ClassroomExam.classroom_id)
+                    .filter(
+                        ClassroomExam.exam_id == exam_id,
+                        ClassroomStudent.student_id == current_user.id,
+                        or_(ClassroomStudent.is_active == True, ClassroomStudent.is_active == None)
+                    )
+                )
+                if not ce_res.scalars().first():
+                    raise HTTPException(status_code=404, detail="Không tìm thấy bài thi")
 
     # 1) Nếu đã có phiên IN_PROGRESS (chưa nộp) thì trả về để tiếp tục làm bài.
     sub_res = await db.execute(
@@ -91,24 +113,35 @@ async def get_student_exams(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    # Lấy exam_id được giao cho lớp của học sinh (assignment còn active)
-    assigned_subq = (
-        select(Assignment.exam_id)
+    # Lấy exam_id được giao cho lớp của học sinh (từ Assignment hoặc ClassroomExam)
+    assigned_subq_1 = (
+        select(Assignment.exam_id.label("exam_id"))
         .join(ClassroomStudent, ClassroomStudent.classroom_id == Assignment.classroom_id)
         .filter(
             ClassroomStudent.student_id == current_user.id,
-            ClassroomStudent.is_active == True,
-            Assignment.is_active == True,
+            or_(ClassroomStudent.is_active == True, ClassroomStudent.is_active == None),
+            or_(Assignment.is_active == True, Assignment.is_active == None),
         )
-        .subquery()
     )
+    assigned_subq_2 = (
+        select(ClassroomExam.exam_id.label("exam_id"))
+        .join(ClassroomStudent, ClassroomStudent.classroom_id == ClassroomExam.classroom_id)
+        .filter(
+            ClassroomStudent.student_id == current_user.id,
+            or_(ClassroomStudent.is_active == True, ClassroomStudent.is_active == None),
+        )
+    )
+    assigned_union = assigned_subq_1.union(assigned_subq_2).subquery()
+
     offset = (page - 1) * limit
     result = await db.execute(
         select(Exam)
+        .options(selectinload(Exam.questions))
         .filter(
+            Exam.is_deleted == False,
             or_(
                 Exam.is_published == True,
-                Exam.id.in_(select(assigned_subq.c.exam_id)),
+                Exam.id.in_(select(assigned_union.c.exam_id)),
             )
         )
         .distinct()
@@ -126,18 +159,68 @@ async def get_student_exams(
         attempts_taken = att_res.scalar() or 0
         q_count = len(exam.questions) if exam.questions else 0
 
+        # Kiểm tra override từ Assignment
+        asgn_res = await db.execute(
+            select(Assignment)
+            .join(ClassroomStudent, ClassroomStudent.classroom_id == Assignment.classroom_id)
+            .filter(
+                Assignment.exam_id == exam.id,
+                ClassroomStudent.student_id == current_user.id,
+                or_(ClassroomStudent.is_active == True, ClassroomStudent.is_active == None),
+                or_(Assignment.is_active == True, Assignment.is_active == None)
+            )
+        )
+        asgn = asgn_res.scalars().first()
+        effective_max_attempts = (asgn.max_attempts if asgn and asgn.max_attempts else None) or exam.max_attempts or 1
+        effective_duration = (asgn.duration_minutes_override if asgn and asgn.duration_minutes_override else None) or exam.duration_minutes or 45
+
+        subjects = {q.subject for q in exam.questions if getattr(q, 'subject', None)}
+        grade_levels = {q.grade_level for q in exam.questions if getattr(q, 'grade_level', None)}
+        primary_subject = list(subjects)[0] if len(subjects) == 1 else (", ".join(sorted(subjects)) if subjects else None)
+        primary_grade = list(grade_levels)[0] if grade_levels else None
+
+        # Kiểm tra trạng thái làm bài của học sinh
+        subs_res = await db.execute(
+            select(ExamSubmission)
+            .filter(ExamSubmission.exam_id == exam.id, ExamSubmission.user_id == current_user.id)
+            .order_by(ExamSubmission.id.desc())
+        )
+        all_subs = subs_res.scalars().all()
+        latest_sub = all_subs[0] if all_subs else None
+        latest_status = latest_sub.status if latest_sub else "NOT_STARTED"
+        latest_submission_id = latest_sub.id if latest_sub else None
+        valid_scores = [s.score for s in all_subs if s.score is not None]
+        highest_score = max(valid_scores) if valid_scores else None
+
+        # Lấy tên lớp học nếu là bài tập được giao
+        classroom_id = asgn.classroom_id if asgn else None
+        classroom_name = None
+        if classroom_id:
+            cr_res = await db.execute(select(Classroom.name).filter(Classroom.id == classroom_id))
+            classroom_name = cr_res.scalar_one_or_none()
+
         response_items.append({
             "id": exam.id,
             "title": exam.title,
             "description": exam.description,
-            "duration_minutes": exam.duration_minutes,
+            "duration_minutes": effective_duration,
             "pass_score": exam.pass_score,
-            "max_attempts": exam.max_attempts or 1,
+            "max_attempts": effective_max_attempts,
             "show_answers_after_submit": exam.show_answers_after_submit,
+            "is_published": exam.is_published,
             "created_at": exam.created_at,
             "created_by_id": exam.created_by_id,
             "attempts_taken": attempts_taken,
-            "question_count": q_count
+            "question_count": q_count,
+            "subject": primary_subject,
+            "grade_level": primary_grade,
+            "exam_type": getattr(exam, 'exam_type', 'EXAM') or 'EXAM',
+            "due_date": asgn.due_date if asgn else None,
+            "classroom_id": classroom_id,
+            "classroom_name": classroom_name,
+            "latest_status": latest_status,
+            "latest_submission_id": latest_submission_id,
+            "highest_score": highest_score
         })
 
     return response_items
@@ -153,24 +236,56 @@ async def get_student_exam_details(
     if not exam or exam.is_deleted:
         raise HTTPException(status_code=404, detail="Không tìm thấy bài thi")
 
-    # Unpublished exams: only allow the creator/admin or an assigned classroom member
+    # Unpublished exams: only allow the creator or an assigned classroom member
     if not exam.is_published:
-        allowed = current_user.role == "ADMIN" or exam.created_by_id == current_user.id
+        allowed = exam.created_by_id == current_user.id
         if not allowed:
-            assign_res = await db.execute(select(Assignment).filter(Assignment.exam_id == exam_id))
-            is_assigned = assign_res.scalars().first()
-            if not is_assigned:
-                raise HTTPException(status_code=404, detail="Không tìm thấy bài thi")
+            assign_res = await db.execute(
+                select(Assignment)
+                .join(ClassroomStudent, ClassroomStudent.classroom_id == Assignment.classroom_id)
+                .filter(
+                    Assignment.exam_id == exam_id,
+                    ClassroomStudent.student_id == current_user.id,
+                    or_(ClassroomStudent.is_active == True, ClassroomStudent.is_active == None),
+                    or_(Assignment.is_active == True, Assignment.is_active == None)
+                )
+            )
+            if not assign_res.scalars().first():
+                ce_res = await db.execute(
+                    select(ClassroomExam)
+                    .join(ClassroomStudent, ClassroomStudent.classroom_id == ClassroomExam.classroom_id)
+                    .filter(
+                        ClassroomExam.exam_id == exam_id,
+                        ClassroomStudent.student_id == current_user.id,
+                        or_(ClassroomStudent.is_active == True, ClassroomStudent.is_active == None)
+                    )
+                )
+                if not ce_res.scalars().first():
+                    raise HTTPException(status_code=404, detail="Không tìm thấy bài thi")
 
     q_result = await db.execute(
         select(Question).join(exam_questions, Question.id == exam_questions.c.question_id).filter(exam_questions.c.exam_id == exam_id)
     )
     questions = q_result.scalars().all()
 
+    subjects = {q.subject for q in questions if getattr(q, 'subject', None)}
+    grade_levels = {q.grade_level for q in questions if getattr(q, 'grade_level', None)}
+    primary_subject = list(subjects)[0] if len(subjects) == 1 else (", ".join(sorted(subjects)) if subjects else None)
+    primary_grade = list(grade_levels)[0] if grade_levels else None
+
     # CRITICAL: Strip correct answers, solutions, and explanations for students
     return {
         "id": exam.id,
         "title": exam.title,
+        "description": exam.description,
+        "duration_minutes": exam.duration_minutes,
+        "pass_score": exam.pass_score,
+        "max_attempts": exam.max_attempts or 1,
+        "show_answers_after_submit": exam.show_answers_after_submit,
+        "is_published": exam.is_published,
+        "exam_type": getattr(exam, 'exam_type', 'EXAM') or 'EXAM',
+        "subject": primary_subject,
+        "grade_level": primary_grade,
         "questions": [
             {
                 "id": q.id,
@@ -215,6 +330,8 @@ async def save_submission(
         )
 
     submission.answers = request.answers
+    if request.tab_switches is not None and request.tab_switches > (submission.tab_switches or 0):
+        submission.tab_switches = request.tab_switches
     submission.version += 1
     submission.last_saved_at = datetime.now(timezone.utc)
 
@@ -305,7 +422,11 @@ async def get_student_history(
     )
 
     # Count total
-    count_query = select(func.count()).select_from(base_query.subquery())
+    count_query = (
+        select(func.count(ExamSubmission.id))
+        .join(Exam, ExamSubmission.exam_id == Exam.id)
+        .filter(ExamSubmission.user_id == current_user.id)
+    )
     total_result = await db.execute(count_query)
     total = total_result.scalar() or 0
 
@@ -343,7 +464,7 @@ async def get_submission_details(
 ):
     result = await db.execute(select(ExamSubmission).filter(ExamSubmission.id == submission_id))
     submission = result.scalars().first()
-    if not submission or (submission.user_id != current_user.id and current_user.role != "ADMIN"):
+    if not submission or submission.user_id != current_user.id:
          raise HTTPException(status_code=404, detail="Không tìm thấy bài nộp")
 
     exam_result = await db.execute(select(Exam).filter(Exam.id == submission.exam_id))
@@ -401,4 +522,258 @@ async def get_submission_details(
         "exam_title": exam.title,
         "show_answers": show_answers,
         "questions": processed_questions
+    }
+
+
+class PracticeGradeRequest(BaseModel):
+    answers: Dict[Any, Any]
+    question_ids: List[int]
+    time_spent: Optional[int] = 0
+
+
+@router.get("/dashboard-summary", summary="Lấy thống kê tổng quan của học sinh")
+async def get_student_dashboard_summary(
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    # 1. Danh sách bài nộp của học sinh
+    subs_res = await db.execute(
+        select(ExamSubmission, Exam.title, Exam.pass_score, Exam.duration_minutes)
+        .join(Exam, ExamSubmission.exam_id == Exam.id)
+        .filter(ExamSubmission.user_id == current_user.id)
+        .order_by(ExamSubmission.submitted_at.desc())
+    )
+    all_subs = subs_res.all()
+    completed_subs = [s[0] for s in all_subs if s[0].status != "IN_PROGRESS"]
+    scores = [s.score for s in completed_subs if s.score is not None]
+    avg_score = round(sum(scores) / len(scores), 1) if scores else 0.0
+    highest_score = round(max(scores), 1) if scores else 0.0
+
+    # 2. Lớp học đang tham gia
+    cr_res = await db.execute(
+        select(Classroom)
+        .join(ClassroomStudent, ClassroomStudent.classroom_id == Classroom.id)
+        .filter(
+            ClassroomStudent.student_id == current_user.id,
+            ClassroomStudent.is_active == True,
+            Classroom.is_deleted == False
+        )
+    )
+    classrooms = cr_res.scalars().all()
+
+    # 3. Danh sách bài được giao
+    assign_res = await db.execute(
+        select(Assignment, Exam, Classroom.name.label("classroom_name"))
+        .join(Classroom, Assignment.classroom_id == Classroom.id)
+        .join(Exam, Assignment.exam_id == Exam.id)
+        .join(ClassroomStudent, ClassroomStudent.classroom_id == Classroom.id)
+        .filter(
+            ClassroomStudent.student_id == current_user.id,
+            ClassroomStudent.is_active == True,
+            Classroom.is_deleted == False,
+            Exam.is_deleted == False,
+            or_(Assignment.is_active == True, Assignment.is_active == None)
+        )
+    )
+    assigned_items = assign_res.all()
+
+    # Phân loại bài tập cần làm
+    completed_exam_ids = {s.exam_id for s in completed_subs}
+    in_progress_exam_ids = {s[0].exam_id for s in all_subs if s[0].status == "IN_PROGRESS"}
+    
+    urgent_assignments = []
+    pending_count = 0
+    now = datetime.now(timezone.utc)
+
+    for asgn, exam, class_name in assigned_items:
+        is_done = asgn.exam_id in completed_exam_ids
+        is_in_prog = asgn.exam_id in in_progress_exam_ids
+        if not is_done:
+            pending_count += 1
+            is_overdue = bool(asgn.due_date and asgn.due_date < now)
+            urgent_assignments.append({
+                "assignment_id": asgn.id,
+                "exam_id": exam.id,
+                "title": exam.title,
+                "classroom_name": class_name,
+                "due_date": asgn.due_date,
+                "duration_minutes": asgn.duration_minutes_override or exam.duration_minutes or 45,
+                "is_in_progress": is_in_prog,
+                "is_overdue": is_overdue,
+                "exam_type": getattr(exam, 'exam_type', 'ASSIGNMENT') or 'ASSIGNMENT'
+            })
+
+    urgent_assignments.sort(key=lambda x: (
+        not x["is_in_progress"],
+        x["due_date"] is None,
+        x["due_date"] or datetime.max.replace(tzinfo=timezone.utc)
+    ))
+
+    # Recent 5 submissions
+    recent_submissions = []
+    for sub, title, pass_score, duration in all_subs[:5]:
+        recent_submissions.append({
+            "id": sub.id,
+            "exam_id": sub.exam_id,
+            "exam_title": title,
+            "score": sub.score,
+            "grading_status": sub.grading_status,
+            "status": sub.status,
+            "submitted_at": sub.submitted_at,
+            "time_spent": sub.time_spent,
+            "is_passed": (sub.score or 0) >= (pass_score or 5.0)
+        })
+
+    return {
+        "student_name": current_user.full_name or current_user.username,
+        "total_assigned": len(assigned_items),
+        "pending_count": pending_count,
+        "completed_count": len(completed_subs),
+        "avg_score": avg_score,
+        "highest_score": highest_score,
+        "classrooms_count": len(classrooms),
+        "urgent_assignments": urgent_assignments[:8],
+        "recent_submissions": recent_submissions
+    }
+
+
+@router.get("/classrooms", summary="Lấy danh sách lớp học của học sinh kèm bài tập")
+async def get_student_classrooms_detailed(
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    cr_res = await db.execute(
+        select(Classroom)
+        .options(
+            selectinload(Classroom.instructor),
+            selectinload(Classroom.students),
+            selectinload(Classroom.assignments).selectinload(Assignment.exam)
+        )
+        .join(ClassroomStudent, ClassroomStudent.classroom_id == Classroom.id)
+        .filter(
+            ClassroomStudent.student_id == current_user.id,
+            ClassroomStudent.is_active == True,
+            Classroom.is_deleted == False
+        )
+    )
+    classrooms = cr_res.scalars().all()
+    
+    subs_res = await db.execute(
+        select(ExamSubmission.exam_id, ExamSubmission.score, ExamSubmission.status)
+        .filter(ExamSubmission.user_id == current_user.id)
+    )
+    student_subs = {row[0]: {"score": row[1], "status": row[2]} for row in subs_res.all()}
+
+    items = []
+    for c in classrooms:
+        active_assignments = []
+        for a in c.assignments:
+            if getattr(a, 'is_active', True) and a.exam and not a.exam.is_deleted:
+                sub_info = student_subs.get(a.exam_id)
+                active_assignments.append({
+                    "id": a.id,
+                    "exam_id": a.exam_id,
+                    "title": a.exam.title,
+                    "duration_minutes": a.duration_minutes_override or a.exam.duration_minutes,
+                    "due_date": a.due_date,
+                    "is_completed": sub_info is not None and sub_info.get("status") != "IN_PROGRESS",
+                    "score": sub_info.get("score") if sub_info else None
+                })
+
+        items.append({
+            "id": c.id,
+            "name": c.name,
+            "description": c.description,
+            "code": c.code,
+            "instructor_name": c.instructor.full_name if c.instructor else "Giáo viên",
+            "instructor_email": c.instructor.email if c.instructor else "",
+            "students_count": len([s for s in c.students if getattr(s, 'is_active', True)]),
+            "assignments_count": len(active_assignments),
+            "pending_assignments_count": len([a for a in active_assignments if not a["is_completed"]]),
+            "assignments": active_assignments
+        })
+
+    return {"items": items, "total": len(items)}
+
+
+@router.get("/practice/questions", summary="Lấy câu hỏi tự luyện cho học sinh")
+async def get_practice_questions(
+    subject: Optional[str] = None,
+    grade_level: Optional[int] = None,
+    chapter: Optional[str] = None,
+    difficulty: Optional[str] = None,
+    limit: int = 10,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    query = select(Question).filter(Question.status == "PUBLISHED")
+    if subject:
+        query = query.filter(Question.subject == subject)
+    if grade_level:
+        query = query.filter(Question.grade_level == grade_level)
+    if chapter:
+        query = query.filter(Question.chapter == chapter)
+    if difficulty and difficulty != "ALL":
+        query = query.filter(Question.difficulty == difficulty)
+        
+    query = query.order_by(func.random()).limit(min(limit, 30))
+    res = await db.execute(query)
+    questions = res.scalars().all()
+
+    return [
+        {
+            "id": q.id,
+            "content": q.content,
+            "question_type": q.question_type,
+            "options": q.options,
+            "sub_questions": [{"statement": s.get("statement", "")} if isinstance(s, dict) else {"statement": str(s)} for s in (q.sub_questions or [])],
+            "blanks": q.blanks,
+            "subject": q.subject,
+            "grade_level": q.grade_level,
+            "chapter": q.chapter,
+            "difficulty": q.difficulty,
+            "image_url": q.image_url,
+            "latex_code": q.latex_code
+        }
+        for q in questions
+    ]
+
+
+@router.post("/practice/grade", summary="Chấm điểm bài tự luyện kèm lời giải chi tiết")
+async def grade_practice_session(
+    payload: PracticeGradeRequest,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    if not payload.question_ids:
+        raise HTTPException(status_code=400, detail="Danh sách câu hỏi rỗng")
+
+    res = await db.execute(select(Question).filter(Question.id.in_(payload.question_ids)))
+    questions = res.scalars().all()
+
+    grader = GradingService()
+    score, correct_count, graded_answers = grader.grade(questions, payload.answers)
+
+    detailed_questions = []
+    for q in questions:
+        detailed_questions.append({
+            "id": q.id,
+            "content": q.content,
+            "question_type": q.question_type,
+            "options": q.options,
+            "correct_option": q.correct_option,
+            "correct_answer": q.correct_answer,
+            "sub_questions": q.sub_questions,
+            "explanation": q.explanation,
+            "sample_solution": q.sample_solution,
+            "difficulty": q.difficulty
+        })
+
+    return {
+        "score": score,
+        "correct_count": correct_count,
+        "total_questions": len(questions),
+        "graded_answers": graded_answers,
+        "questions": detailed_questions,
+        "time_spent": payload.time_spent
     }

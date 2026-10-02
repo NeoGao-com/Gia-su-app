@@ -1,8 +1,9 @@
 import os
 from typing import Optional
-from pydantic_settings import BaseSettings
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
 class Settings(BaseSettings):
+    model_config = SettingsConfigDict(env_file=".env", extra="ignore")
     DATABASE_URL: str = os.getenv("DATABASE_URL", "sqlite+aiosqlite:///./quiz.db")
     SECRET_KEY: str = os.getenv("SECRET_KEY", "supersecretkey_change_in_production_32bytes")
     ALGORITHM: str = "HS256"
@@ -17,7 +18,6 @@ class Settings(BaseSettings):
     UPLOAD_RATE_LIMIT: str = "20/5minutes"
     MAX_UPLOAD_SIZE: int = 5 * 1024 * 1024  # 5 MB
     IMPORT_RATE_LIMIT: str = "10/5minutes"
-    ADMIN_RATE_LIMIT: str = "50/5minutes"
 
     # SMTP / Email
     SMTP_HOST: str = os.getenv("SMTP_HOST", "smtp.gmail.com")
@@ -28,8 +28,5 @@ class Settings(BaseSettings):
     RESET_TOKEN_EXPIRE_MINUTES: int = 30
     LOG_LEVEL: str = os.getenv("LOG_LEVEL", "INFO")
     LOG_DIR: str = "logs"
-
-    class Config:
-        env_file = ".env"
 
 settings = Settings()

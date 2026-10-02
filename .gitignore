@@ -1,11 +1,14 @@
 # Build output
 dist/
 build/
+frontend/dist/
 *.egg-info/
 
 # Dependencies
 node_modules/
+frontend/node_modules/
 venv/
+backend/venv/
 .venv/
 env/
 
@@ -24,19 +27,31 @@ npm-debug.log*
 yarn-debug.log*
 pnpm-debug.log*
 
-# Environment variables
+# Environment variables & Secrets
 .env
-.env.local
-.env.production
+.env.*
+!.env.example
+*.env
+backend/.env
+backend/.env.*
+!backend/.env.example
+frontend/.env
+frontend/.env.*
+!frontend/.env.example
 
-# Database & Uploads / Local Data
+# Database & SQLite files
 *.db
+*.sqlite
+*.sqlite3
 quiz.db
+backend/quiz.db
 pgdata/
 uploads/
+backend/static/uploads/
 
-# OS & IDE
+# OS & IDE & Local config
 .DS_Store
 Thumbs.db
 .vscode/
 .idea/
+.claude/

@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict, field_validator
 from typing import Optional, List
 from datetime import datetime
 
@@ -21,6 +21,7 @@ from app.schemas.exam import ExamResponse
 from app.schemas.assignment import AssignmentResponse as AssignmentSchemaResponse, AssignmentCreate
 
 class ClassroomResponse(ClassroomBase):
+    model_config = ConfigDict(from_attributes=True)
     id: int
     code: str
     code_expires_at: Optional[datetime] = None
@@ -31,8 +32,21 @@ class ClassroomResponse(ClassroomBase):
     exams: List[ExamResponse] = []
     assignments: List[AssignmentSchemaResponse] = []
 
-    class Config:
-        from_attributes = True
+    @field_validator("assignments", mode="before")
+    @classmethod
+    def filter_active_assignments(cls, v):
+        if not v:
+            return []
+        filtered = []
+        for a in v:
+            is_active = getattr(a, "is_active", True)
+            if isinstance(a, dict):
+                is_active = a.get("is_active", True)
+            if is_active:
+                filtered.append(a)
+        return filtered
+
+
 
 class JoinClassroomRequest(BaseModel):
     code: str

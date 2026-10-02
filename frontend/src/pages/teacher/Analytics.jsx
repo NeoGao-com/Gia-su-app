@@ -186,9 +186,17 @@ export function Analytics() {
                           <td className="p-4 text-gray-600">{exam.duration_minutes} phút</td>
                           <td className="p-4 font-semibold text-pastel-purpleDark">{exam.question_count ?? (exam.questions?.length || 0)} câu</td>
                           <td className="p-4">
-                            <span className="inline-flex items-center space-x-1 px-2.5 py-1 bg-emerald-50 text-emerald-600 rounded-full text-xs font-semibold">
-                              <CheckCircle2 className="w-3.5 h-3.5" />
-                              <span>Hoạt động</span>
+                            <span className={`inline-flex items-center space-x-1 px-2.5 py-1 rounded-full text-xs font-bold ${
+                              exam.is_published ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700'
+                            }`}>
+                              {exam.is_published ? (
+                                <>
+                                  <CheckCircle2 className="w-3.5 h-3.5" />
+                                  <span>Đã xuất bản</span>
+                                </>
+                              ) : (
+                                <span>Bản nháp</span>
+                              )}
                             </span>
                           </td>
                         </tr>

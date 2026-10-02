@@ -1,6 +1,6 @@
 from sqlalchemy.sql import func
 from sqlalchemy import DateTime
-from sqlalchemy import Column, Integer, String, JSON, ForeignKey
+from sqlalchemy import Column, Integer, String, JSON, ForeignKey, Boolean
 from sqlalchemy.orm import relationship
 from app.database import Base
 import enum
@@ -44,6 +44,9 @@ class Question(Base):
     tags = Column(JSON, nullable=True)
     status = Column(String, default="DRAFT", index=True)
     created_by_id = Column(Integer, ForeignKey("users.id"), index=True)
+    ai_verified = Column(Boolean, default=False, index=True)
+    ai_feedback = Column(JSON, nullable=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
 
 class QuestionAuditLog(Base):
     __tablename__ = "question_audit_logs"

@@ -1,7 +1,7 @@
-FROM node:20-alpine AS build
+FROM node:20-slim AS build
 WORKDIR /app
 COPY package*.json ./
-RUN npm ci
+RUN npm install --legacy-peer-deps --ignore-scripts
 COPY . .
 RUN npm run build
 

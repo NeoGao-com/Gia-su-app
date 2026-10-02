@@ -1,12 +1,11 @@
 import React from 'react';
-import { PlusCircle, BookOpen, Users, Play, Award, LogIn, FileText, CheckSquare } from 'lucide-react';
+import { PlusCircle, BookOpen, Users, Play, Award, LogIn, FileText } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 export function QuickActions({ role }) {
   const actions = {
     teacher: [
       { label: 'Ngân hàng câu hỏi', path: '/teacher/questions', icon: BookOpen, color: 'bg-blue-50 text-blue-600', detail: 'Quản lý và thêm mới câu hỏi' },
-      { label: 'Tạo đề thi mới', path: '/teacher/exams', icon: PlusCircle, color: 'bg-purple-50 text-purple-600', detail: 'Thiết kế bài kiểm tra từ ngân hàng' },
       { label: 'Quản lý lớp học', path: '/teacher/classrooms', icon: Users, color: 'bg-emerald-50 text-emerald-600', detail: 'Quản lý danh sách lớp và học sinh' },
       { label: 'Thống kê kết quả', path: '/teacher/analytics', icon: Award, color: 'bg-amber-50 text-amber-600', detail: 'Xem báo cáo phổ điểm và kết quả' },
     ],

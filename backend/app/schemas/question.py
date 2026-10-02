@@ -1,4 +1,4 @@
-from pydantic import BaseModel, model_validator
+from pydantic import BaseModel, ConfigDict
 from typing import List, Optional, Any
 from datetime import datetime
 
@@ -22,6 +22,8 @@ class QuestionBase(BaseModel):
     explanation: Optional[str] = None
     image_url: Optional[str] = None
     latex_code: Optional[str] = None
+    ai_verified: Optional[bool] = False
+    ai_feedback: Optional[Any] = None
 
 class QuestionCreate(QuestionBase):
     pass
@@ -48,11 +50,10 @@ class QuestionUpdate(BaseModel):
     latex_code: Optional[str] = None
 
 class QuestionResponse(QuestionBase):
+    model_config = ConfigDict(from_attributes=True)
+
     id: int
     code: Optional[str] = None
     created_by_id: Optional[int] = None
     created_at: Optional[datetime] = None
     creator_name: Optional[str] = None
-
-    class Config:
-        from_attributes = True

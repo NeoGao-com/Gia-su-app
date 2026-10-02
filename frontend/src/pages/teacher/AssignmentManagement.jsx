@@ -1,288 +1,540 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Navbar } from '../../components/Navbar';
 import { Sidebar } from '../../components/Sidebar';
+import { AssignmentModal } from '../../components/AssignmentModal';
+import { EditAssignmentModal } from '../../components/EditAssignmentModal';
+import { AssignByLessonModal } from '../../components/AssignByLessonModal';
+import { 
+  Send, Search, Plus, Trash2, Edit3, BookOpen, 
+  Sparkles, Calendar, Clock, School, Layers, CheckCircle2, AlertTriangle, Eye
+} from 'lucide-react';
 import api from '../../api/axios';
-import { Send, Plus, Trash2, Calendar, BookOpen, School } from 'lucide-react';
-import { Modal } from '../../components/Modal';
+import { useToast } from '../../context/ToastContext';
 
 export function AssignmentManagement() {
+  const { toast, confirm } = useToast();
+  const [activeTab, setActiveTab] = useState('assigned'); // 'assigned' | 'exams'
+
+  // Classroom data
   const [classrooms, setClassrooms] = useState([]);
-  const [exams, setExams] = useState([]);
-  const [selectedClassId, setSelectedClassId] = useState('');
+  const [selectedClassFilter, setSelectedClassFilter] = useState('all');
+
+  // Tab 1: Assigned list state
   const [assignments, setAssignments] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [loadingAssignments, setLoadingAssignments] = useState(false);
+  const [assignmentSearch, setAssignmentSearch] = useState('');
 
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [form, setForm] = useState({
-    exam_id: '',
-    due_date: '',
-    open_date: '',
-    max_attempts: 1,
-    duration_minutes_override: ''
-  });
+  // Tab 2: Available exams state
+  const [exams, setExams] = useState([]);
+  const [loadingExams, setLoadingExams] = useState(false);
+  const [examSearch, setExamSearch] = useState('');
+  const [examPage, setExamPage] = useState(1);
+  const [totalExams, setTotalExams] = useState(0);
 
+  // Modals state
+  const [assignmentModalOpen, setAssignmentModalOpen] = useState(false);
+  const [selectedExamForAssign, setSelectedExamForAssign] = useState(null);
+
+  const [editModalOpen, setEditModalOpen] = useState(false);
+  const [selectedAssignmentForEdit, setSelectedAssignmentForEdit] = useState(null);
+
+  const [lessonModalOpen, setLessonModalOpen] = useState(false);
+
+  // Load classrooms on mount
   useEffect(() => {
-    let cancelled = false;
-    const fetchData = async () => {
+    const fetchClassrooms = async () => {
       try {
-        const [classRes, examRes] = await Promise.all([
-          api.get('/classrooms/?limit=100'),
-          api.get('/exams')
-        ]);
-        if (cancelled) return;
-        const classes = Array.isArray(classRes.data?.items) ? classRes.data.items : (Array.isArray(classRes.data) ? classRes.data : []);
-        setClassrooms(classes);
-        const examItems = Array.isArray(examRes.data?.items) ? examRes.data.items : (Array.isArray(examRes.data) ? examRes.data : []);
-        setExams(examItems);
-        if (classes.length > 0) {
-          setSelectedClassId(prev => prev || classes[0].id);
-        }
+        const res = await api.get('/classrooms/?limit=100');
+        const items = res.data.items || res.data || [];
+        setClassrooms(items);
       } catch (err) {
-        console.error('Lỗi tải dữ liệu giao bài:', err);
+        console.error('Error fetching classrooms:', err);
       }
     };
-    fetchData();
-    return () => { cancelled = true; };
+    fetchClassrooms();
   }, []);
 
+  // Load assignments when activeTab is 'assigned' or class filter changes
   useEffect(() => {
-    let cancelled = false;
-    const fetchAssignments = async (classId) => {
-      try {
-        const res = await api.get(`/classrooms/${classId}`);
-        if (cancelled) return;
-        const assignedList = res.data?.assignments || [];
-        setAssignments(assignedList);
-      } catch (err) {
-        console.error('Lỗi tải danh sách bài giao:', err);
-        if (!cancelled) setAssignments([]);
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
-    };
-    if (selectedClassId) {
-      fetchAssignments(selectedClassId);
+    if (activeTab === 'assigned') {
+      fetchAssignments();
     }
-    return () => { cancelled = true; };
-  }, [selectedClassId]);
+  }, [activeTab, selectedClassFilter]);
 
-  const refreshAssignments = async () => {
-    if (!selectedClassId) return;
+  // Load exams when activeTab is 'exams' or search/page changes
+  useEffect(() => {
+    if (activeTab === 'exams') {
+      fetchExams();
+    }
+  }, [activeTab, examPage, examSearch]);
+
+  const fetchAssignments = async () => {
     try {
-      setLoading(true);
-      const res = await api.get(`/classrooms/${selectedClassId}`);
-      setAssignments(res.data?.assignments || []);
+      setLoadingAssignments(true);
+      const params = {};
+      if (selectedClassFilter !== 'all') {
+        params.classroom_id = selectedClassFilter;
+      }
+      const res = await api.get('/classrooms/assignments/all', { params });
+      setAssignments(res.data || []);
     } catch (err) {
-      console.error('Lỗi tải danh sách bài giao:', err);
+      console.error('Error fetching assignments:', err);
       setAssignments([]);
     } finally {
-      setLoading(false);
+      setLoadingAssignments(false);
     }
   };
 
-  const handleAssignExam = async (e) => {
-    e.preventDefault();
-    if (!selectedClassId || !form.exam_id) return;
+  const fetchExams = async () => {
     try {
-      const payload = {
-        exam_id: Number(form.exam_id),
-        classroom_id: Number(selectedClassId),
-        due_date: form.due_date ? new Date(form.due_date).toISOString() : null,
-        open_date: form.open_date ? new Date(form.open_date).toISOString() : null,
-        max_attempts: form.max_attempts ? Number(form.max_attempts) : 1,
-        duration_minutes_override: form.duration_minutes_override ? Number(form.duration_minutes_override) : null
-      };
-      await api.post(`/classrooms/${selectedClassId}/exams`, payload);
-      setIsModalOpen(false);
-      setForm({ exam_id: '', due_date: '', open_date: '', max_attempts: 1, duration_minutes_override: '' });
-      refreshAssignments();
-      alert('Giao đề thi cho lớp học thành công!');
+      setLoadingExams(true);
+      const res = await api.get('/exams', {
+        params: { page: examPage, limit: 12, search: examSearch || undefined, exam_type: 'ASSIGNMENT' }
+      });
+      setExams(res.data.items || res.data || []);
+      setTotalExams(res.data.total || (res.data.items ? res.data.items.length : 0));
     } catch (err) {
-      alert(err.response?.data?.detail || 'Không thể giao đề thi');
+      console.error('Error fetching exams:', err);
+      setExams([]);
+    } finally {
+      setLoadingExams(false);
     }
   };
 
-  const handleUnassign = async (examId) => {
-    if (!confirm('Bạn có chắc muốn hủy giao đề thi này cho lớp?')) return;
+  const handleOpenEdit = (assignment) => {
+    setSelectedAssignmentForEdit(assignment);
+    setEditModalOpen(true);
+  };
+
+  const handleDeleteAssignment = async (assignment) => {
+    const examTitle = assignment.exam?.title || `Đề thi #${assignment.exam_id}`;
+    const className = assignment.classroom_name || 'lớp học';
+    const ok = await confirm({
+      title: 'Hủy giao bài tập',
+      message: `Bạn có chắc chắn muốn hủy / xóa bài tập "${examTitle}" khỏi lớp "${className}"?`,
+      confirmText: 'Xác nhận xóa',
+      cancelText: 'Hủy'
+    });
+    if (!ok) return;
+
     try {
-      await api.delete(`/classrooms/${selectedClassId}/exams/${examId}`);
-      refreshAssignments();
-      alert('Đã hủy giao đề thi!');
+      await api.delete(`/classrooms/${assignment.classroom_id}/exams/${assignment.exam_id}`);
+      toast.success('Đã xóa bài tập khỏi lớp thành công!');
+      fetchAssignments();
     } catch (err) {
-      alert(err.response?.data?.detail || 'Không thể hủy giao đề thi');
+      toast.error(err.response?.data?.detail || 'Không thể xóa bài tập');
     }
   };
 
-  const currentClass = classrooms.find(c => c.id === Number(selectedClassId));
+  const openAssignExamModal = (exam) => {
+    setSelectedExamForAssign(exam);
+    setAssignmentModalOpen(true);
+  };
+
+  // Filter assignments by search keyword
+  const filteredAssignments = assignments.filter((a) => {
+    if (!assignmentSearch.trim()) return true;
+    const term = assignmentSearch.toLowerCase();
+    const titleMatch = (a.exam?.title || '').toLowerCase().includes(term);
+    const classMatch = (a.classroom_name || '').toLowerCase().includes(term);
+    return titleMatch || classMatch;
+  });
+
+  // Calculate assignment status badge
+  const getStatusBadge = (assignment) => {
+    const now = new Date();
+    if (assignment.open_date && new Date(assignment.open_date) > now) {
+      return (
+        <span className="inline-flex items-center space-x-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-gray-100 text-gray-600">
+          <Clock className="w-3 h-3" />
+          <span>Chưa mở</span>
+        </span>
+      );
+    }
+    if (assignment.due_date && new Date(assignment.due_date) < now) {
+      return (
+        <span className="inline-flex items-center space-x-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-red-50 text-red-600">
+          <AlertTriangle className="w-3 h-3" />
+          <span>Đã hết hạn</span>
+        </span>
+      );
+    }
+    return (
+      <span className="inline-flex items-center space-x-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700">
+        <CheckCircle2 className="w-3 h-3" />
+        <span>Đang diễn ra</span>
+      </span>
+    );
+  };
 
   return (
-    <div className="min-h-screen bg-pastel-bg">
+    <div className="min-h-screen bg-pastel-bg flex flex-col font-sans">
       <Navbar />
-      <div className="flex">
+      <div className="flex flex-1">
         <Sidebar role="teacher" />
-        <main className="flex-1 p-8">
-          <div className="flex justify-between items-center mb-6">
+        <main className="flex-1 p-6 lg:p-8 max-w-7xl mx-auto w-full">
+          {/* Top Title & Action Buttons */}
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
             <div>
-              <h1 className="text-2xl font-bold text-gray-800 flex items-center space-x-2">
-                <Send className="w-7 h-7 text-pastel-purpleDark" />
-                <span>Giao Đề thi cho Lớp học</span>
+              <h1 className="text-2xl font-extrabold text-gray-800 tracking-tight flex items-center space-x-2">
+                <Send className="w-6 h-6 text-pastel-purpleDark" />
+                <span>Quản lý Giao bài tập & Về nhà</span>
               </h1>
-              <p className="text-xs text-gray-500 mt-1">
-                Phân công đề thi, thiết lập thời hạn nộp bài và quản lý danh sách bài đã giao cho từng lớp.
+              <p className="text-xs sm:text-sm text-gray-500 mt-1">
+                Theo dõi, chỉnh sửa bài tập đã giao và giao bài tập linh hoạt theo từng bài học trên lớp.
               </p>
             </div>
+
+            <div className="flex flex-wrap items-center gap-2.5">
+              <button
+                onClick={() => setLessonModalOpen(true)}
+                className="flex items-center space-x-1.5 px-4 py-2.5 bg-gradient-to-r from-pastel-purple to-pastel-purpleDark text-white rounded-2xl font-bold text-xs sm:text-sm shadow-sm hover:opacity-95 transition"
+              >
+                <Sparkles className="w-4 h-4" />
+                <span>Giao bài theo bài học</span>
+              </button>
+
+              <button
+                onClick={() => {
+                  setSelectedExamForAssign(null);
+                  setAssignmentModalOpen(true);
+                }}
+                className="flex items-center space-x-1.5 px-4 py-2.5 bg-white border border-gray-200 text-gray-700 rounded-2xl font-semibold text-xs sm:text-sm shadow-xs hover:bg-gray-50 transition"
+              >
+                <Plus className="w-4 h-4 text-pastel-purpleDark" />
+                <span>Giao từ kho bài tập</span>
+              </button>
+            </div>
+          </div>
+
+          {/* Navigation Tabs */}
+          <div className="flex items-center space-x-2 mb-6">
             <button
-              onClick={() => setIsModalOpen(true)}
-              disabled={!selectedClassId}
-              className="flex items-center space-x-2 px-4 py-2.5 bg-pastel-purple text-white rounded-2xl font-semibold text-sm shadow-sm hover:opacity-90 transition disabled:opacity-50"
+              onClick={() => setActiveTab('assigned')}
+              className={`flex items-center space-x-2 px-5 py-2.5 rounded-2xl font-bold text-xs sm:text-sm transition ${
+                activeTab === 'assigned'
+                  ? 'bg-pastel-purple text-white shadow-sm'
+                  : 'bg-white text-gray-600 border border-gray-100 hover:bg-gray-50'
+              }`}
             >
-              <Plus className="w-4 h-4" />
-              <span>Giao đề thi mới</span>
+              <Send className="w-4 h-4" />
+              <span>Bài tập đã giao ({assignments.length})</span>
+            </button>
+
+            <button
+              onClick={() => setActiveTab('exams')}
+              className={`flex items-center space-x-2 px-5 py-2.5 rounded-2xl font-bold text-xs sm:text-sm transition ${
+                activeTab === 'exams'
+                  ? 'bg-pastel-purple text-white shadow-sm'
+                  : 'bg-white text-gray-600 border border-gray-100 hover:bg-gray-50'
+              }`}
+            >
+              <BookOpen className="w-4 h-4" />
+              <span>Kho bài tập ({totalExams})</span>
             </button>
           </div>
 
-          <div className="grid grid-cols-12 gap-6">
-            {/* Classroom Selector Sidebar */}
-            <div className="col-span-4 bg-white p-6 rounded-3xl border border-gray-100 shadow-sm space-y-4">
-              <h3 className="font-bold text-gray-800 text-sm flex items-center space-x-2">
-                <School className="w-4 h-4 text-pastel-purpleDark" />
-                <span>Chọn lớp học</span>
-              </h3>
-              {classrooms.length === 0 ? (
-                <div className="text-xs text-gray-400 py-4 text-center">Chưa có lớp học nào.</div>
-              ) : (
-                <div className="space-y-2">
-                  {classrooms.map(c => (
-                    <div
-                      key={c.id}
-                      onClick={() => setSelectedClassId(c.id)}
-                      className={`p-4 rounded-2xl border cursor-pointer transition ${Number(selectedClassId) === c.id ? 'bg-purple-50 border-pastel-purple font-bold text-pastel-purpleDark' : 'bg-gray-50 border-gray-100 text-gray-700 hover:bg-gray-100'}`}
-                    >
-                      <div className="text-base font-bold">{c.name}</div>
-                      <div className="text-xs opacity-70 mt-0.5">Mã lớp: {c.code || c.id}</div>
-                    </div>
-                  ))}
+          {/* TAB 1: DANH SÁCH BÀI TẬP ĐÃ GIAO */}
+          {activeTab === 'assigned' && (
+            <div className="space-y-4">
+              {/* Filter & Search Bar */}
+              <div className="bg-white rounded-3xl border border-gray-100 p-4 shadow-xs flex flex-col sm:flex-row gap-3 items-center justify-between">
+                <div className="flex items-center space-x-2 w-full sm:w-auto">
+                  <School className="w-4 h-4 text-gray-400 shrink-0 ml-1" />
+                  <span className="text-xs font-bold text-gray-500 whitespace-nowrap">Lọc theo lớp:</span>
+                  <select
+                    value={selectedClassFilter}
+                    onChange={(e) => setSelectedClassFilter(e.target.value)}
+                    className="px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs sm:text-sm font-semibold text-gray-700 focus:outline-none focus:border-pastel-purple"
+                  >
+                    <option value="all">Tất cả các lớp ({classrooms.length})</option>
+                    {classrooms.map((c) => (
+                      <option key={c.id} value={c.id}>
+                        Lớp: {c.name}
+                      </option>
+                    ))}
+                  </select>
                 </div>
-              )}
-            </div>
 
-            {/* Assignments List */}
-            <div className="col-span-8 bg-white p-6 rounded-3xl border border-gray-100 shadow-sm">
-              <div className="flex justify-between items-center mb-4 pb-3 border-b border-gray-100">
-                <h3 className="font-bold text-gray-800 text-base">
-                  Danh sách đề thi đã giao {currentClass ? `cho lớp ${currentClass.name}` : ''}
-                </h3>
+                <div className="relative w-full sm:w-72">
+                  <Search className="w-4 h-4 text-gray-400 absolute left-3 top-2.5" />
+                  <input
+                    type="text"
+                    placeholder="Tìm theo tên bài hoặc lớp..."
+                    value={assignmentSearch}
+                    onChange={(e) => setAssignmentSearch(e.target.value)}
+                    className="w-full pl-9 pr-4 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs sm:text-sm focus:outline-none focus:border-pastel-purple"
+                  />
+                </div>
               </div>
 
-              {loading ? (
-                <div className="text-center py-16 text-gray-400">Đang tải danh sách bài giao...</div>
-              ) : assignments.length === 0 ? (
-                <div className="text-center py-16 text-gray-400">Lớp học này chưa được giao đề thi nào.</div>
-              ) : (
-                <div className="space-y-3">
-                  {assignments.map(a => (
-                    <div key={a.id || a.exam_id} className="p-4 bg-gray-50 rounded-2xl border border-gray-100 flex items-center justify-between">
-                      <div className="flex items-center space-x-3">
-                        <div className="p-3 bg-purple-100 text-pastel-purpleDark rounded-xl">
-                          <BookOpen className="w-5 h-5" />
-                        </div>
-                        <div>
-                          <div className="font-bold text-gray-800 text-base">{a.exam?.title || `Đề thi ID: ${a.exam_id}`}</div>
-                          <div className="text-xs text-gray-500 flex items-center space-x-2 mt-1">
-                            <span className="flex items-center space-x-1">
-                              <Calendar className="w-3.5 h-3.5 text-gray-400" />
-                              <span>Hạn nộp: {a.due_date ? new Date(a.due_date).toLocaleString('vi-VN') : 'Không giới hạn'}</span>
+              {/* Assignments Table Card */}
+              <div className="bg-white rounded-3xl border border-gray-100 shadow-xs overflow-hidden">
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left border-collapse">
+                    <thead>
+                      <tr className="bg-gray-50 text-[11px] font-bold text-gray-500 uppercase tracking-wider border-b border-gray-100">
+                        <th className="p-4">Bài tập / Đề thi</th>
+                        <th className="p-4">Lớp nhận bài</th>
+                        <th className="p-4">Thời gian</th>
+                        <th className="p-4">Cài đặt làm bài</th>
+                        <th className="p-4">Trạng thái</th>
+                        <th className="p-4 text-right">Thao tác</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-100 text-xs sm:text-sm">
+                      {loadingAssignments ? (
+                        <tr>
+                          <td colSpan="6" className="py-16 text-center text-gray-400">
+                            Đang tải danh sách bài tập đã giao...
+                          </td>
+                        </tr>
+                      ) : filteredAssignments.length === 0 ? (
+                        <tr>
+                          <td colSpan="6" className="py-16 text-center text-gray-400">
+                            <div className="flex flex-col items-center justify-center space-y-2">
+                              <BookOpen className="w-8 h-8 text-gray-300" />
+                              <span className="font-medium">Chưa có bài tập nào được giao.</span>
+                              <button
+                                onClick={() => setLessonModalOpen(true)}
+                                className="text-xs font-bold text-pastel-purpleDark hover:underline mt-1"
+                              >
+                                + Giao bài tập theo bài học ngay
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      ) : (
+                        filteredAssignments.map((a) => {
+                          const examTitle = a.exam?.title || `Đề thi #${a.exam_id}`;
+                          const duration = a.duration_minutes_override ?? a.exam?.duration_minutes ?? 45;
+                          const questionCount = a.exam?.question_count ?? a.exam?.questions?.length ?? 0;
+
+                          return (
+                            <tr key={`${a.classroom_id}-${a.exam_id}-${a.id}`} className="hover:bg-gray-50/60 transition">
+                              <td className="p-4">
+                                <div className="font-bold text-gray-800 text-sm">{examTitle}</div>
+                                <div className="text-[11px] text-gray-400 mt-0.5 flex items-center space-x-2">
+                                  <span>{questionCount} câu hỏi</span>
+                                  {a.exam?.subject && <span>• {a.exam.subject}</span>}
+                                  {a.exam?.pass_score && <span>• Điểm đạt: {a.exam.pass_score}</span>}
+                                </div>
+                              </td>
+
+                              <td className="p-4">
+                                <span className="inline-flex items-center space-x-1.5 px-3 py-1 rounded-xl bg-purple-50 text-pastel-purpleDark font-bold text-xs border border-purple-100">
+                                  <School className="w-3.5 h-3.5" />
+                                  <span>{a.classroom_name || `Lớp #${a.classroom_id}`}</span>
+                                </span>
+                              </td>
+
+                              <td className="p-4 space-y-1">
+                                <div className="flex items-center space-x-1.5 text-xs text-gray-600">
+                                  <Clock className="w-3.5 h-3.5 text-gray-400 shrink-0" />
+                                  <span>Hạn: {a.due_date ? new Date(a.due_date).toLocaleString('vi-VN') : 'Không giới hạn'}</span>
+                                </div>
+                                {a.open_date && (
+                                  <div className="flex items-center space-x-1.5 text-[11px] text-gray-400">
+                                    <Calendar className="w-3 h-3 text-gray-400 shrink-0" />
+                                    <span>Mở: {new Date(a.open_date).toLocaleString('vi-VN')}</span>
+                                  </div>
+                                )}
+                              </td>
+
+                              <td className="p-4 space-y-1 text-xs text-gray-600">
+                                <div>Thời gian: <strong>{duration} phút</strong></div>
+                                <div className="text-[11px] text-gray-400">
+                                  Số lần làm: <strong>{a.max_attempts || 1}</strong> lượt
+                                </div>
+                                {a.show_answers_after_submit && (
+                                  <div className="text-[10px] text-emerald-600 font-semibold flex items-center space-x-1">
+                                    <Eye className="w-3 h-3" />
+                                    <span>Xem đáp án sau thi</span>
+                                  </div>
+                                )}
+                              </td>
+
+                              <td className="p-4">
+                                {getStatusBadge(a)}
+                              </td>
+
+                              <td className="p-4 text-right">
+                                <div className="flex items-center justify-end space-x-1.5">
+                                  <button
+                                    onClick={() => handleOpenEdit(a)}
+                                    className="p-2 text-pastel-purpleDark hover:bg-purple-50 rounded-xl transition"
+                                    title="Chỉnh sửa bài tập đã giao (Hạn nộp, số lần làm...)"
+                                  >
+                                    <Edit3 className="w-4 h-4" />
+                                  </button>
+
+                                  <button
+                                    onClick={() => handleDeleteAssignment(a)}
+                                    className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition"
+                                    title="Xóa / Hủy bài tập này khỏi lớp"
+                                  >
+                                    <Trash2 className="w-4 h-4" />
+                                  </button>
+                                </div>
+                              </td>
+                            </tr>
+                          );
+                        })
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* TAB 2: KHO BÀI TẬP */}
+          {activeTab === 'exams' && (
+            <div className="space-y-4">
+              <div className="bg-white rounded-3xl border border-gray-100 p-4 shadow-xs flex flex-col sm:flex-row gap-3 items-center justify-between">
+                <div className="font-bold text-sm text-gray-700">
+                  Chọn bài tập để giao cho các lớp học ({totalExams} bài tập)
+                </div>
+
+                <div className="relative w-full sm:w-72">
+                  <Search className="w-4 h-4 text-gray-400 absolute left-3 top-2.5" />
+                  <input
+                    type="text"
+                    placeholder="Tìm kiếm bài tập..."
+                    value={examSearch}
+                    onChange={(e) => {
+                      setExamSearch(e.target.value);
+                      setExamPage(1);
+                    }}
+                    className="w-full pl-9 pr-4 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs sm:text-sm focus:outline-none focus:border-pastel-purple"
+                  />
+                </div>
+              </div>
+
+              <div className="bg-white rounded-3xl border border-gray-100 shadow-xs overflow-hidden">
+                <table className="w-full text-left border-collapse">
+                  <thead>
+                    <tr className="bg-gray-50 text-[11px] font-bold text-gray-500 uppercase tracking-wider border-b border-gray-100">
+                      <th className="p-4">Tiêu đề bài tập</th>
+                      <th className="p-4">Thời gian</th>
+                      <th className="p-4">Số lượng câu</th>
+                      <th className="p-4">Trạng thái</th>
+                      <th className="p-4 text-right">Thao tác</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-100 text-sm">
+                    {loadingExams ? (
+                      <tr>
+                        <td colSpan="5" className="py-12 text-center text-gray-400">
+                          Đang tải kho bài tập...
+                        </td>
+                      </tr>
+                    ) : exams.length === 0 ? (
+                      <tr>
+                        <td colSpan="5" className="py-12 text-center text-gray-400">
+                          Không tìm thấy bài tập nào.
+                        </td>
+                      </tr>
+                    ) : (
+                      exams.map((exam) => (
+                        <tr key={exam.id} className="hover:bg-gray-50/60 transition">
+                          <td className="p-4 font-bold text-gray-800">
+                            <div>{exam.title}</div>
+                            {exam.description && (
+                              <div className="text-xs text-gray-400 font-normal mt-0.5 line-clamp-1">
+                                {exam.description}
+                              </div>
+                            )}
+                          </td>
+                          <td className="p-4 text-xs text-gray-600 font-medium">
+                            {exam.duration_minutes} phút
+                          </td>
+                          <td className="p-4 text-xs font-semibold text-pastel-purpleDark">
+                            {exam.question_count ?? exam.questions?.length ?? 0} câu
+                          </td>
+                          <td className="p-4">
+                            <span className={`px-2.5 py-0.5 rounded-full text-xs font-bold ${
+                              exam.is_published ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700'
+                            }`}>
+                              {exam.is_published ? 'Đã xuất bản' : 'Bản nháp'}
                             </span>
-                          </div>
-                        </div>
-                      </div>
-                      <button
-                        onClick={() => handleUnassign(a.exam_id)}
-                        className="p-2.5 bg-red-50 text-red-600 hover:bg-red-100 rounded-xl transition"
-                        title="Hủy giao đề"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              )}
+                          </td>
+                          <td className="p-4 text-right">
+                            <div className="flex items-center justify-end space-x-1.5">
+                              <button
+                                onClick={() => openAssignExamModal(exam)}
+                                className="inline-flex items-center space-x-1.5 px-4 py-2 bg-pastel-purple text-white rounded-xl text-xs font-bold hover:bg-pastel-purpleDark transition shadow-xs"
+                              >
+                                <Send className="w-3.5 h-3.5" />
+                                <span>Giao bài</span>
+                              </button>
+                              <button
+                                onClick={async () => {
+                                  const ok = await confirm({
+                                    title: 'Xóa bài tập khỏi kho',
+                                    message: `Bạn có chắc chắn muốn xóa bài tập "${exam.title}" khỏi kho bài tập?`,
+                                    confirmText: 'Xác nhận xóa',
+                                    cancelText: 'Hủy'
+                                  });
+                                  if (!ok) return;
+                                  try {
+                                    await api.delete(`/exams/${exam.id}?force=true`);
+                                    toast.success('Đã xóa bài tập khỏi kho thành công!');
+                                    fetchExams();
+                                  } catch (err) {
+                                    toast.error(err.response?.data?.detail || 'Không thể xóa bài tập');
+                                  }
+                                }}
+                                className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition"
+                                title="Xóa bài tập khỏi kho"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
             </div>
-          </div>
+          )}
 
-          <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title="Giao đề thi cho lớp học" size="lg">
-            <form onSubmit={handleAssignExam} className="space-y-4 p-2 max-h-[80vh] overflow-y-auto pr-2">
-              <div>
-                <label className="block text-xs font-semibold text-gray-600 mb-1">Chọn đề thi</label>
-                <select
-                  required
-                  value={form.exam_id}
-                  onChange={e => setForm({ ...form, exam_id: e.target.value })}
-                  className="w-full px-3 py-2.5 border rounded-xl text-sm bg-white"
-                >
-                  <option value="">-- Chọn đề thi --</option>
-                  {exams.map(ex => (
-                    <option key={ex.id} value={ex.id}>{ex.title} ({ex.duration_minutes} phút)</option>
-                  ))}
-                </select>
-              </div>
+          {/* Modal Giao đề thi có sẵn */}
+          <AssignmentModal
+            exam={selectedExamForAssign}
+            exams={exams}
+            examType="ASSIGNMENT"
+            isOpen={assignmentModalOpen}
+            onClose={() => setAssignmentModalOpen(false)}
+            onAssigned={() => {
+              fetchAssignments();
+              setActiveTab('assigned');
+            }}
+          />
 
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-xs font-semibold text-gray-600 mb-1">Thời gian mở đề (Tùy chọn)</label>
-                  <input
-                    type="datetime-local"
-                    value={form.open_date}
-                    onChange={e => setForm({ ...form, open_date: e.target.value })}
-                    className="w-full px-3 py-2.5 border rounded-xl text-sm"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold text-gray-600 mb-1">Hạn nộp bài (Tùy chọn)</label>
-                  <input
-                    type="datetime-local"
-                    value={form.due_date}
-                    onChange={e => setForm({ ...form, due_date: e.target.value })}
-                    className="w-full px-3 py-2.5 border rounded-xl text-sm"
-                  />
-                </div>
-              </div>
+          {/* Modal Chỉnh sửa bài tập đã giao */}
+          <EditAssignmentModal
+            assignment={selectedAssignmentForEdit}
+            isOpen={editModalOpen}
+            onClose={() => setEditModalOpen(false)}
+            onSaved={() => {
+              toast.success('Cập nhật bài tập thành công!');
+              fetchAssignments();
+            }}
+          />
 
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-xs font-semibold text-gray-600 mb-1">Số lần làm bài tối đa</label>
-                  <input
-                    type="number"
-                    min={1}
-                    max={10}
-                    value={form.max_attempts}
-                    onChange={e => setForm({ ...form, max_attempts: e.target.value })}
-                    className="w-full px-3 py-2.5 border rounded-xl text-sm"
-                    placeholder="Mặc định: 1"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold text-gray-600 mb-1">Thời gian làm bài riêng (phút)</label>
-                  <input
-                    type="number"
-                    min={1}
-                    max={600}
-                    value={form.duration_minutes_override}
-                    onChange={e => setForm({ ...form, duration_minutes_override: e.target.value })}
-                    className="w-full px-3 py-2.5 border rounded-xl text-sm"
-                    placeholder="Để trống nếu dùng theo đề"
-                  />
-                </div>
-              </div>
-
-              <div className="flex justify-end space-x-3 pt-2">
-                <button type="button" onClick={() => setIsModalOpen(false)} className="px-4 py-2 border rounded-xl text-sm">Hủy</button>
-                <button type="submit" className="px-5 py-2.5 bg-pastel-purple text-white rounded-xl text-sm font-semibold hover:bg-pastel-purpleDark transition">
-                  Xác nhận giao bài
-                </button>
-              </div>
-            </form>
-          </Modal>
+          {/* Modal Giao bài tập theo bài học trên lớp */}
+          <AssignByLessonModal
+            isOpen={lessonModalOpen}
+            onClose={() => setLessonModalOpen(false)}
+            onSuccess={() => {
+              toast.success('Tạo và giao bài tập theo bài học thành công!');
+              fetchAssignments();
+              setActiveTab('assigned');
+            }}
+          />
         </main>
       </div>
     </div>

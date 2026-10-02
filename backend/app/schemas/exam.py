@@ -1,13 +1,16 @@
-from pydantic import BaseModel, field_validator, model_validator, Field
+from pydantic import BaseModel, field_validator, model_validator, Field, ConfigDict
 from typing import Optional, List, Dict, Any
 from datetime import datetime
 
 class ExamBase(BaseModel):
     title: str
+    description: Optional[str] = None
     duration_minutes: int = Field(..., gt=0)
     pass_score: Optional[float] = Field(None, ge=0.0, le=10.0)
     max_attempts: Optional[int] = Field(None, gt=0)
     show_answers_after_submit: Optional[bool] = False
+    is_published: Optional[bool] = False
+    exam_type: Optional[str] = "EXAM"
 
     @field_validator("duration_minutes")
     @classmethod
@@ -53,6 +56,7 @@ class ExamUpdate(BaseModel):
     is_published: Optional[bool] = None
     show_answers_after_submit: Optional[bool] = None
     max_attempts: Optional[int] = None
+    exam_type: Optional[str] = None
     question_ids: Optional[List[int]] = None
     question_points: Optional[List[float]] = None
 
@@ -73,19 +77,28 @@ class ExamUpdate(BaseModel):
         return self
 
 class ExamResponse(ExamBase):
+    model_config = ConfigDict(from_attributes=True)
     id: int
     created_at: datetime
     created_by_id: int
 
-    class Config:
-        from_attributes = True
-
 class StudentExamResponse(ExamResponse):
     attempts_taken: int = 0
     question_count: int = 0
+    subject: Optional[str] = None
+    grade_level: Optional[int] = None
+    exam_type: Optional[str] = "EXAM"
+    due_date: Optional[datetime] = None
+    classroom_id: Optional[int] = None
+    classroom_name: Optional[str] = None
+    latest_status: Optional[str] = "NOT_STARTED"
+    latest_submission_id: Optional[int] = None
+    highest_score: Optional[float] = None
 
 class ExamDetailResponse(ExamResponse):
-    questions: List[Dict] # Simplified for now, or use QuestionResponse
+    questions: List[Dict]
+    subject: Optional[str] = None
+    grade_level: Optional[int] = None
 
 class ExamSubmissionRequest(BaseModel):
     exam_id: int
@@ -93,6 +106,7 @@ class ExamSubmissionRequest(BaseModel):
     time_spent: Optional[int] = 0
 
 class ExamSubmissionResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
     id: int
     exam_id: int
     user_id: int
@@ -106,13 +120,12 @@ class ExamSubmissionResponse(BaseModel):
     last_saved_at: Optional[datetime] = None
     attempt_number: Optional[int] = 1
     version: Optional[int] = 1
-
-    class Config:
-        from_attributes = True
+    tab_switches: Optional[int] = 0
 
 class ExamSubmissionSaveRequest(BaseModel):
     answers: Dict[str, Any]
     version: int = 1
+    tab_switches: Optional[int] = 0
 
 class EssayGradeRequest(BaseModel):
     question_ids: Optional[List[int]] = None # Optional list of specific essay question IDs to grade
@@ -136,14 +149,12 @@ class ExamMatrixUpdate(BaseModel):
     is_active: Optional[bool] = None
 
 class ExamMatrixResponse(ExamMatrixBase):
+    model_config = ConfigDict(from_attributes=True)
     id: int
     total_questions: int
     is_active: bool
     created_at: datetime
     created_by_id: int
-
-    class Config:
-        from_attributes = True
 
 class ExamMatrixGenerateRequest(BaseModel):
     matrix_id: int
@@ -153,3 +164,8 @@ class ExamMatrixGenerateRequest(BaseModel):
     max_attempts: Optional[int] = Field(None, gt=0)
     show_answers_after_submit: Optional[bool] = False
     is_published: bool = False
+    number_of_versions: Optional[int] = Field(1, ge=1, le=20, description="Số lượng mã đề cần sinh (1-20)")
+    code_prefix: Optional[str] = Field("10", description="Tiền tố mã đề (ví dụ 10 -> mã đề 101, 102...)")
+    shuffle_questions: Optional[bool] = Field(True, description="Đảo thứ tự câu hỏi giữa các mã đề")
+    shuffle_options: Optional[bool] = Field(True, description="Đảo thứ tự các đáp án A, B, C, D")
+    independent_draw: Optional[bool] = Field(False, description="Bốc ngẫu nhiên tổ hợp câu hỏi độc lập cho từng mã đề")

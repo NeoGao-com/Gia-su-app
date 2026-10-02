@@ -1,6 +1,16 @@
 import React from 'react';
+import { TextToolbar } from './TextToolbar';
 
 export function CreateQuestionForm({ _formData, _setFormData, _onSubmit }) {
+  const insertLatex = () => {
+    const textarea = document.querySelector('textarea');
+    if (textarea) {
+      textarea.value += ' $...$ ';
+      textarea.dispatchEvent(new Event('input', { bubbles: true }));
+      textarea.focus();
+    }
+  };
+
   return (
     <div className="bg-white p-8 rounded-[22px] border border-gray-100 shadow-sm space-y-6">
       <h2 className="text-xl font-bold text-gray-800 border-b border-gray-100 pb-4">Tạo câu hỏi mới</h2>
@@ -15,6 +25,7 @@ export function CreateQuestionForm({ _formData, _setFormData, _onSubmit }) {
       </div>
 
       {/* Content */}
+      <TextToolbar onInsertLatex={insertLatex} />
       <textarea 
         placeholder="Nhập nội dung câu hỏi..."
         className="w-full p-4 rounded-xl border border-gray-100 bg-[#f8f9fe] text-sm text-gray-700 min-h-[120px]" 

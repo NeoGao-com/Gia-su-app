@@ -70,6 +70,14 @@ async def get_tree_structure(
     current_user: User = Depends(get_current_user)
 ):
     try:
+        cache_key = "questions:tree_structure"
+        cached_tree = await redis_client.get(cache_key)
+        if cached_tree:
+            try:
+                return json.loads(cached_tree)
+            except Exception:
+                pass
+
         cat_query = select(QuestionCategory).filter(QuestionCategory.is_deleted == False)
         cat_res = await db.execute(cat_query)
         categories = cat_res.scalars().all()
@@ -96,10 +104,98 @@ async def get_tree_structure(
             if chap not in tree[subj][grade_str]: tree[subj][grade_str][chap] = {}
             if less not in tree[subj][grade_str][chap]: tree[subj][grade_str][chap][less] = {}
             tree[subj][grade_str][chap][less][top] = cnt
+        
+        await redis_client.set(cache_key, json.dumps(tree), expire=1800)
         return tree
     except Exception as e:
         logger.error(f"Error fetching tree structure: {str(e)}")
         return {}
+
+@router.get("/stats", summary="Thống kê số lượng câu hỏi chi tiết theo Môn, Khối, Chương, Bài, Dạng bài và Độ khó từ DB")
+async def get_question_stats(
+    subject: Optional[str] = None,
+    grade_level: Optional[int] = None,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    try:
+        # Lấy danh sách môn và khối có trong DB
+        subjects_res = await db.execute(select(Question.subject).distinct())
+        subjects = [s for s in subjects_res.scalars().all() if s]
+
+        grades_res = await db.execute(select(Question.grade_level).distinct())
+        grades = [g for g in grades_res.scalars().all() if g is not None]
+
+        query = select(
+            Question.subject,
+            Question.grade_level,
+            Question.chapter,
+            Question.lesson,
+            Question.topic,
+            Question.difficulty,
+            func.count(Question.id).label("count")
+        ).filter(
+            (Question.status != "EXAM_CLONE") | (Question.status.is_(None))
+        ).group_by(
+            Question.subject,
+            Question.grade_level,
+            Question.chapter,
+            Question.lesson,
+            Question.topic,
+            Question.difficulty
+        )
+
+        if subject:
+            query = query.filter(Question.subject == subject)
+        if grade_level is not None:
+            query = query.filter(Question.grade_level == grade_level)
+
+        res = await db.execute(query)
+        rows = res.all()
+
+        total_questions = 0
+        # Cấu trúc: { subject: { grade: { chapter: { lesson: { topic: { difficulty: count } } } } } }
+        hierarchy: Dict[str, Any] = {}
+
+        for subj, grade, chap, less, top, diff, cnt in rows:
+            if not subj:
+                subj = "Khác"
+            if grade is None:
+                grade = 10
+            if not chap:
+                chap = "Chưa phân loại"
+            if not less:
+                less = "Chưa phân loại"
+            if not top:
+                top = "Chưa phân loại"
+            if not diff:
+                diff = "THONG_HIEU"
+
+            total_questions += cnt
+
+            if subj not in hierarchy:
+                hierarchy[subj] = {}
+            grade_key = str(grade)
+            if grade_key not in hierarchy[subj]:
+                hierarchy[subj][grade_key] = {}
+            if chap not in hierarchy[subj][grade_key]:
+                hierarchy[subj][grade_key][chap] = {}
+            if less not in hierarchy[subj][grade_key][chap]:
+                hierarchy[subj][grade_key][chap][less] = {}
+            if top not in hierarchy[subj][grade_key][chap][less]:
+                hierarchy[subj][grade_key][chap][less][top] = {}
+
+            hierarchy[subj][grade_key][chap][less][top][diff] = cnt
+
+        return {
+            "subjects": subjects,
+            "grades": grades,
+            "total_questions": total_questions,
+            "hierarchy": hierarchy
+        }
+    except Exception as e:
+        logger.error(f"Error fetching question stats: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
 
 @router.post("/categories", summary="Tạo thư mục con mới trên Cây kiến thức")
 async def create_category(
@@ -169,23 +265,75 @@ async def delete_category(
         await db.rollback()
         raise HTTPException(status_code=500, detail=f"Lỗi khi xóa danh mục: {str(e)}")
 
+class CategoryMoveRequest(BaseModel):
+    source: CategoryDeleteRequest
+    target: CategoryDeleteRequest
+
+@router.put("/categories/move", summary="Di chuyển danh mục và các câu hỏi sang vị trí mới")
+async def move_category(
+    payload: CategoryMoveRequest,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_teacher)
+):
+    try:
+        cat_query = select(QuestionCategory).filter(QuestionCategory.is_deleted == False)
+        if payload.source.subject: cat_query = cat_query.filter(QuestionCategory.subject == payload.source.subject)
+        if payload.source.grade_level is not None: cat_query = cat_query.filter(QuestionCategory.grade_level == payload.source.grade_level)
+        if payload.source.chapter: cat_query = cat_query.filter(QuestionCategory.chapter == payload.source.chapter)
+        if payload.source.lesson: cat_query = cat_query.filter(QuestionCategory.lesson == payload.source.lesson)
+        if payload.source.topic: cat_query = cat_query.filter(QuestionCategory.topic == payload.source.topic)
+        cats = (await db.execute(cat_query)).scalars().all()
+        for cat in cats:
+            if payload.target.subject: cat.subject = payload.target.subject
+            if payload.target.grade_level is not None: cat.grade_level = payload.target.grade_level
+            if payload.target.chapter is not None: cat.chapter = payload.target.chapter
+            if payload.target.lesson is not None: cat.lesson = payload.target.lesson
+            if payload.target.topic is not None: cat.topic = payload.target.topic
+
+        q_query = select(Question)
+        if payload.source.subject: q_query = q_query.filter(Question.subject == payload.source.subject)
+        if payload.source.grade_level is not None: q_query = q_query.filter(Question.grade_level == payload.source.grade_level)
+        if payload.source.chapter: q_query = q_query.filter(Question.chapter == payload.source.chapter)
+        if payload.source.lesson: q_query = q_query.filter(Question.lesson == payload.source.lesson)
+        if payload.source.topic: q_query = q_query.filter(Question.topic == payload.source.topic)
+        questions = (await db.execute(q_query)).scalars().all()
+        for q in questions:
+            if payload.target.subject: q.subject = payload.target.subject
+            if payload.target.grade_level is not None: q.grade_level = payload.target.grade_level
+            if payload.target.chapter is not None: q.chapter = payload.target.chapter
+            if payload.target.lesson is not None: q.lesson = payload.target.lesson
+            if payload.target.topic is not None: q.topic = payload.target.topic
+
+        await db.commit()
+        await invalidate_questions_cache()
+        return {"message": f"Đã di chuyển danh mục và {len(questions)} câu hỏi thành công"}
+    except Exception as e:
+        await db.rollback()
+        raise HTTPException(status_code=500, detail=f"Lỗi khi di chuyển danh mục: {str(e)}")
+
 @router.get("", response_model=dict, summary="Lấy danh sách câu hỏi")
 @router.get("/", response_model=dict, include_in_schema=False)
 async def get_questions(
     subject: Optional[str] = None, grade_level: Optional[int] = None, chapter: Optional[str] = None,
     lesson: Optional[str] = None, topic: Optional[str] = None, difficulty: Optional[str] = None,
     question_type: Optional[str] = None, search: Optional[str] = None, page: int = 1, limit: int = 20,
+    ai_status: Optional[str] = None,
     db: AsyncSession = Depends(get_db), current_user: User = Depends(get_current_user)
 ):
     offset = (page - 1) * limit
     try:
-        query = select(Question)
+        query = select(Question).filter((Question.status != "EXAM_CLONE") | (Question.status.is_(None)))
         if subject: query = query.filter(Question.subject == subject)
         if grade_level is not None: query = query.filter(Question.grade_level == grade_level)
         if chapter: query = query.filter(Question.chapter == chapter)
         if lesson: query = query.filter(Question.lesson == lesson)
         if topic: query = query.filter(Question.topic == topic)
+        if difficulty: query = query.filter(Question.difficulty == difficulty)
+        if question_type: query = query.filter(Question.question_type == question_type)
         if search: query = query.filter(Question.content.ilike(f"%{search}%"))
+        if ai_status == "unverified": query = query.filter(Question.ai_verified == False)
+        elif ai_status == "correct": query = query.filter(Question.ai_verified == True, Question.ai_feedback["is_correct"].as_boolean() == True)
+        elif ai_status == "incorrect": query = query.filter(Question.ai_verified == True, (Question.ai_feedback["is_correct"].as_boolean() == False) | (Question.ai_feedback.is_(None)))
         count_query = select(func.count()).select_from(query.subquery())
         total = (await db.execute(count_query)).scalar() or 0
         res = await db.execute(query.order_by(Question.id.desc()).offset(offset).limit(limit))
@@ -194,6 +342,124 @@ async def get_questions(
         return {"total": total, "items": items, "page": page, "limit": limit}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+def normalize_question_payload(raw: Dict[str, Any]) -> Dict[str, Any]:
+    data = dict(raw)
+    
+    # 1. Alias mapping
+    if "type" in data and "question_type" not in data:
+        data["question_type"] = data.pop("type")
+    if "answers" in data and "options" not in data:
+        data["options"] = data.pop("answers")
+    if "level" in data and "difficulty" not in data:
+        data["difficulty"] = data.pop("level")
+        
+    # 2. Normalize question_type
+    q_type = str(data.get("question_type", "")).strip().upper()
+    if q_type in ["TRAC_NGHIEM", "TRẮC NGHIỆM", "MCQ", "MULTIPLE-CHOICE", "CHOICE"]:
+        q_type = "MULTIPLE_CHOICE"
+    elif q_type in ["DUNG_SAI", "ĐÚNG SAI", "ĐÚNG/SAI", "TRUE-FALSE", "TF"]:
+        q_type = "TRUE_FALSE"
+    elif q_type in ["DIEN_TU", "ĐIỀN TỪ", "TRA_LOI_NGAN", "TRẢ LỜI NGẮN", "SHORT-ANSWER", "SHORT"]:
+        q_type = "SHORT_ANSWER"
+    elif q_type in ["TU_LUAN", "TỰ LUẬN", "ESSAY"]:
+        q_type = "ESSAY"
+    if not q_type:
+        if isinstance(data.get("sub_questions"), list) and len(data["sub_questions"]) > 0:
+            q_type = "TRUE_FALSE"
+        elif isinstance(data.get("options"), list) and len(data["options"]) > 0:
+            q_type = "MULTIPLE_CHOICE"
+        else:
+            q_type = "MULTIPLE_CHOICE"
+    data["question_type"] = q_type
+    
+    # 3. Normalize grade_level
+    gl = data.get("grade_level", 10)
+    if isinstance(gl, str):
+        digits = "".join(ch for ch in gl if ch.isdigit())
+        data["grade_level"] = int(digits) if digits else 10
+    elif isinstance(gl, (int, float)):
+        data["grade_level"] = int(gl)
+    else:
+        data["grade_level"] = 10
+        
+    # 4. Normalize difficulty
+    diff = str(data.get("difficulty", "THONG_HIEU")).strip().upper()
+    diff_map = {
+        "NHẬN BIẾT": "NHAN_BIET", "NHAN BIET": "NHAN_BIET", "EASY": "NHAN_BIET",
+        "THÔNG HIỂU": "THONG_HIEU", "THONG HIEU": "THONG_HIEU", "MEDIUM": "THONG_HIEU",
+        "VẬN DỤNG": "VAN_DUNG", "VAN DUNG": "VAN_DUNG", "HARD": "VAN_DUNG",
+        "VẬN DỤNG CAO": "VAN_DUNG_CAO", "VAN DUNG CAO": "VAN_DUNG_CAO", "VERY_HARD": "VAN_DUNG_CAO"
+    }
+    data["difficulty"] = diff_map.get(diff, diff if diff in ["NHAN_BIET", "THONG_HIEU", "VAN_DUNG", "VAN_DUNG_CAO"] else "THONG_HIEU")
+
+    # 5. Normalize MULTIPLE_CHOICE
+    if q_type == "MULTIPLE_CHOICE":
+        options = data.get("options")
+        if isinstance(options, list):
+            data["options"] = [str(opt).strip() for opt in options]
+        else:
+            data["options"] = []
+            
+        c_opt = data.get("correct_option")
+        opt_map = {"A": 0, "B": 1, "C": 2, "D": 3}
+        if isinstance(c_opt, str):
+            c_upper = c_opt.strip().upper()
+            if c_upper in opt_map:
+                data["correct_option"] = opt_map[c_upper]
+            elif c_upper.isdigit():
+                data["correct_option"] = int(c_upper)
+            else:
+                data["correct_option"] = None
+        elif isinstance(c_opt, (int, float)):
+            data["correct_option"] = int(c_opt)
+            
+        # Fallback if correct_option is still None but correct_answer is provided
+        if data.get("correct_option") is None and data.get("correct_answer"):
+            ca = str(data["correct_answer"]).strip().upper()
+            if ca in opt_map:
+                data["correct_option"] = opt_map[ca]
+            elif ca.isdigit() and int(ca) < len(data["options"]):
+                data["correct_option"] = int(ca)
+            elif data.get("options"):
+                raw_ca = str(data["correct_answer"]).strip()
+                for o_idx, opt_text in enumerate(data["options"]):
+                    if raw_ca.lower() == opt_text.lower():
+                        data["correct_option"] = o_idx
+                        break
+
+    # 6. Normalize TRUE_FALSE
+    elif q_type == "TRUE_FALSE":
+        sub_qs = data.get("sub_questions")
+        if isinstance(sub_qs, list):
+            norm_sub = []
+            for sub in sub_qs:
+                if isinstance(sub, str):
+                    norm_sub.append({"statement": sub, "answer": True})
+                elif isinstance(sub, dict):
+                    stmt = sub.get("statement") or sub.get("content") or sub.get("text") or ""
+                    raw_ans = sub.get("answer") if "answer" in sub else (sub.get("is_correct") if "is_correct" in sub else sub.get("correct", True))
+                    if isinstance(raw_ans, bool):
+                        bool_ans = raw_ans
+                    elif isinstance(raw_ans, str):
+                        bool_ans = raw_ans.strip().lower() in ["true", "đúng", "dung", "1", "yes", "t"]
+                    elif isinstance(raw_ans, (int, float)):
+                        bool_ans = (raw_ans == 1)
+                    else:
+                        bool_ans = True
+                    norm_sub.append({"statement": str(stmt).strip(), "answer": bool_ans})
+            data["sub_questions"] = norm_sub
+
+    # 7. Normalize SHORT_ANSWER
+    elif q_type == "SHORT_ANSWER":
+        if "correct_answer" in data and data["correct_answer"] is not None:
+            data["correct_answer"] = str(data["correct_answer"]).strip()
+
+    # 8. Ensure subject default
+    if not data.get("subject"):
+        data["subject"] = "Toán"
+
+    return data
 
 class QuestionImportRequest(BaseModel):
     questions: List[Dict[str, Any]]
@@ -212,7 +478,8 @@ async def import_questions_json(
     errors: List[str] = []
     for idx, raw in enumerate(payload.questions):
         try:
-            q_in = QuestionCreate(**raw)
+            norm_data = normalize_question_payload(raw)
+            q_in = QuestionCreate(**norm_data)
             code = await generate_question_code(db, q_in.subject, q_in.grade_level, q_in.question_type)
             db.add(Question(**q_in.model_dump(), code=code, created_by_id=current_user.id))
             await db.flush()  # đảm bảo câu kế tiếp nhìn thấy code mới trong session

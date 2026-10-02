@@ -46,6 +46,7 @@ class Exam(Base):
     pass_score = Column(Float, nullable=True)        # Điểm đạt
     is_published = Column(Boolean, default=False, index=True)
     is_deleted = Column(Boolean, default=False, index=True)
+    exam_type = Column(String, default="EXAM", index=True) # "EXAM" (Đề thi) hoặc "ASSIGNMENT" (Bài tập)
     show_answers_after_submit = Column(Boolean, default=False)
     max_attempts = Column(Integer, default=1)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
@@ -74,7 +75,8 @@ class ExamSubmission(Base):
     essay_score = Column(Float, nullable=True)
     question_snapshot = Column(JSON, nullable=True) # Snapshot câu hỏi khi nộp
     submitted_at = Column(DateTime(timezone=True), server_default=func.now(), index=True)
-    status = Column(String, default="IN_PROGRESS")  # "IN_PROGRESS", "SUBMITTED", "GRADED", "PENDING_ESSAY"
+    status = Column(String, default="IN_PROGRESS", index=True)  # "IN_PROGRESS", "SUBMITTED", "GRADED", "PENDING_ESSAY"
+    tab_switches = Column(Integer, default=0)       # Số lần rời tab/chuyển cửa sổ khi thi
     started_at = Column(DateTime(timezone=True), nullable=True)
     last_saved_at = Column(DateTime(timezone=True), nullable=True)
     attempt_number = Column(Integer, default=1)

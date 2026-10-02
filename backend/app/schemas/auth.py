@@ -1,4 +1,4 @@
-from pydantic import BaseModel, EmailStr, field_validator
+from pydantic import BaseModel, EmailStr, field_validator, ConfigDict
 from typing import Optional
 import re
 
@@ -31,13 +31,11 @@ class UserCreate(UserBase):
         return validate_strong_password(v)
 
 class UserResponse(UserBase):
+    model_config = ConfigDict(from_attributes=True)
     id: int
     role: str
     is_active: bool
     grade_level: Optional[int] = None
-
-    class Config:
-        from_attributes = True
 
 class UserUpdate(BaseModel):
     email: Optional[EmailStr] = None

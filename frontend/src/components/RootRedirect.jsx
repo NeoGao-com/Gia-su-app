@@ -14,7 +14,7 @@ function getStoredRole() {
 
 export function RootRedirect() {
   const role = getStoredRole();
-  if (role === 'teacher' || role === 'admin') return <Navigate to="/teacher/dashboard" replace />;
+  if (role === 'teacher') return <Navigate to="/teacher/dashboard" replace />;
   if (role === 'student') return <Navigate to="/student" replace />;
   return <Navigate to="/login" replace />;
 }

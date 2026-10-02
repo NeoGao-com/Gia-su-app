@@ -1,17 +1,22 @@
 import logging
-from fastapi import APIRouter, Depends, HTTPException, status, Query, Request
+import random
+from fastapi import APIRouter, Depends, HTTPException, status, Query, Request, Body
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from sqlalchemy import func
 from sqlalchemy.orm import selectinload, joinedload
 from typing import List, Optional
-from app.database import get_db
-from app.models.classroom import Classroom, Assignment, ClassroomStudent
+from app.database import get_db, redis_client
+from app.models.classroom import Classroom, Assignment, ClassroomStudent, ClassroomExam
+from app.models.question import Question
 from app.schemas.classroom import (
     ClassroomCreate, ClassroomUpdate, ClassroomResponse,
     AssignmentCreate, JoinClassroomRequest, GradebookResponse
 )
-from app.schemas.assignment import AssignmentResponse, AssignmentCreateBody
+from app.schemas.assignment import (
+    AssignmentResponse, AssignmentCreateBody,
+    AssignmentUpdateBody, AssignByLessonRequest
+)
 from app.core.security import get_current_teacher, get_current_user
 from app.core.rate_limiter import parse_rate_limit
 from app.core.config import settings
@@ -189,10 +194,61 @@ async def get_all_students(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    res = await db.execute(select(User))
+    res = await db.execute(select(User).filter(User.is_deleted == False))
     users = res.scalars().all()
     students = [u for u in users if str(u.role).upper() in ["STUDENT", "HỌC SINH"]]
     return students
+
+@router.post("/students", summary="Tạo mới tài khoản học sinh")
+async def create_student(
+    payload: dict,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_teacher)
+):
+    email = payload.get("email", "").strip()
+    if not email:
+        raise HTTPException(status_code=400, detail="Vui lòng nhập email học sinh")
+
+    user_query = select(User).filter(User.email == email)
+    u_res = await db.execute(user_query)
+    existing = u_res.scalars().first()
+    if existing:
+        if existing.is_deleted:
+            existing.is_deleted = False
+            existing.is_active = True
+            await db.commit()
+            return existing
+        raise HTTPException(status_code=400, detail="Email này đã tồn tại trong hệ thống")
+
+    full_name = payload.get("full_name", "").strip() or email.split("@")[0]
+    password = payload.get("password") or "Password@123!"
+    from app.core.security import get_password_hash
+    new_student = User(
+        email=email,
+        full_name=full_name,
+        hashed_password=get_password_hash(password),
+        role="STUDENT",
+        is_active=True
+    )
+    db.add(new_student)
+    await db.commit()
+    await db.refresh(new_student)
+    return new_student
+
+@router.delete("/students/{student_id}", summary="Xóa học sinh khỏi hệ thống")
+async def delete_student(
+    student_id: int,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_teacher)
+):
+    student = await db.get(User, student_id)
+    if not student or student.is_deleted:
+        raise HTTPException(status_code=404, detail="Học sinh không tồn tại")
+
+    student.is_deleted = True
+    student.is_active = False
+    await db.commit()
+    return {"message": "Đã xóa học sinh thành công"}
 
 @router.get("/{classroom_id}/students", summary="Lấy danh sách học sinh thuộc lớp học")
 async def get_classroom_students(
@@ -262,7 +318,7 @@ async def add_student_to_classroom(
     return {"message": "Đã thêm học sinh vào lớp thành công"}
 
 
-@router.get("/{classroom_id}", response_model=ClassroomResponse)
+@router.get("/{classroom_id}")
 async def get_classroom(
     classroom_id: int,
     db: AsyncSession = Depends(get_db),
@@ -272,7 +328,6 @@ async def get_classroom(
         selectinload(Classroom.instructor),
         selectinload(Classroom.students),
         selectinload(Classroom.exams),
-        selectinload(Classroom.assignments).selectinload(Assignment.exam)
     )
     result = await db.execute(query)
     classroom = result.scalars().first()
@@ -284,7 +339,14 @@ async def get_classroom(
     elif current_user.role == "STUDENT" and current_user not in classroom.students:
         raise HTTPException(status_code=403, detail="Not a member of this classroom")
 
-    return classroom
+    active_q = select(Assignment).filter(Assignment.classroom_id == classroom_id, Assignment.is_active == True).options(selectinload(Assignment.exam))
+    active_res = await db.execute(active_q)
+    assignments = active_res.scalars().all()
+
+    from app.schemas.classroom import ClassroomResponse
+    resp = ClassroomResponse.model_validate(classroom)
+    resp.assignments = [AssignmentResponse.model_validate(a) for a in assignments]
+    return resp.model_dump(mode="json")
 
 @router.put("/{classroom_id}", response_model=ClassroomResponse)
 async def update_classroom(
@@ -307,7 +369,7 @@ async def update_classroom(
         logger.warning(f"Classroom update failed: Not found {classroom_id} by {current_user.email} from IP {client_ip}")
         raise HTTPException(status_code=404, detail="Classroom not found")
 
-    if current_user.role not in ("ADMIN", "TEACHER") and classroom.instructor_id != current_user.id:
+    if current_user.role != "TEACHER" and classroom.instructor_id != current_user.id:
         logger.warning(f"Classroom update failed: Unauthorized {classroom_id} by {current_user.email} from IP {client_ip}")
         raise HTTPException(status_code=403, detail="Not authorized")
 
@@ -344,7 +406,7 @@ async def delete_classroom(
         logger.warning(f"Classroom delete failed: Not found {classroom_id} by {current_user.email} from IP {client_ip}")
         raise HTTPException(status_code=404, detail="Classroom not found")
 
-    if current_user.role not in ("ADMIN", "TEACHER") and classroom.instructor_id != current_user.id:
+    if current_user.role != "TEACHER" and classroom.instructor_id != current_user.id:
         logger.warning(f"Classroom delete failed: Unauthorized {classroom_id} by {current_user.email} from IP {client_ip}")
         raise HTTPException(status_code=403, detail="Not authorized")
 
@@ -370,7 +432,7 @@ async def remove_student_from_classroom(
         raise HTTPException(status_code=403, detail="Not authorized")
     elif current_user.role == "TEACHER" and classroom.instructor_id != current_user.id:
         raise HTTPException(status_code=403, detail="Not authorized")
-    elif current_user.role not in ["STUDENT", "TEACHER", "ADMIN"]:
+    elif current_user.role not in ["STUDENT", "TEACHER"]:
         raise HTTPException(status_code=403, detail="Not authorized")
 
     student = await db.get(User, student_id)
@@ -421,100 +483,6 @@ async def leave_classroom(
     await db.commit()
     return {"message": "Successfully left the classroom"}
 
-def _with_exam(assignment):
-    """Gắn thông tin exam vào assignment response để frontend hiển thị tiêu đề đề thi."""
-    from app.schemas.exam import ExamResponse as ExamResp
-    if assignment is None:
-        return assignment
-    resp = AssignmentResponse.model_validate(assignment).model_dump(mode="json")
-    try:
-        resp["exam"] = ExamResp.model_validate(assignment.exam).model_dump(mode="json")
-    except Exception:
-        resp["exam"] = None
-    return resp
-
-
-@router.post("/{classroom_id}/exams", response_model=AssignmentResponse)
-async def assign_exam_to_classroom(
-    classroom_id: int,
-    assign_in: AssignmentCreateBody,
-    db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_teacher)
-):
-    # Classroom_id lấy từ URL là nguồn chính, nếu thiếu body thì fallback từ URL
-    effective_classroom_id = assign_in.classroom_id or classroom_id
-
-    classroom = await db.get(Classroom, effective_classroom_id)
-    if not classroom:
-        raise HTTPException(status_code=404, detail="Classroom not found")
-
-    if current_user.role not in ("ADMIN", "TEACHER") and classroom.instructor_id != current_user.id:
-        raise HTTPException(status_code=403, detail="Not authorized")
-
-    exam = await db.get(Exam, assign_in.exam_id)
-    if not exam:
-        raise HTTPException(status_code=404, detail="Exam not found")
-
-    if current_user.role not in ("ADMIN", "TEACHER") and exam.created_by_id != current_user.id:
-        raise HTTPException(status_code=403, detail="You can only assign exams that you created")
-
-    # Check for existing assignment
-    query = select(Assignment).filter(
-        Assignment.classroom_id == effective_classroom_id,
-        Assignment.exam_id == assign_in.exam_id
-    )
-    result = await db.execute(query)
-    existing_assignment = result.scalars().first()
-
-    if existing_assignment:
-        if existing_assignment.is_active:
-            raise HTTPException(status_code=400, detail="Assignment already exists for this classroom and exam")
-        else:
-            # Reactivate
-            existing_assignment.is_active = True
-            existing_assignment.due_date = assign_in.due_date
-            await db.commit()
-            await db.refresh(existing_assignment)
-            return _with_exam(existing_assignment)
-
-    assignment = Assignment(
-        exam_id=assign_in.exam_id,
-        classroom_id=effective_classroom_id,
-        due_date=assign_in.due_date,
-        open_date=assign_in.open_date,
-        max_attempts=assign_in.max_attempts,
-        show_answers_after_submit=assign_in.show_answers_after_submit,
-        duration_minutes_override=assign_in.duration_minutes_override
-    )
-    db.add(assignment)
-    await db.commit()
-    await db.refresh(assignment)
-    return _with_exam(assignment)
-
-@router.delete("/{classroom_id}/exams/{exam_id}")
-async def unassign_exam_from_classroom(
-    classroom_id: int,
-    exam_id: int,
-    db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_teacher)
-):
-    classroom = await db.get(Classroom, classroom_id)
-    if not classroom:
-        raise HTTPException(status_code=404, detail="Classroom not found")
-
-    if current_user.role not in ("ADMIN", "TEACHER") and classroom.instructor_id != current_user.id:
-        raise HTTPException(status_code=403, detail="Not authorized")
-
-    query = select(Assignment).filter(Assignment.classroom_id == classroom_id, Assignment.exam_id == exam_id, Assignment.is_active == True)
-    result = await db.execute(query)
-    assignment = result.scalars().first()
-    if not assignment:
-        raise HTTPException(status_code=404, detail="Assignment not found")
-
-    assignment.is_active = False
-    await db.commit()
-    return {"message": "Exam removed from classroom successfully"}
-
 @router.get("/{classroom_id}/gradebook", response_model=GradebookResponse)
 async def get_classroom_gradebook(
     classroom_id: int,
@@ -531,7 +499,7 @@ async def get_classroom_gradebook(
     if not classroom:
         raise HTTPException(status_code=404, detail="Classroom not found")
 
-    if current_user.role not in ("ADMIN", "TEACHER") and classroom.instructor_id != current_user.id:
+    if current_user.role != "TEACHER" and classroom.instructor_id != current_user.id:
         raise HTTPException(status_code=403, detail="Not authorized")
 
     # Get active students count and pagination
@@ -618,3 +586,327 @@ async def get_classroom_gradebook(
         "page": page,
         "limit": limit
     }
+
+
+@router.get("/{classroom_id}/exams", summary="Lấy danh sách đề thi được giao cho lớp")
+async def get_classroom_exams(
+    classroom_id: int,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    classroom = await db.get(Classroom, classroom_id)
+    if not classroom or classroom.is_deleted:
+        raise HTTPException(status_code=404, detail="Lớp học không tồn tại")
+    q = (
+        select(Assignment)
+        .filter(Assignment.classroom_id == classroom_id, Assignment.is_active == True)
+        .options(selectinload(Assignment.exam))
+        .order_by(Assignment.assigned_at.desc())
+    )
+    res = await db.execute(q)
+    assignments = res.scalars().all()
+    return [AssignmentResponse.model_validate(a).model_dump(mode="json") for a in assignments]
+
+
+@router.post("/{classroom_id}/exams", response_model=AssignmentResponse, summary="Giao đề thi cho lớp học")
+async def assign_exam_to_classroom(
+    classroom_id: int,
+    payload: AssignmentCreateBody,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_teacher),
+):
+    classroom = await db.get(Classroom, classroom_id)
+    if not classroom or classroom.is_deleted:
+        raise HTTPException(status_code=404, detail="Lớp học không tồn tại")
+    if classroom.instructor_id and classroom.instructor_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Bạn không có quyền giao bài cho lớp này")
+
+    exam_res = await db.execute(select(Exam).filter(Exam.id == payload.exam_id, Exam.is_deleted == False))
+    exam = exam_res.scalars().first()
+    if not exam:
+        raise HTTPException(status_code=404, detail="Đề thi không tồn tại")
+
+    exist_res = await db.execute(
+        select(Assignment).filter(
+            Assignment.classroom_id == classroom_id,
+            Assignment.exam_id == payload.exam_id,
+            Assignment.is_active == True,
+        )
+    )
+    existing = exist_res.scalars().first()
+    if existing:
+        existing.due_date = payload.due_date
+        existing.open_date = payload.open_date
+        existing.max_attempts = payload.max_attempts
+        existing.show_answers_after_submit = payload.show_answers_after_submit
+        existing.duration_minutes_override = payload.duration_minutes_override
+        await db.commit()
+        await db.refresh(existing)
+        res = await db.execute(
+            select(Assignment).filter(Assignment.id == existing.id).options(selectinload(Assignment.exam))
+        )
+        return res.scalars().first()
+
+    assignment = Assignment(
+        classroom_id=classroom_id,
+        exam_id=payload.exam_id,
+        due_date=payload.due_date,
+        open_date=payload.open_date,
+        max_attempts=payload.max_attempts,
+        show_answers_after_submit=payload.show_answers_after_submit,
+        duration_minutes_override=payload.duration_minutes_override,
+        is_active=True,
+    )
+    db.add(assignment)
+    ce_res = await db.execute(
+        select(ClassroomExam).filter(
+            ClassroomExam.classroom_id == classroom_id,
+            ClassroomExam.exam_id == payload.exam_id,
+        )
+    )
+    if not ce_res.scalars().first():
+        db.add(ClassroomExam(classroom_id=classroom_id, exam_id=payload.exam_id, due_date=payload.due_date))
+    await db.commit()
+    await db.refresh(assignment)
+    res = await db.execute(
+        select(Assignment).filter(Assignment.id == assignment.id).options(selectinload(Assignment.exam))
+    )
+    return res.scalars().first()
+
+
+@router.delete("/{classroom_id}/exams/{exam_id}", summary="Hủy giao đề thi cho lớp học")
+async def unassign_exam_from_classroom(
+    classroom_id: int,
+    exam_id: int,
+    student_ids: Optional[list[int]] = Body(None, embed=True),
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_teacher),
+):
+    classroom = await db.get(Classroom, classroom_id)
+    if not classroom or classroom.is_deleted:
+        raise HTTPException(status_code=404, detail="Lớp học không tồn tại")
+    if classroom.instructor_id and classroom.instructor_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Bạn không có quyền hủy giao bài của lớp này")
+
+    res = await db.execute(
+        select(Assignment).filter(
+            Assignment.classroom_id == classroom_id,
+            Assignment.exam_id == exam_id,
+            Assignment.is_active == True,
+        )
+    )
+    assignments = res.scalars().all()
+    if not assignments:
+        ce_res = await db.execute(
+            select(ClassroomExam).filter(
+                ClassroomExam.classroom_id == classroom_id,
+                ClassroomExam.exam_id == exam_id,
+            )
+        )
+        for ce in ce_res.scalars().all():
+            await db.delete(ce)
+        await db.commit()
+        return {"message": "Đề thi đã được hủy giao thành công"}
+
+    # Handle cancellation per student or whole classroom
+    cs_q = select(ClassroomStudent.student_id).filter(
+        ClassroomStudent.classroom_id == classroom_id,
+        ClassroomStudent.is_active == True
+    )
+    cs_res = await db.execute(cs_q)
+    class_student_ids = set(cs_res.scalars().all())
+
+    is_all = not student_ids or (class_student_ids and class_student_ids.issubset(set(student_ids)))
+
+    if student_ids:
+        sub_q = select(ExamSubmission).filter(
+            ExamSubmission.exam_id == exam_id,
+            ExamSubmission.user_id.in_(student_ids)
+        )
+        sub_res = await db.execute(sub_q)
+        subs = sub_res.scalars().all()
+        for sub in subs:
+            await db.delete(sub)
+
+    if is_all:
+        for a in assignments:
+            a.is_active = False
+
+        ce_res = await db.execute(
+            select(ClassroomExam).filter(
+                ClassroomExam.classroom_id == classroom_id,
+                ClassroomExam.exam_id == exam_id,
+            )
+        )
+        for ce in ce_res.scalars().all():
+            await db.delete(ce)
+
+    await db.commit()
+    try:
+        keys = await redis_client.keys("exams:*")
+        if keys:
+            await redis_client.delete(*keys)
+    except Exception:
+        pass
+    return {"message": "Đã hủy giao đề thi thành công"}
+
+
+@router.get("/assignments/all", summary="Lấy danh sách tất cả bài tập đã giao của giáo viên")
+async def get_all_teacher_assignments(
+    classroom_id: Optional[int] = None,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_teacher),
+):
+    query = (
+        select(Assignment)
+        .join(Classroom, Assignment.classroom_id == Classroom.id)
+        .filter(
+            Classroom.is_deleted == False,
+            Assignment.is_active == True,
+        )
+        .options(
+            selectinload(Assignment.exam),
+            selectinload(Assignment.classroom),
+        )
+        .order_by(Assignment.assigned_at.desc())
+    )
+    if current_user.role == "TEACHER":
+        query = query.filter(Classroom.instructor_id == current_user.id)
+    if classroom_id:
+        query = query.filter(Assignment.classroom_id == classroom_id)
+
+    res = await db.execute(query)
+    assignments = res.scalars().all()
+    results = []
+    for a in assignments:
+        item = AssignmentResponse.model_validate(a).model_dump(mode="json")
+        item["classroom_name"] = a.classroom.name if a.classroom else None
+        item["classroom_code"] = a.classroom.code if a.classroom else None
+        results.append(item)
+    return results
+
+
+@router.put("/{classroom_id}/exams/{exam_id}", response_model=AssignmentResponse, summary="Chỉnh sửa bài tập đã giao")
+async def update_classroom_assignment(
+    classroom_id: int,
+    exam_id: int,
+    payload: AssignmentUpdateBody,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_teacher),
+):
+    classroom = await db.get(Classroom, classroom_id)
+    if not classroom or classroom.is_deleted:
+        raise HTTPException(status_code=404, detail="Lớp học không tồn tại")
+    if classroom.instructor_id and classroom.instructor_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Bạn không có quyền chỉnh sửa bài tập của lớp này")
+
+    res = await db.execute(
+        select(Assignment).filter(
+            Assignment.classroom_id == classroom_id,
+            Assignment.exam_id == exam_id,
+            Assignment.is_active == True,
+        )
+    )
+    assignment = res.scalars().first()
+    if not assignment:
+        raise HTTPException(status_code=404, detail="Bài tập không tồn tại hoặc đã bị hủy")
+
+    update_dict = payload.model_dump(exclude_unset=True)
+    for k, v in update_dict.items():
+        setattr(assignment, k, v)
+
+    if "due_date" in update_dict:
+        ce_res = await db.execute(
+            select(ClassroomExam).filter(
+                ClassroomExam.classroom_id == classroom_id,
+                ClassroomExam.exam_id == exam_id,
+            )
+        )
+        ce = ce_res.scalars().first()
+        if ce:
+            ce.due_date = payload.due_date
+
+    await db.commit()
+    await db.refresh(assignment)
+    res_full = await db.execute(
+        select(Assignment).filter(Assignment.id == assignment.id).options(selectinload(Assignment.exam))
+    )
+    return res_full.scalars().first()
+
+
+@router.post("/{classroom_id}/assign-by-lesson", response_model=AssignmentResponse, summary="Giao bài tập theo bài học trên lớp")
+async def assign_by_lesson(
+    classroom_id: int,
+    payload: AssignByLessonRequest,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_teacher),
+):
+    classroom = await db.get(Classroom, classroom_id)
+    if not classroom or classroom.is_deleted:
+        raise HTTPException(status_code=404, detail="Lớp học không tồn tại")
+    if classroom.instructor_id and classroom.instructor_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Bạn không có quyền giao bài cho lớp này")
+
+    # 1. Tìm danh sách câu hỏi theo bài học
+    if payload.question_ids:
+        q_res = await db.execute(select(Question).filter(Question.id.in_(payload.question_ids)))
+        questions = q_res.scalars().all()
+    else:
+        q_query = select(Question).filter(
+            Question.subject == payload.subject,
+            Question.grade_level == payload.grade_level,
+            Question.chapter == payload.chapter,
+            Question.lesson == payload.lesson,
+        )
+        q_res = await db.execute(q_query)
+        all_matching = q_res.scalars().all()
+        if payload.question_count and len(all_matching) > payload.question_count:
+            questions = random.sample(all_matching, payload.question_count)
+        else:
+            questions = all_matching
+
+    if not questions:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Không tìm thấy câu hỏi nào cho bài học '{payload.lesson}' ({payload.chapter}) môn {payload.subject} lớp {payload.grade_level}"
+        )
+
+    # 2. Tạo đề thi tự động từ các câu hỏi của bài học này
+    exam_title = payload.title.strip() or f"Bài tập: {payload.lesson} - {classroom.name}"
+    exam = Exam(
+        title=exam_title,
+        description=payload.description or f"Bài tập theo bài học: {payload.lesson} (Chương: {payload.chapter} - Khối {payload.grade_level})",
+        duration_minutes=payload.duration_minutes,
+        pass_score=payload.pass_score,
+        is_published=True,
+        max_attempts=payload.max_attempts,
+        show_answers_after_submit=payload.show_answers_after_submit,
+        exam_type="ASSIGNMENT",
+        created_by_id=current_user.id,
+    )
+    exam.questions = questions
+    db.add(exam)
+    await db.commit()
+    await db.refresh(exam)
+
+    # 3. Giao đề thi mới này cho lớp học
+    assignment = Assignment(
+        classroom_id=classroom_id,
+        exam_id=exam.id,
+        due_date=payload.due_date,
+        open_date=payload.open_date,
+        max_attempts=payload.max_attempts,
+        show_answers_after_submit=payload.show_answers_after_submit,
+        duration_minutes_override=None,
+        is_active=True,
+    )
+    db.add(assignment)
+    db.add(ClassroomExam(classroom_id=classroom_id, exam_id=exam.id, due_date=payload.due_date))
+    await db.commit()
+    await db.refresh(assignment)
+
+    res = await db.execute(
+        select(Assignment).filter(Assignment.id == assignment.id).options(selectinload(Assignment.exam))
+    )
+    return res.scalars().first()
+
