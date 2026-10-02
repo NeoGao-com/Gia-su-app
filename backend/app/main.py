@@ -104,3 +104,6 @@ async def health_check():
 async def trigger_init_db():
     result = await init_db_tables()
     return result
+
+# Explicit handler alias
+handler = app
