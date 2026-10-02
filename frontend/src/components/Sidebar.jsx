@@ -45,7 +45,7 @@ export function Sidebar({ role }) {
       ];
     }
 
-    if (normalizedRole === 'teacher' || normalizedRole === 'admin') {
+    if (normalizedRole === 'teacher') {
       return [
         {
           title: 'Tổng quan',

@@ -1,192 +1,179 @@
-# Quiz App - Hệ Thống Quản Lý & Tổ Chức Thi Trắc Nghiệm Trực Tuyến
+# TutorQuiz - Nền Tảng Quản Lý Gia Sư & Luyện Thi Trắc Nghiệm Trực Tuyến
 
-Ứng dụng web quản lý ngân hàng câu hỏi, tạo đề thi và tổ chức thi trắc nghiệm trực tuyến. Hỗ trợ công thức Toán học KaTeX/LaTeX, bóc tách đề thi từ Word (.docx), tạo câu hỏi tự động bằng AI (OpenAI), và nhập hàng loạt bằng JSON.
+Ứng dụng web toàn diện dành cho **Giáo viên / Gia sư** và **Học sinh**, hỗ trợ quản lý ngân hàng câu hỏi, tạo đề thi ma trận, giao bài tập theo lớp học và tổ chức thi trực tuyến thông minh. Tích hợp công thức Toán học KaTeX/LaTeX, trích xuất đề thi bằng AI thông qua Master Prompt, và chấm điểm tự động.
 
 ---
 
 ## 🛠 Công Nghệ Sử Dụng (Tech Stack)
 
-| Thành phần | Công nghệ |
-|:---|:---|
-| **Backend** | Python 3.11+, FastAPI, SQLAlchemy 2.0 (Async), Pydantic v2 |
-| **Database** | SQLite (dev) / PostgreSQL (production), Redis (cache & rate limit) |
-| **Frontend** | React 19, Vite 8, React Router v7, Tailwind CSS |
-| **AI** | OpenAI API (tự động tạo câu hỏi) |
-| **Rendering** | KaTeX (công thức toán), LaTeX rendering service |
-| **Export** | DOCX export/import (python-docx) |
-| **DevOps** | Docker & Docker Compose, Nginx (reverse proxy) |
-| **Auth** | JWT (HS256), Double-Submit Cookie CSRF, Rate Limiting |
+| Thành phần | Công nghệ | Mô tả |
+|:---|:---|:---|
+| **Backend** | Python 3.11+, FastAPI, SQLAlchemy 2.0 (Async), Pydantic v2 | RESTful API hiệu năng cao, bất đồng bộ hoàn toàn |
+| **Frontend** | React 19, Vite 8, Tailwind CSS, Lucide React | Giao diện hiện đại, tối ưu UX, responsive đa thiết bị |
+| **Database** | SQLite (Dev) / PostgreSQL (Production) | Lưu trữ người dùng, ngân hàng câu hỏi, đề thi, lớp học |
+| **Cache & Limiter** | Redis | Bộ nhớ đệm và bảo vệ API với Rate Limiting |
+| **Toán học & LaTeX** | KaTeX, MathRenderer | Hiển thị công thức Toán học trực quan thời gian thực |
+| **AI Integration** | OpenAI / Gemini API + Master Prompt Generator | Hỗ trợ bóc tách tài liệu và sinh câu hỏi trắc nghiệm |
+| **Xử lý tài liệu** | python-docx | Hỗ trợ nhập và xuất đề thi định dạng Word |
+| **Bảo mật** | JWT (HS256), Password Hashing (bcrypt), CSRF Protection | Xác thực phân quyền chặt chẽ giữa Giáo viên & Học sinh |
+| **DevOps** | Docker, Docker Compose, Nginx | Đóng gói container sẵn sàng triển khai |
 
 ---
 
-## 📁 Cấu Trúc Thư Mục
+## 👥 Tài Khoản Trải Nghiệm Mặc Định
 
-```
-quiz-app-main/
-├── backend/                          # Backend FastAPI (Python)
-│   ├── app/
-│   │   ├── core/                    # Config, CSRF, Security, Email, Rate Limiter
-│   │   ├── models/                  # User, Question, Exam, Classroom, AIConfig, Notification
-│   │   ├── routers/                 # Auth, Question, Exam, Student, Classroom, Analytics, AI, Export...
-│   │   ├── schemas/                 # Pydantic schemas cho validation
-│   │   ├── services/                # AI Service, Grading, Export, Rendering, Tasks
-│   │   ├── database.py              # DB connection (SQLite/PostgreSQL + Redis)
-│   │   └── main.py                  # Entry point FastAPI
-│   ├── alembic/                     # Database migrations
-│   ├── tests/                       # Unit tests
-│   ├── seed_all.py / seed_users.py  # Seed data scripts
-│   ├── requirements.txt             # Python dependencies
-│   ├── Dockerfile                   # Backend Docker image
-│   └── quiz.db                      # SQLite database (dev)
-├── frontend/                        # Frontend React + Vite
-│   ├── src/
-│   │   ├── api/axios.js             # Axios config
-│   │   ├── components/              # Navbar, Sidebar, Modal, MathRenderer, FileExplorer...
-│   │   ├── pages/
-│   │   │   ├── auth/                # Login, Register, ForgotPassword
-│   │   │   ├── student/             # Dashboard, ExamList, TakeExam, ExamHistory
-│   │   │   └── teacher/             # QuestionBank, ExamMgmt, Gradebook, Analytics...
-│   │   ├── App.jsx, main.jsx        # App entry point
-│   │   └── lazyPages.jsx            # Code-splitting config
-│   ├── dist/                        # Build output (Vite)
-│   ├── nginx.conf                   # Nginx config cho Docker SPA
-│   ├── Dockerfile                   # Frontend Docker image (Node build + Nginx serve)
-│   └── package.json
-├── docker-compose.yml               # Production: Postgres + Redis + Backend + Frontend
-├── .env.example                     # Environment template
-├── nginx.conf                       # Nginx reverse proxy (local dev)
-└── DEPLOY.md                        # Hướng dẫn triển khai
-```
+Hệ thống được thiết kế với hai vai trò chính: **Giáo viên (Teacher)** và **Học sinh (Student)**:
 
----
-
-## 👥 Tài Khoản Mặc Định (Seed Users)
-
-| Vai trò | Email | Mật khẩu |
-| :--- | :--- | :--- |
-| **Admin** | `admin@example.com` | `Password@123!` |
-| **Teacher** | `teacher@example.com` | `Password@123!` |
-| **Student** | `student@example.com` | `Password@123!` |
+| Vai trò | Email | Mật khẩu mặc định | Mục đích sử dụng |
+|:---|:---|:---|:---|
+| **Giáo viên / Gia sư** | `teacher@example.com` | `Password@123!` | Quản lý câu hỏi, tạo đề, tạo lớp học, giao bài, chấm thi, xem thống kê |
+| **Học sinh** | `student@example.com` | `Password@123!` | Tham gia lớp học, làm bài tập về nhà, thi trực tuyến, xem lời giải & sổ điểm |
 
 ---
 
 ## 🌟 Tính Năng Nổi Bật
 
-1. **Ngân hàng Câu hỏi**: Hỗ trợ nhiều dạng câu hỏi (Trắc nghiệm, Đúng/Sai, Điền khuyết, Trả lời ngắn, Tự luận, Matching, Fill-in-blank, Essay).
-2. **Tạo câu hỏi bằng AI**: Tự động sinh câu hỏi từ OpenAI API với prompt chuẩn hóa.
-3. **Live LaTeX Preview**: Soạn thảo công thức Toán học trực quan với KaTeX và MathRenderer.
-4. **Bóc tách Word (.docx)**: Nhập hàng loạt câu hỏi từ file Word.
-5. **Quản lý Lớp học & Đề thi**: Giao bài, thi trực tuyến, mã lớp tự động, chống brute-force.
-6. **Chấm điểm tự động**: Tự động chấm trắc nghiệm, chấm luận bàn (essay) với AI.
-7. **Thống kê & Analytics**: Phổ điểm, thống kê tổng quan cho giáo viên.
-8. **Xuất Word (.docx)**: Xuất đề thi ra Word kèm công thức OMML/Math.
-9. **Rate Limiting & CSRF**: Bảo mật với Redis-based rate limiter, Double-Submit Cookie CSRF.
-10. **Code-splitting**: Lazy loading page với React.lazy cho performance.
+### 1. Dành cho Giáo viên & Gia sư
+- **Ngân hàng câu hỏi phân cấp**: Quản lý câu hỏi theo Cây thư mục (Môn học $\rightarrow$ Khối lớp $\rightarrow$ Chương $\rightarrow$ Bài $\rightarrow$ Chủ đề).
+- **Đa dạng dạng câu hỏi**: Trắc nghiệm 1 đáp án, nhiều đáp án, Đúng/Sai, Điền khuyết, Ghép nối (Matching), Tự luận (Essay).
+- **Soạn thảo công thức Toán học (LaTeX)**: Trình soạn thảo trực quan hỗ trợ KaTeX rendering tức thì.
+- **AI Master Prompt & Nhập JSON hàng loạt**:
+  - Tự động sinh Prompt chuẩn hóa cho AI dựa trên Môn học và Khối lớp trong ngân hàng.
+  - Người dùng chỉ cần gửi tài liệu/PDF/ảnh cho AI cùng Prompt, sau đó dán JSON kết quả để nhập hàng chục câu hỏi vào cơ sở dữ liệu trong vài giây.
+- **Quản lý Đề thi & Ma trận câu hỏi**: Tạo đề thi nhanh, cấu hình thời gian làm bài, số lần làm tối đa, điểm đạt, trộn thứ tự câu hỏi và đáp án.
+- **Quản lý Lớp học & Giao bài**:
+  - Tạo lớp học với mã lớp ngẫu nhiên, sinh mã mới chống gian lận.
+  - Giao bài tập về nhà và bài thi theo từng lớp với thời hạn cụ thể.
+- **Sổ điểm & Chấm bài**: Tự động chấm trắc nghiệm ngay khi nộp bài, giao diện chấm tự luận kèm nhận xét.
+- **Báo cáo & Phổ điểm**: Biểu đồ phân tích phổ điểm, tỷ lệ hoàn thành và chất lượng học sinh.
+
+### 2. Dành cho Học sinh (Giao diện UI/UX mới)
+- **Bàn học sinh (Dashboard)**: Thống kê tổng quan số bài cần làm, kỳ thi sắp diễn ra, điểm trung bình và biểu đồ tiến độ học tập.
+- **Bài tập về nhà (`/student/assignments`)**: Danh sách bài tập được giáo viên giao, hạn chót nộp bài, trạng thái đã làm / chưa làm.
+- **Kỳ thi trực tuyến (`/student/exams`)**: Danh sách các kỳ thi chính thức theo lớp học hoặc toàn hệ thống.
+- **Phòng thi chuẩn hóa (`/student/exam/:id/take`)**:
+  - Đồng hồ đếm ngược thời gian thực.
+  - Tự động lưu tiến độ làm bài (Auto-save) phòng ngừa mất kết nối mạng.
+  - Thanh điều hướng danh sách câu hỏi: trạng thái đã làm, chưa làm, câu hỏi đánh dấu xem lại.
+  - Hiển thị công thức Toán học, hình ảnh đính kèm rõ ràng, chống click nhầm khi nộp bài.
+- **Sổ điểm & Lịch sử bài nộp (`/student/history`)**: Xem lại chi tiết từng lượt làm, điểm số đạt được, xem lại đáp án đúng kèm lời giải thích chi tiết của giáo viên.
+- **Lớp học của tôi (`/student/classrooms`)**: Danh sách các lớp đang tham gia, tham gia lớp mới nhanh bằng mã mời của giáo viên.
+
+---
+
+## 📁 Cấu Trúc Dự Án
+
+```
+quiz-app-main/
+├── backend/                          # Backend FastAPI (Python)
+│   ├── app/
+│   │   ├── core/                    # Cấu hình config, bảo mật JWT, email, rate limiter
+│   │   ├── models/                  # SQLAlchemy models (User, Question, Exam, Classroom...)
+│   │   ├── routers/                 # API endpoints (auth, questions, exam, student, classroom...)
+│   │   ├── schemas/                 # Pydantic schemas xác thực dữ liệu request/response
+│   │   ├── services/                # Logic AI, chấm điểm, xuất nhập Word/JSON
+│   │   ├── database.py              # Kết nối Database (SQLite/PostgreSQL) & Redis
+│   │   └── main.py                  # Điểm khởi chạy FastAPI
+│   ├── tests/                       # Unit tests & Integration tests
+│   ├── seed_all.py                  # Script khởi tạo tài khoản giáo viên & học sinh mẫu
+│   ├── requirements.txt             # Danh sách thư viện Python
+│   └── Dockerfile                   # Dockerfile Backend
+├── frontend/                        # Frontend React + Vite
+│   ├── src/
+│   │   ├── api/axios.js             # Cấu hình Axios client & Interceptors
+│   │   ├── components/              # Sidebar, Navbar, MathRenderer, Modals, Pagination...
+│   │   ├── pages/
+│   │   │   ├── auth/                # Đăng nhập, Đăng ký, Quên mật khẩu
+│   │   │   ├── student/             # Bàn học sinh, Bài tập, Kỳ thi, Phòng thi, Sổ điểm, Lớp học
+│   │   │   └── teacher/             # Ngân hàng câu hỏi, Quản lý đề thi, Giao bài, Sổ điểm, Phân tích
+│   │   ├── App.jsx, main.jsx        # Routing và khởi chạy React App
+│   │   └── lazyPages.jsx            # Cấu hình Code-Splitting tăng tốc độ tải trang
+│   ├── package.json
+│   ├── Dockerfile                   # Dockerfile Frontend (Nginx serve)
+│   └── nginx.conf                   # Cấu hình Nginx reverse proxy cho production
+├── docker-compose.yml               # File chạy đồng thời Postgres, Redis, Backend, Frontend
+├── .env.example                     # Mẫu biến môi trường
+└── DEPLOY.md                        # Hướng dẫn triển khai chi tiết
+```
 
 ---
 
 ## 🚀 Hướng Dẫn Khởi Chạy
 
-### 1. Khởi chạy Local (Phát triển)
+### 1. Khởi chạy môi trường phát triển (Local Development)
 
-**Backend:**
+#### Bước 1: Khởi động Backend
 ```bash
 cd backend
 python -m venv venv
-# Trên Windows:
-.\venv\Scripts\Activate
+
+# Kích hoạt môi trường ảo:
+# Trên Windows (PowerShell):
+.\venv\Scripts\Activate.ps1
+# Trên Linux/macOS:
+source venv/bin/activate
+
+# Cài đặt thư viện:
 pip install -r requirements.txt
-# Copy .env.example để tạo .env
+
+# Tạo file cấu hình môi trường:
 cp .env.example .env
+
+# Chạy server FastAPI:
 uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
 ```
+- API Docs Swagger: `http://127.0.0.1:8000/docs`
+- Khởi tạo dữ liệu mẫu (tuỳ chọn): `python seed_all.py`
 
-**Frontend:**
+#### Bước 2: Khởi động Frontend
+Mở một cửa sổ dòng lệnh khác:
 ```bash
 cd frontend
 npm install
 npm run dev
 ```
+- Giao diện ứng dụng chạy tại: `http://localhost:5173`
 
-Mở `http://localhost:5173` để xem frontend, API chạy ở `http://localhost:8000`.
+---
 
-### 2. Khởi chạy bằng Docker Compose (Production)
+### 2. Triển khai bằng Docker Compose (Production)
+
+Toàn bộ dịch vụ (PostgreSQL, Redis, Backend FastAPI, Frontend Nginx) đã được cấu hình trong `docker-compose.yml`.
 
 ```bash
-# 1. Copy file cấu hình
+# 1. Tạo file .env từ file mẫu
 cp .env.example .env
-# Mở .env và thay các giá trị bắt buộc: SECRET_KEY, POSTGRES_PASSWORD, REDIS_PASSWORD, ADMIN_PASSWORD
 
-# 2. Build + chạy toàn bộ stack
+# 2. Mở file .env và thay đổi các mật khẩu bảo mật:
+#    SECRET_KEY, POSTGRES_PASSWORD, REDIS_PASSWORD
+
+# 3. Khởi chạy toàn bộ stack:
 docker compose up -d --build
 
-# 3. Kiểm tra trạng thái
+# 4. Kiểm tra trạng thái các container:
 docker compose ps
 curl http://localhost/health
 ```
 
-| Service   | Container       | Port mặc định | Ghi chú                              |
-|-----------|-----------------|---------------|--------------------------------------|
-| frontend  | quiz_frontend   | 80            | Nginx serve SPA + proxy `/api/`      |
-| backend   | quiz_backend    | 8000          | FastAPI, health check `/health`      |
-| postgres  | quiz_postgres   | 5432          | Data persist trong `postgres_data`   |
-| redis     | quiz_redis      | 6379          | Có password, persist trong `redis_data` |
+#### Các cổng dịch vụ mặc định:
+- **Frontend Web**: `http://localhost:80`
+- **Backend API**: `http://localhost:8000` (hoặc thông qua reverse proxy `http://localhost/api/`)
+- **PostgreSQL**: `localhost:5432`
+- **Redis**: `localhost:6379`
 
 ---
 
-## 📡 API Endpoints
+## 🧪 Kiểm Thử (Testing)
 
-Tất cả API được prefix `/api/`. Xem docs chi tiết tại `http://localhost:8000/docs` khi backend đang chạy.
-
-| Nhóm | Endpoints chính |
-|:---|:---|
-| **Auth** | `POST /login`, `POST /register`, `POST /logout`, `GET /me` |
-| **Questions** | `GET /`, `POST /`, `PUT /{id}`, `DELETE /{id}`, `GET /tree/structure`, `POST /import-json`, `POST /upload-image` |
-| **Exams** | `GET /`, `POST /`, `GET /{id}`, `PUT /submissions/{id}/grade` |
-| **Student** | `GET /exams`, `POST /exams/{id}/start`, `POST /submissions/{id}/save`, `POST /submissions/{id}/submit`, `GET /history` |
-| **Classrooms** | `GET /`, `POST /`, `POST /join`, `POST /{id}/exams`, `GET /{id}/students` |
-| **Analytics** | `GET /summary` |
-| **Export** | `POST /export/docx`, `POST /upload/docx`, `POST /upload/image` |
-| **AI** | `POST /generate-questions`, `POST /render-math` |
-| **Notifications** | `GET /`, `POST /read` |
-| **AI Config** | `GET /`, `POST /`, `PUT /{id}` |
-
----
-
-## 🗄 Mô Hình Dữ Liệu
-
-- **User**: `id`, `email`, `hashed_password`, `full_name`, `role` (`STUDENT` | `TEACHER` | `ADMIN`), `grade_level`, `is_active`, `is_deleted`
-- **Question**: `id`, `created_by_id`, `subject`, `grade_level`, `chapter`, `lesson`, `topic`, `question_type`, `content`, `options` (JSON), `correct_option`, `correct_answer`, `sub_questions`, `blanks`, `sample_solution`, `explanation`, `difficulty`, `image_url`, `latex_code`, `is_deleted`
-- **Exam**: `id`, `created_by_id`, `title`, `duration_minutes`, `pass_score`, `max_attempts`, `is_published`, `show_answers_after_submit`, `is_deleted`
-- **Classroom**: `id`, `instructor_id`, `name`, `code` (Unique), `description`, `code_expires_at`
-- **ExamSubmission**: `id`, `exam_id`, `user_id`, `answers` (JSON), `version`, `status`, `auto_score`, `essay_score`, `score`, `time_spent`
-
----
-
-## 🧪 Chạy Tests
-
+Dự án bao gồm bộ kiểm thử tự động cho backend:
 ```bash
 cd backend
-.\venv\Scripts\python.exe -m pytest tests/test_core.py -v
+pytest tests/ -v
 ```
 
 ---
 
-## 🐳 Lệnh Docker Phổ Biến
-
-```bash
-docker compose logs -f backend      # Xem log backend
-docker compose logs -f frontend     # Xem log nginx
-docker compose down                 # Dừng stack (giữ data)
-docker compose down -v              # Dừng + XÓA toàn bộ data
-docker compose up -d --build backend  # Rebuild riêng backend
-```
-
----
-
-## 📝 Ghi Chú
-
-- `.env` chứa secrets — không commit lên git (đã có trong `.gitignore`).
-- `quiz.db` trong `backend/` dùng cho phát triển local; production dùng PostgreSQL.
-- File upload lưu trong `backend/static/uploads/` (Docker: volume `backend_uploads`).
-- CORS được cấu hình cho `localhost:5173` (Vite dev) và `localhost:80` (production).
+## 🔒 Lưu Ý Về Bảo Mật & Triển Khai
+- **Tuyệt đối không commit file `.env` hoặc file cơ sở dữ liệu (`quiz.db`, `*.db`)** lên GitHub.
+- Trước khi đưa lên môi trường Internet / Production, hãy tạo `SECRET_KEY` ngẫu nhiên có độ dài tối thiểu 32 ký tự để đảm bảo an toàn cho chữ ký JWT.
+- Cấu hình CORS và các giới hạn tải lên (Max Upload Size: 5MB) có thể điều chỉnh linh hoạt trong `.env`.

@@ -9,8 +9,8 @@
 ```bash
 # 1. Copy file môi trường và điền secrets
 cp .env.example .env
-# Mở .env và thay 4 giá trị bắt buộc:
-#   SECRET_KEY, POSTGRES_PASSWORD, REDIS_PASSWORD, ADMIN_PASSWORD
+# Mở .env và thay 3 giá trị bắt buộc:
+#   SECRET_KEY, POSTGRES_PASSWORD, REDIS_PASSWORD
 
 # 2. Build + chạy toàn bộ stack
 docker compose up -d --build
@@ -35,7 +35,6 @@ Bắt buộc (compose sẽ từ chối chạy nếu thiếu):
 - `SECRET_KEY` — tối thiểu 32 ký tự ngẫu nhiên (ký JWT)
 - `POSTGRES_PASSWORD` — mật khẩu Postgres
 - `REDIS_PASSWORD` — mật khẩu Redis
-- `ADMIN_PASSWORD` — mật khẩu tài khoản admin seed ban đầu
 
 Tùy chọn: `OPENAI_API_KEY`, `SMTP_*`, `FRONTEND_URL`, port overrides
 (`BACKEND_PORT`, `FRONTEND_PORT`, `POSTGRES_PORT`, `REDIS_PORT`).
