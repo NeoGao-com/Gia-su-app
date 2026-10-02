@@ -515,17 +515,10 @@ async def delete_question_item(question_id: int, db: AsyncSession = Depends(get_
     await db.commit()
     await invalidate_questions_cache()
     return {"message": "Xóa câu hỏi thành công"}
-
-import os, uuid, subprocess
-from fastapi import UploadFile, File
-UPLOAD_DIR = "backend/static/uploads"
-os.makedirs(UPLOAD_DIR, exist_ok=True)
-
 # Standardized upload route: redirecting to secure upload module
+from fastapi import UploadFile, File
 from app.routers.upload import upload_image as secure_upload_image
 
 @router.post("/upload-image")
 async def upload_image(request: Request, file: UploadFile = File(...), current_user: User = Depends(get_current_teacher)):
     return await secure_upload_image(request=request, file=file, current_user=current_user)
-
-# Unused RCE endpoint generate-image-py removed for security. Use upload-image endpoint.

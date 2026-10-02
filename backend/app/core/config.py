@@ -8,7 +8,7 @@ class Settings(BaseSettings):
     SECRET_KEY: str = os.getenv("SECRET_KEY", "supersecretkey_change_in_production_32bytes")
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
-    UPLOAD_DIR: str = "static/uploads"
+    UPLOAD_DIR: str = os.getenv("UPLOAD_DIR", "/tmp/uploads" if os.getenv("VERCEL") else "static/uploads")
     OPENAI_API_KEY: Optional[str] = os.getenv("OPENAI_API_KEY")
     REDIS_URL: str = os.getenv("REDIS_URL", "redis://localhost:6379/0")
 
@@ -27,6 +27,6 @@ class Settings(BaseSettings):
     EMAIL_FROM: str = os.getenv("EMAIL_FROM", "noreply@quizapp.com")
     RESET_TOKEN_EXPIRE_MINUTES: int = 30
     LOG_LEVEL: str = os.getenv("LOG_LEVEL", "INFO")
-    LOG_DIR: str = "logs"
+    LOG_DIR: str = os.getenv("LOG_DIR", "/tmp/logs" if os.getenv("VERCEL") else "logs")
 
 settings = Settings()
