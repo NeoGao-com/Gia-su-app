@@ -5,15 +5,32 @@ from app.routers import rendering, auth, questions, exam, export, student, uploa
 from contextlib import asynccontextmanager
 import logging
 
+import asyncio
+from app.database import engine, Base, redis_client, AsyncSessionLocal
+
 logger = logging.getLogger(__name__)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     try:
-        async with engine.begin() as conn:
-            await conn.run_sync(Base.metadata.create_all)
+        async def init_db():
+            async with engine.begin() as conn:
+                await conn.run_sync(Base.metadata.create_all)
+            from app.models.user import User
+            from app.core.security import get_password_hash
+            from sqlalchemy.future import select
+            async with AsyncSessionLocal() as session:
+                res = await session.execute(select(User).limit(1))
+                if not res.scalars().first():
+                    logger.info("Auto-seeding default accounts...")
+                    t = User(email="teacher@example.com", full_name="Giáo Viên", hashed_password=get_password_hash("Password@123!"), role="TEACHER")
+                    s = User(email="student@example.com", full_name="Học Sinh", hashed_password=get_password_hash("Password@123!"), role="STUDENT")
+                    session.add_all([t, s])
+                    await session.commit()
+
+        await asyncio.wait_for(init_db(), timeout=3.5)
     except Exception as e:
-        logger.warning(f"Database table initialization warning: {e}")
+        logger.warning(f"Database table initialization warning (non-fatal): {e}")
     yield
 
 app = FastAPI(
@@ -60,8 +77,10 @@ async def health_check():
     status = {"status": "ok", "database": "unknown", "redis": "unknown"}
     code = 200
     try:
-        async with engine.begin() as conn:
-            await conn.run_sync(lambda c: None)
+        async def check_db():
+            async with engine.begin() as conn:
+                await conn.run_sync(lambda c: None)
+        await asyncio.wait_for(check_db(), timeout=2.0)
         status["database"] = "connected"
     except Exception as e:
         status["database"] = f"error: {str(e)}"

@@ -17,7 +17,13 @@ elif db_url.startswith("postgresql://") and not db_url.startswith("postgresql+")
 elif os.getenv("VERCEL") and "sqlite" in db_url and ("./quiz.db" in db_url or "quiz.db" in db_url):
     db_url = "sqlite+aiosqlite:////tmp/quiz.db"
 
-engine = create_async_engine(db_url, echo=False)
+# asyncpg does not accept ?sslmode=..., convert to ?ssl=require
+if "sslmode=" in db_url:
+    db_url = re.sub(r'[\?&]sslmode=[^&]+', '', db_url)
+    sep = '&' if '?' in db_url else '?'
+    db_url = f"{db_url}{sep}ssl=require"
+
+engine = create_async_engine(db_url, echo=False, pool_pre_ping=True)
 AsyncSessionLocal = sessionmaker(
     bind=engine,
     class_=AsyncSession,
