@@ -6,7 +6,18 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-engine = create_async_engine(settings.DATABASE_URL, echo=False)
+import os
+import re
+
+db_url = settings.DATABASE_URL
+if db_url.startswith("postgres://"):
+    db_url = db_url.replace("postgres://", "postgresql+asyncpg://", 1)
+elif db_url.startswith("postgresql://") and not db_url.startswith("postgresql+"):
+    db_url = db_url.replace("postgresql://", "postgresql+asyncpg://", 1)
+elif os.getenv("VERCEL") and "sqlite" in db_url and ("./quiz.db" in db_url or "quiz.db" in db_url):
+    db_url = "sqlite+aiosqlite:////tmp/quiz.db"
+
+engine = create_async_engine(db_url, echo=False)
 AsyncSessionLocal = sessionmaker(
     bind=engine,
     class_=AsyncSession,
