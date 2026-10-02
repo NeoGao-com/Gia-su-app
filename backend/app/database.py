@@ -23,7 +23,18 @@ if "sslmode=" in db_url:
     sep = '&' if '?' in db_url else '?'
     db_url = f"{db_url}{sep}ssl=require"
 
-engine = create_async_engine(db_url, echo=False, pool_pre_ping=True)
+# Supabase pooler / PgBouncer compatibility
+connect_args = {}
+if "pooler.supabase.com" in db_url or ":6543" in db_url:
+    connect_args["statement_cache_size"] = 0
+    connect_args["prepared_statement_cache_size"] = 0
+
+engine = create_async_engine(
+    db_url,
+    echo=False,
+    pool_pre_ping=True,
+    connect_args=connect_args
+)
 AsyncSessionLocal = sessionmaker(
     bind=engine,
     class_=AsyncSession,
