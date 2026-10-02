@@ -1,7 +1,9 @@
 import axios from 'axios';
 
+const defaultBaseURL = import.meta.env.DEV ? 'http://127.0.0.1:8000/api' : '/api';
+
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000/api',
+  baseURL: import.meta.env.VITE_API_URL || defaultBaseURL,
   withCredentials: true,
 });
 
@@ -55,12 +57,13 @@ export function resolveImageUrl(url) {
   if (url.startsWith('http://') || url.startsWith('https://') || url.startsWith('data:')) {
     return url;
   }
-  const apiBase = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000/api';
+  const defaultBase = import.meta.env.DEV ? 'http://127.0.0.1:8000/api' : '/api';
+  const apiBase = import.meta.env.VITE_API_URL || defaultBase;
   try {
-    const origin = new URL(apiBase).origin;
+    const origin = apiBase.startsWith('http') ? new URL(apiBase).origin : window.location.origin;
     return `${origin}${url.startsWith('/') ? '' : '/'}${url}`;
   } catch {
-    return `http://127.0.0.1:8000${url.startsWith('/') ? '' : '/'}${url}`;
+    return `${url.startsWith('/') ? '' : '/'}${url}`;
   }
 }
 

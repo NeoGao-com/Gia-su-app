@@ -20,7 +20,7 @@ app.add_middleware(
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
-    allow_origin_regex="http://(localhost|127\\.0\\.0\\.1)(:\\d+)?",
+    allow_origin_regex=r"https?://(localhost|127\.0\.0\.1|.*\.vercel\.app)(:\d+)?",
 )
 
 # Include Routers (All routers already include /api prefix internally)
@@ -44,6 +44,7 @@ async def read_root():
     return {"message": "Chào mừng đến với API Hệ Thống Quản Lý Thi Trắc Nghiệm"}
 
 @app.get("/health", tags=["Hệ thống"], summary="Kiểm tra trạng thái hệ thống")
+@app.get("/api/health", tags=["Hệ thống"], summary="Kiểm tra trạng thái hệ thống (prefix)")
 async def health_check():
     status = {"status": "ok", "database": "unknown", "redis": "unknown"}
     code = 200
