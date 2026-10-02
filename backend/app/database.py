@@ -9,32 +9,43 @@ logger = logging.getLogger(__name__)
 import os
 import re
 
-db_url = settings.DATABASE_URL
-if db_url.startswith("postgres://"):
-    db_url = db_url.replace("postgres://", "postgresql+asyncpg://", 1)
-elif db_url.startswith("postgresql://") and not db_url.startswith("postgresql+"):
-    db_url = db_url.replace("postgresql://", "postgresql+asyncpg://", 1)
-elif os.getenv("VERCEL") and "sqlite" in db_url and ("./quiz.db" in db_url or "quiz.db" in db_url):
-    db_url = "sqlite+aiosqlite:////tmp/quiz.db"
+import urllib.parse
+from sqlalchemy.pool import NullPool
 
-# asyncpg does not accept ?sslmode=..., convert to ?ssl=require
-if "sslmode=" in db_url:
-    db_url = re.sub(r'[\?&]sslmode=[^&]+', '', db_url)
-    sep = '&' if '?' in db_url else '?'
-    db_url = f"{db_url}{sep}ssl=require"
+def clean_database_url(url: str) -> str:
+    if not url:
+        return "sqlite+aiosqlite:///./quiz.db"
+    if url.startswith("postgres://"):
+        url = url.replace("postgres://", "postgresql+asyncpg://", 1)
+    elif url.startswith("postgresql://") and not url.startswith("postgresql+"):
+        url = url.replace("postgresql://", "postgresql+asyncpg://", 1)
+    elif os.getenv("VERCEL") and "sqlite" in url and ("./quiz.db" in url or "quiz.db" in url):
+        return "sqlite+aiosqlite:////tmp/quiz.db"
 
-# Supabase pooler / PgBouncer compatibility
-connect_args = {}
-if "pooler.supabase.com" in db_url or ":6543" in db_url:
-    connect_args["statement_cache_size"] = 0
-    connect_args["prepared_statement_cache_size"] = 0
+    if "postgresql" in url:
+        u = urllib.parse.urlsplit(url)
+        params = urllib.parse.parse_qs(u.query)
+        clean_params = {"ssl": "require"}
+        new_query = urllib.parse.urlencode(clean_params)
+        return urllib.parse.urlunsplit((u.scheme, u.netloc, u.path, new_query, u.fragment))
+    return url
 
-engine = create_async_engine(
-    db_url,
-    echo=False,
-    pool_pre_ping=True,
-    connect_args=connect_args
-)
+db_url = clean_database_url(settings.DATABASE_URL)
+
+engine_kwargs = {"echo": False}
+if "postgresql" in db_url:
+    engine_kwargs["connect_args"] = {
+        "statement_cache_size": 0,
+        "command_timeout": 30
+    }
+    if os.getenv("VERCEL"):
+        engine_kwargs["poolclass"] = NullPool
+    else:
+        engine_kwargs["pool_pre_ping"] = True
+else:
+    engine_kwargs["pool_pre_ping"] = True
+
+engine = create_async_engine(db_url, **engine_kwargs)
 AsyncSessionLocal = sessionmaker(
     bind=engine,
     class_=AsyncSession,

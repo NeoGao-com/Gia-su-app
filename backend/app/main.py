@@ -10,27 +10,31 @@ from app.database import engine, Base, redis_client, AsyncSessionLocal
 
 logger = logging.getLogger(__name__)
 
+async def init_db_tables():
+    try:
+        async with engine.begin() as conn:
+            await conn.run_sync(Base.metadata.create_all)
+        from app.models.user import User
+        from app.core.security import get_password_hash
+        from sqlalchemy.future import select
+        async with AsyncSessionLocal() as session:
+            res = await session.execute(select(User).limit(1))
+            if not res.scalars().first():
+                logger.info("Auto-seeding default accounts...")
+                t = User(email="teacher@example.com", full_name="Giáo Viên", hashed_password=get_password_hash("Password@123!"), role="TEACHER")
+                s = User(email="student@example.com", full_name="Học Sinh", hashed_password=get_password_hash("Password@123!"), role="STUDENT")
+                session.add_all([t, s])
+                await session.commit()
+                logger.info("Default accounts created successfully!")
+        return {"status": "success", "message": "Database initialized and seeded"}
+    except Exception as e:
+        logger.warning(f"Database table initialization warning: {e}")
+        return {"status": "warning", "message": str(e)}
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    try:
-        async def init_db():
-            async with engine.begin() as conn:
-                await conn.run_sync(Base.metadata.create_all)
-            from app.models.user import User
-            from app.core.security import get_password_hash
-            from sqlalchemy.future import select
-            async with AsyncSessionLocal() as session:
-                res = await session.execute(select(User).limit(1))
-                if not res.scalars().first():
-                    logger.info("Auto-seeding default accounts...")
-                    t = User(email="teacher@example.com", full_name="Giáo Viên", hashed_password=get_password_hash("Password@123!"), role="TEACHER")
-                    s = User(email="student@example.com", full_name="Học Sinh", hashed_password=get_password_hash("Password@123!"), role="STUDENT")
-                    session.add_all([t, s])
-                    await session.commit()
-
-        await asyncio.wait_for(init_db(), timeout=3.5)
-    except Exception as e:
-        logger.warning(f"Database table initialization warning (non-fatal): {e}")
+    # Non-blocking async init
+    asyncio.create_task(init_db_tables())
     yield
 
 app = FastAPI(
@@ -75,16 +79,14 @@ async def read_root():
 @app.get("/api/health", tags=["Hệ thống"], summary="Kiểm tra trạng thái hệ thống (prefix)")
 async def health_check():
     status = {"status": "ok", "database": "unknown", "redis": "unknown"}
-    code = 200
     try:
         async def check_db():
             async with engine.begin() as conn:
                 await conn.run_sync(lambda c: None)
-        await asyncio.wait_for(check_db(), timeout=2.0)
+        await asyncio.wait_for(check_db(), timeout=3.0)
         status["database"] = "connected"
     except Exception as e:
         status["database"] = f"error: {str(e)}"
-        code = 503
 
     try:
         if redis_client:
@@ -96,3 +98,9 @@ async def health_check():
         status["redis"] = f"error: {str(e)}"
     
     return status
+
+@app.get("/api/init-db", tags=["Hệ thống"], summary="Khởi tạo bảng cơ sở dữ liệu Supabase/PostgreSQL")
+@app.post("/api/init-db", tags=["Hệ thống"], summary="Khởi tạo bảng cơ sở dữ liệu Supabase/PostgreSQL")
+async def trigger_init_db():
+    result = await init_db_tables()
+    return result

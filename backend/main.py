@@ -14,8 +14,9 @@ except Exception as e:
     err_msg = str(e)
     err_tb = traceback.format_exc()
     
+    @app.api_route("/", methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"])
     @app.api_route("/{path:path}", methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"])
-    async def fallback_error(path: str):
+    async def fallback_error(path: str = ""):
         return JSONResponse(
             status_code=500,
             content={
