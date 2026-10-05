@@ -26,7 +26,24 @@ async def init_db_tables():
                 session.add_all([t, s])
                 await session.commit()
                 logger.info("Default accounts created successfully!")
-        return {"status": "success", "message": "Database initialized and seeded"}
+        # Create performance optimization indexes
+        from sqlalchemy import text
+        indexes = [
+            "CREATE INDEX IF NOT EXISTS idx_questions_lookup ON questions (subject, grade_level, chapter, lesson, topic)",
+            "CREATE INDEX IF NOT EXISTS idx_questions_creator ON questions (created_by_id, status)",
+            "CREATE INDEX IF NOT EXISTS idx_classrooms_instructor ON classrooms (instructor_id, is_deleted)",
+            "CREATE INDEX IF NOT EXISTS idx_assignments_classroom ON assignments (classroom_id, is_active)",
+            "CREATE INDEX IF NOT EXISTS idx_exams_creator ON exams (created_by_id, exam_type)",
+            "CREATE INDEX IF NOT EXISTS idx_submissions_exam ON exam_submissions (exam_id, student_id)",
+        ]
+        async with engine.begin() as conn:
+            for idx_sql in indexes:
+                try:
+                    await conn.execute(text(idx_sql))
+                except Exception:
+                    pass
+
+        return {"status": "success", "message": "Database initialized, indexed and seeded"}
     except Exception as e:
         logger.warning(f"Database table initialization warning: {e}")
         return {"status": "warning", "message": str(e)}
@@ -45,6 +62,11 @@ app = FastAPI(
     redoc_url="/redoc",
     lifespan=lifespan
 )
+
+from starlette.middleware.gzip import GZipMiddleware
+
+# GZip Compression Middleware (Compress payloads > 1KB by 70-85%)
+app.add_middleware(GZipMiddleware, minimum_size=1000)
 
 # CORS Middleware
 app.add_middleware(

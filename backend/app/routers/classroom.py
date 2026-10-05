@@ -23,9 +23,19 @@ from app.core.config import settings
 from app.models.user import User
 from app.models.exam import Exam, ExamSubmission
 
+import json
+
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api/classrooms", tags=["classroom"])
+
+async def invalidate_classroom_cache():
+    try:
+        keys = await redis_client.keys("classrooms:list:*")
+        if keys:
+            await redis_client.delete(*keys)
+    except Exception:
+        pass
 
 @router.post("", response_model=ClassroomResponse, summary="Tạo lớp học mới")
 @router.post("/", response_model=ClassroomResponse, include_in_schema=False)
@@ -60,6 +70,7 @@ async def create_classroom(
     )
     result = await db.execute(query)
     cl = result.scalars().first()
+    await invalidate_classroom_cache()
     logger.info(f"Classroom created: {cl.id} ({cl.name}) by {current_user.email} from IP {client_ip}")
     return cl
 
@@ -71,6 +82,14 @@ async def get_classrooms(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
+    cache_key = f"classrooms:list:{current_user.id}:{current_user.role}:{page}:{limit}"
+    cached = await redis_client.get(cache_key)
+    if cached:
+        try:
+            return json.loads(cached)
+        except Exception:
+            pass
+
     offset = (page - 1) * limit
     query = select(Classroom).options(
         selectinload(Classroom.instructor),
@@ -97,13 +116,19 @@ async def get_classrooms(
     classrooms = result.scalars().all()
     classrooms_response = [ClassroomResponse.model_validate(c).model_dump(mode="json") for c in classrooms]
 
-    return {
+    res_dict = {
         "total": total,
         "page": page,
         "limit": limit,
         "total_pages": (total + limit - 1) // limit if limit > 0 else 0,
         "items": classrooms_response
     }
+    try:
+        await redis_client.set(cache_key, json.dumps(res_dict), ex=30)
+    except Exception:
+        pass
+
+    return res_dict
 
 @router.post("/join", response_model=ClassroomResponse, summary="Tham gia lớp học bằng mã code", dependencies=[Depends(parse_rate_limit(settings.JOIN_CLASS_RATE_LIMIT))])
 async def join_classroom(

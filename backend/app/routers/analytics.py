@@ -2,8 +2,8 @@ from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from sqlalchemy import func
-from typing import Dict, Any, List
-from app.database import get_db
+import json
+from app.database import get_db, redis_client
 from app.models.exam import Exam, ExamSubmission
 from app.models.question import Question
 from app.models.classroom import Classroom
@@ -18,6 +18,14 @@ async def get_teacher_summary(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_teacher)
 ):
+    cache_key = f"analytics:summary:{current_user.id}"
+    cached = await redis_client.get(cache_key)
+    if cached:
+        try:
+            return json.loads(cached)
+        except Exception:
+            pass
+
     # Total exams
     exams_count_res = await db.execute(select(func.count(Exam.id)))
     exams_count = exams_count_res.scalar() or 0
@@ -65,7 +73,7 @@ async def get_teacher_summary(
         {"name": name, "count": count} for name, count in score_ranges.items()
     ]
 
-    return {
+    res_data = {
         "exams_count": int(exams_count),
         "questions_count": int(questions_count),
         "classrooms_count": int(classrooms_count),
@@ -73,3 +81,9 @@ async def get_teacher_summary(
         "average_score": float(avg_score),
         "score_distribution": distribution_data
     }
+    try:
+        await redis_client.set(cache_key, json.dumps(res_data), ex=60)
+    except Exception:
+        pass
+
+    return res_data

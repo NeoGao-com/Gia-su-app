@@ -136,16 +136,91 @@ class SafeRedis:
             self._record_failure()
             return False
 
-class DummyRedis:
-    async def get(self, *args, **kwargs): return None
-    async def set(self, *args, **kwargs): return True
-    async def delete(self, *args, **kwargs): return True
-    async def incr(self, *args, **kwargs): return 1
-    async def keys(self, *args, **kwargs): return []
-    async def ping(self, *args, **kwargs): return False
+import fnmatch
+
+class InMemoryCache:
+    """High-performance in-memory cache with TTL support for serverless/local environments."""
+    def __init__(self, max_items=3000):
+        self._store = {}
+        self._expires = {}
+        self._max_items = max_items
+
+    def _prune(self):
+        now = time.time()
+        expired = [k for k, exp in self._expires.items() if exp and exp < now]
+        for k in expired:
+            self._store.pop(k, None)
+            self._expires.pop(k, None)
+        if len(self._store) > self._max_items:
+            excess = len(self._store) - self._max_items
+            old_keys = list(self._store.keys())[:excess]
+            for k in old_keys:
+                self._store.pop(k, None)
+                self._expires.pop(k, None)
+
+    async def get(self, key: str, *args, **kwargs):
+        now = time.time()
+        exp = self._expires.get(key)
+        if exp and exp < now:
+            self._store.pop(key, None)
+            self._expires.pop(key, None)
+            return None
+        val = self._store.get(key)
+        return str(val) if val is not None else None
+
+    async def set(self, key: str, value, ex=None, expire=None, px=None, **kwargs):
+        self._prune()
+        ttl = ex if ex is not None else expire
+        if px is not None:
+            ttl = px / 1000.0
+        now = time.time()
+        self._store[key] = str(value) if not isinstance(value, (str, int, float)) else value
+        if ttl:
+            self._expires[key] = now + float(ttl)
+        else:
+            self._expires.pop(key, None)
+        return True
+
+    async def delete(self, *keys):
+        count = 0
+        for k in keys:
+            if k in self._store:
+                self._store.pop(k, None)
+                self._expires.pop(k, None)
+                count += 1
+        return count
+
+    async def incr(self, key: str, amount: int = 1):
+        self._prune()
+        now = time.time()
+        exp = self._expires.get(key)
+        if exp and exp < now:
+            self._store.pop(key, None)
+            self._expires.pop(key, None)
+        val = int(self._store.get(key, 0)) + amount
+        self._store[key] = val
+        return val
+
+    async def keys(self, pattern: str = "*"):
+        now = time.time()
+        res = []
+        for k, exp in list(self._expires.items()):
+            if exp and exp < now:
+                self._store.pop(k, None)
+                self._expires.pop(k, None)
+                continue
+            if fnmatch.fnmatch(k, pattern):
+                res.append(k)
+        for k in list(self._store.keys()):
+            if k not in res and fnmatch.fnmatch(k, pattern):
+                res.append(k)
+        return res
+
+    async def ping(self, *args, **kwargs):
+        return True
 
 if os.getenv("VERCEL") and ("localhost" in settings.REDIS_URL or "127.0.0.1" in settings.REDIS_URL or not settings.REDIS_URL):
-    redis_client = DummyRedis()
+    redis_client = InMemoryCache()
 else:
     redis_client = SafeRedis(settings.REDIS_URL)
 
