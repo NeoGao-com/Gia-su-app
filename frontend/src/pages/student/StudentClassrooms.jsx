@@ -27,9 +27,9 @@ export function StudentClassrooms() {
     } catch {
       // Fallback to standard classrooms endpoint
       try {
-        const fallback = await api.get('/classrooms/?limit=50');
-        const items = fallback.data?.items || fallback.data || [];
-        setClassrooms(Array.isArray(items) ? items : []);
+        const fallback = await api.get('/classrooms', { params: { limit: 50 } });
+        const items = Array.isArray(fallback.data?.items) ? fallback.data.items : (Array.isArray(fallback.data) ? fallback.data : []);
+        setClassrooms(items);
       } catch {
         setClassrooms([]);
       }

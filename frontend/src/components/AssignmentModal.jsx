@@ -59,9 +59,14 @@ export function AssignmentModal({ exam, exams = [], examType, isOpen, onClose, o
     const loadClasses = async () => {
       setLoadingClasses(true);
       try {
-        const res = await api.get('/classrooms/?limit=100');
+        const res = await api.get('/classrooms', { params: { limit: 100 } });
         if (cancelled) return;
-        setClassrooms(res.data.items || res.data || []);
+        const items = Array.isArray(res.data?.items)
+          ? res.data.items
+          : Array.isArray(res.data)
+            ? res.data
+            : [];
+        setClassrooms(items);
       } catch {
         if (!cancelled) setClassrooms([]);
       } finally {

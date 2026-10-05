@@ -48,10 +48,14 @@ export function AssignByLessonModal({ isOpen, onClose, onSuccess, defaultClassro
       setLoadingTree(true);
       try {
         const [classRes, treeRes] = await Promise.all([
-          api.get('/classrooms/?limit=100'),
+          api.get('/classrooms', { params: { limit: 100 } }),
           api.get('/questions/tree/structure')
         ]);
-        const classes = classRes.data.items || classRes.data || [];
+        const classes = Array.isArray(classRes.data?.items)
+          ? classRes.data.items
+          : Array.isArray(classRes.data)
+            ? classRes.data
+            : [];
         setClassrooms(classes);
         if (!selectedClassId && classes.length > 0) {
           setSelectedClassId(String(classes[0].id));

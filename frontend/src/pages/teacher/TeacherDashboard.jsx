@@ -38,7 +38,7 @@ export function TeacherDashboard() {
         setLoading(true);
         const [summaryRes, classRes, examRes, studentsRes] = await Promise.all([
           api.get('/analytics/summary').catch(() => ({ data: {} })),
-          api.get('/classrooms/?limit=6').catch(() => ({ data: { items: [] } })),
+          api.get('/classrooms', { params: { limit: 6 } }).catch(() => ({ data: { items: [] } })),
           api.get('/exams?limit=6').catch(() => ({ data: { items: [] } })),
           api.get('/classrooms/students/all').catch(() => ({ data: [] })),
         ]);

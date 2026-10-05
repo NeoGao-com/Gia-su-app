@@ -44,11 +44,16 @@ export function AssignmentManagement() {
   useEffect(() => {
     const fetchClassrooms = async () => {
       try {
-        const res = await api.get('/classrooms/?limit=100');
-        const items = res.data.items || res.data || [];
+        const res = await api.get('/classrooms', { params: { limit: 100 } });
+        const items = Array.isArray(res.data?.items)
+          ? res.data.items
+          : Array.isArray(res.data)
+            ? res.data
+            : [];
         setClassrooms(items);
       } catch (err) {
         console.error('Error fetching classrooms:', err);
+        setClassrooms([]);
       }
     };
     fetchClassrooms();
@@ -76,7 +81,12 @@ export function AssignmentManagement() {
         params.classroom_id = selectedClassFilter;
       }
       const res = await api.get('/classrooms/assignments/all', { params });
-      setAssignments(res.data || []);
+      const items = Array.isArray(res.data)
+        ? res.data
+        : Array.isArray(res.data?.items)
+          ? res.data.items
+          : [];
+      setAssignments(items);
     } catch (err) {
       console.error('Error fetching assignments:', err);
       setAssignments([]);
@@ -91,8 +101,13 @@ export function AssignmentManagement() {
       const res = await api.get('/exams', {
         params: { page: examPage, limit: 12, search: examSearch || undefined, exam_type: 'ASSIGNMENT' }
       });
-      setExams(res.data.items || res.data || []);
-      setTotalExams(res.data.total || (res.data.items ? res.data.items.length : 0));
+      const items = Array.isArray(res.data?.items)
+        ? res.data.items
+        : Array.isArray(res.data)
+          ? res.data
+          : [];
+      setExams(items);
+      setTotalExams(res.data?.total || items.length);
     } catch (err) {
       console.error('Error fetching exams:', err);
       setExams([]);

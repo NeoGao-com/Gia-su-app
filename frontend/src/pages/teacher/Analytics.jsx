@@ -26,7 +26,7 @@ export function Analytics() {
         const [summaryRes, examsRes, classRes] = await Promise.all([
           api.get('/analytics/summary').catch(() => ({ data: {} })),
           api.get('/exams').catch(() => ({ data: [] })),
-          api.get('/classrooms/?limit=100').catch(() => ({ data: [] }))
+          api.get('/classrooms', { params: { limit: 100 } }).catch(() => ({ data: [] }))
         ]);
 
         setStats(summaryRes.data || {});

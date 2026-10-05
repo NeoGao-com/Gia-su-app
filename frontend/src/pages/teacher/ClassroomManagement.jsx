@@ -55,7 +55,7 @@ export function ClassroomManagement() {
 
   const refreshClassrooms = async () => {
     try {
-      const res = await api.get('/classrooms/?limit=100');
+      const res = await api.get('/classrooms', { params: { limit: 100 } });
       const items = Array.isArray(res.data?.items) ? res.data.items : (Array.isArray(res.data) ? res.data : []);
       setClassrooms(items);
       return items;
@@ -90,7 +90,7 @@ export function ClassroomManagement() {
     const load = async () => {
       try {
         const [classRes, studRes] = await Promise.all([
-          api.get('/classrooms/?limit=100'),
+          api.get('/classrooms', { params: { limit: 100 } }),
           api.get('/classrooms/students/all')
         ]);
         if (cancelled) return;
@@ -153,7 +153,7 @@ export function ClassroomManagement() {
     e.preventDefault();
     if (!form.name.trim()) return;
     try {
-      const res = await api.post('/classrooms/', form);
+      const res = await api.post('/classrooms', form);
       setIsClassModalOpen(false);
       setForm({ name: '', description: '' });
       await refreshClassrooms();
