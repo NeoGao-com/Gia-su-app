@@ -1,6 +1,8 @@
+from __future__ import annotations
 import os
 import json
 import logging
+from typing import Optional, List, Dict, Any
 from openai import OpenAI
 from app.core.config import settings
 
