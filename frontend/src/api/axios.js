@@ -10,71 +10,60 @@ const api = axios.create({
 // --- High-Performance In-Memory Client Cache & Request Deduplication ---
 const responseCache = new Map();
 const inflightRequests = new Map();
-const CACHE_TTL_MS = 20000; // 20s TTL for fast tab switching & navigation
+const CACHE_TTL_MS = 25000; // 25s TTL for fast tab switching & navigation
 
 export function clearApiCache() {
   responseCache.clear();
 }
 
-function getCacheKey(config) {
-  const paramsStr = config.params ? JSON.stringify(config.params) : '';
-  return `${config.method || 'get'}:${config.url || ''}:${paramsStr}`;
+function getCacheKey(url, config) {
+  const paramsStr = config?.params ? JSON.stringify(config.params) : '';
+  return `GET:${url}:${paramsStr}`;
 }
 
-const originalAdapter = api.defaults.adapter || axios.defaults.adapter;
-
-api.defaults.adapter = async (config) => {
-  const method = (config.method || 'get').toLowerCase();
-
-  // Invalidate cache immediately on mutations
-  if (['post', 'put', 'patch', 'delete'].includes(method)) {
-    responseCache.clear();
-    return originalAdapter(config);
-  }
-
-  // Only cache GET requests unless Cache-Control explicitly forbids it
+const originalGet = api.get.bind(api);
+api.get = async function (url, config = {}) {
   const isNoCache = config.headers && (config.headers['Cache-Control'] === 'no-cache' || config.headers['Pragma'] === 'no-cache');
-  if (method === 'get' && !isNoCache) {
-    const key = getCacheKey(config);
-    const now = Date.now();
-    const cached = responseCache.get(key);
-
-    if (cached && now - cached.timestamp < CACHE_TTL_MS) {
-      return {
-        data: JSON.parse(JSON.stringify(cached.data)),
-        status: 200,
-        statusText: 'OK (Cache)',
-        headers: { ...cached.headers, 'x-client-cache': 'HIT' },
-        config,
-        request: {}
-      };
-    }
-
-    if (inflightRequests.has(key)) {
-      return inflightRequests.get(key);
-    }
-
-    const requestPromise = (async () => {
-      try {
-        const response = await originalAdapter(config);
-        if (response.status === 200) {
-          responseCache.set(key, {
-            data: response.data,
-            headers: response.headers,
-            timestamp: Date.now()
-          });
-        }
-        return response;
-      } finally {
-        inflightRequests.delete(key);
-      }
-    })();
-
-    inflightRequests.set(key, requestPromise);
-    return requestPromise;
+  if (isNoCache) {
+    return originalGet(url, config);
   }
 
-  return originalAdapter(config);
+  const key = getCacheKey(url, config);
+  const now = Date.now();
+  const cached = responseCache.get(key);
+
+  if (cached && now - cached.timestamp < CACHE_TTL_MS) {
+    return {
+      data: JSON.parse(JSON.stringify(cached.data)),
+      status: 200,
+      statusText: 'OK (Client Cache)',
+      headers: { ...cached.headers, 'x-client-cache': 'HIT' },
+      config,
+    };
+  }
+
+  if (inflightRequests.has(key)) {
+    return inflightRequests.get(key);
+  }
+
+  const reqPromise = (async () => {
+    try {
+      const response = await originalGet(url, config);
+      if (response && response.status === 200) {
+        responseCache.set(key, {
+          data: response.data,
+          headers: response.headers,
+          timestamp: Date.now(),
+        });
+      }
+      return response;
+    } finally {
+      inflightRequests.delete(key);
+    }
+  })();
+
+  inflightRequests.set(key, reqPromise);
+  return reqPromise;
 };
 
 // Helper lấy cookie theo tên (dùng cho csrf_token)
@@ -95,6 +84,7 @@ api.interceptors.request.use(
 
     const method = config.method ? config.method.toUpperCase() : '';
     if (['POST', 'PUT', 'PATCH', 'DELETE'].includes(method)) {
+      responseCache.clear();
       const csrfToken = getCookie('csrf_token');
       if (csrfToken) {
         config.headers['X-CSRF-Token'] = csrfToken;
