@@ -33,8 +33,9 @@ async def init_db_tables():
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Non-blocking async init
-    asyncio.create_task(init_db_tables())
+    # Non-blocking async init only on non-serverless environments
+    if not os.getenv("VERCEL"):
+        asyncio.create_task(init_db_tables())
     yield
 
 app = FastAPI(
