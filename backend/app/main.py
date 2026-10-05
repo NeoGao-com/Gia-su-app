@@ -1,12 +1,12 @@
+import os
+import sys
+import asyncio
+import logging
+from contextlib import asynccontextmanager
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
-from app.database import engine, Base, redis_client
-from app.routers import rendering, auth, questions, exam, export, student, upload, classroom, analytics, uploads_protected, tasks, ai, notifications, ai_config
-from contextlib import asynccontextmanager
-import logging
-
-import asyncio
 from app.database import engine, Base, redis_client, AsyncSessionLocal
+from app.routers import rendering, auth, questions, exam, export, student, upload, classroom, analytics, uploads_protected, tasks, ai, notifications, ai_config
 
 logger = logging.getLogger(__name__)
 
