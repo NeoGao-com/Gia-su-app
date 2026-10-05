@@ -136,7 +136,18 @@ class SafeRedis:
             self._record_failure()
             return False
 
-redis_client = SafeRedis(settings.REDIS_URL)
+class DummyRedis:
+    async def get(self, *args, **kwargs): return None
+    async def set(self, *args, **kwargs): return True
+    async def delete(self, *args, **kwargs): return True
+    async def incr(self, *args, **kwargs): return 1
+    async def keys(self, *args, **kwargs): return []
+    async def ping(self, *args, **kwargs): return False
+
+if os.getenv("VERCEL") and ("localhost" in settings.REDIS_URL or "127.0.0.1" in settings.REDIS_URL or not settings.REDIS_URL):
+    redis_client = DummyRedis()
+else:
+    redis_client = SafeRedis(settings.REDIS_URL)
 
 async def get_db():
     async with AsyncSessionLocal() as session:

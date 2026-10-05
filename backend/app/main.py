@@ -81,18 +81,19 @@ async def read_root():
 async def health_check():
     status = {"status": "ok", "database": "unknown", "redis": "unknown"}
     try:
+        from sqlalchemy import text
         async def check_db():
-            async with engine.begin() as conn:
-                await conn.run_sync(lambda c: None)
-        await asyncio.wait_for(check_db(), timeout=3.0)
+            async with engine.connect() as conn:
+                await conn.execute(text("SELECT 1"))
+        await asyncio.wait_for(check_db(), timeout=8.0)
         status["database"] = "connected"
     except Exception as e:
         status["database"] = f"error: {str(e)}"
 
     try:
         if redis_client:
-            await redis_client.ping()
-            status["redis"] = "connected"
+            is_ok = await redis_client.ping()
+            status["redis"] = "connected" if is_ok else "disabled"
         else:
             status["redis"] = "disabled"
     except Exception as e:
