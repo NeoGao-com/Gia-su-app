@@ -7,6 +7,7 @@ import { RootRedirect, PageLoader } from './components/RootRedirect'
 import { Login } from './pages/auth/Login'
 import { Register } from './pages/auth/Register'
 import { ForgotPassword } from './pages/auth/ForgotPassword'
+import { OAuthCallback } from './pages/auth/OAuthCallback'
 import { ErrorBoundary } from './components/ErrorBoundary'
 import { ToastProvider } from './context/ToastContext'
 import {
@@ -27,6 +28,7 @@ createRoot(document.getElementById('root')).render(
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
+          <Route path="/oauth-callback" element={<OAuthCallback />} />
 
           {/* Student Routes */}
           <Route element={<ProtectedRoute allowedRoles={['student']} />}>

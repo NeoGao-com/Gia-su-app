@@ -56,4 +56,11 @@ class Settings(BaseSettings):
     LOG_LEVEL: str = os.getenv("LOG_LEVEL", "INFO")
     LOG_DIR: str = os.getenv("LOG_DIR", "/tmp/logs" if os.getenv("VERCEL") else "logs")
 
+    # OAuth Settings (Google & Zalo)
+    GOOGLE_CLIENT_ID: Optional[str] = os.getenv("GOOGLE_CLIENT_ID")
+    GOOGLE_CLIENT_SECRET: Optional[str] = os.getenv("GOOGLE_CLIENT_SECRET")
+    ZALO_APP_ID: Optional[str] = os.getenv("ZALO_APP_ID")
+    ZALO_APP_SECRET: Optional[str] = os.getenv("ZALO_APP_SECRET")
+    FRONTEND_URL: str = os.getenv("FRONTEND_URL", "https://gia-su-app-psi.vercel.app")
+
 settings = Settings()

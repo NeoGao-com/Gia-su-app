@@ -6,7 +6,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from app.database import engine, Base, redis_client, AsyncSessionLocal
-from app.routers import rendering, auth, questions, exam, export, student, upload, classroom, analytics, uploads_protected, tasks, ai, notifications, ai_config
+from app.routers import rendering, auth, questions, exam, export, student, upload, classroom, analytics, uploads_protected, tasks, ai, notifications, ai_config, oauth
 
 logger = logging.getLogger(__name__)
 
@@ -71,6 +71,7 @@ app.include_router(tasks.router)
 app.include_router(ai.router)
 app.include_router(notifications.router)
 app.include_router(ai_config.router)
+app.include_router(oauth.router)
 
 @app.get("/", tags=["Hệ thống"])
 async def read_root():
