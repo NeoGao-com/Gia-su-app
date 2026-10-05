@@ -93,15 +93,15 @@ export function ToastProvider({ children }) {
             },
             info: {
               icon: Info,
-              bg: 'bg-pastel-purple text-white',
-              border: 'border-pastel-purpleDark/30',
-              accent: 'bg-pastel-purpleLight',
+              bg: 'bg-indigo-600 text-white',
+              border: 'border-indigo-700/30',
+              accent: 'bg-indigo-400',
             },
           }[t.type] || {
             icon: Info,
-            bg: 'bg-gray-800 text-white',
-            border: 'border-gray-700',
-            accent: 'bg-gray-600',
+            bg: 'bg-slate-900 text-white',
+            border: 'border-slate-800',
+            accent: 'bg-slate-700',
           };
 
           const IconComponent = config.icon;
@@ -130,25 +130,25 @@ export function ToastProvider({ children }) {
       {/* Modern Confirm Modal */}
       {confirmDialog && (
         <div className="fixed inset-0 z-[10000] flex items-center justify-center bg-black/40 backdrop-blur-xs p-4 animate-in fade-in duration-150">
-          <div className="bg-white rounded-3xl p-6 sm:p-7 max-w-md w-full shadow-2xl border border-gray-100 animate-in zoom-in-95 duration-200">
-            <h3 className="text-lg font-bold text-gray-800 mb-2">
+          <div className="bg-white rounded-3xl p-6 sm:p-7 max-w-md w-full shadow-2xl border border-slate-100 animate-in zoom-in-95 duration-200">
+            <h3 className="text-lg font-bold text-slate-900 mb-2">
               {confirmDialog.title}
             </h3>
-            <p className="text-sm text-gray-600 mb-6 leading-relaxed">
+            <p className="text-sm text-slate-600 mb-6 leading-relaxed">
               {confirmDialog.message}
             </p>
             <div className="flex justify-end space-x-3">
               <button
                 type="button"
                 onClick={confirmDialog.onCancel}
-                className="px-4 py-2 border border-gray-200 text-gray-700 rounded-xl text-xs font-semibold hover:bg-gray-50 transition"
+                className="px-4 py-2 border border-slate-200 text-slate-700 rounded-xl text-xs font-semibold hover:bg-slate-50 transition cursor-pointer"
               >
                 {confirmDialog.cancelText}
               </button>
               <button
                 type="button"
                 onClick={confirmDialog.onConfirm}
-                className="px-5 py-2 bg-pastel-purple hover:bg-pastel-purpleDark text-white rounded-xl text-xs font-bold transition shadow-sm"
+                className="px-5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold transition shadow-xs cursor-pointer"
               >
                 {confirmDialog.confirmText}
               </button>

@@ -141,22 +141,22 @@ export function Login() {
   const zaloCallbackUrl = `${currentOrigin}/api/auth/oauth/zalo/callback`;
 
   return (
-    <div className="min-h-screen bg-[#f8f9fe] flex items-center justify-center p-4 font-sans relative overflow-hidden">
-      {/* Background soft ambient accents */}
-      <div className="absolute -top-32 -left-32 w-96 h-96 bg-purple-200/40 rounded-full blur-3xl pointer-events-none" />
-      <div className="absolute -bottom-32 -right-32 w-96 h-96 bg-indigo-200/40 rounded-full blur-3xl pointer-events-none" />
+    <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4 font-sans relative overflow-hidden">
+      {/* Background ambient accents */}
+      <div className="absolute -top-32 -left-32 w-96 h-96 bg-indigo-100/50 rounded-full blur-3xl pointer-events-none" />
+      <div className="absolute -bottom-32 -right-32 w-96 h-96 bg-slate-200/50 rounded-full blur-3xl pointer-events-none" />
 
-      <div className="bg-white rounded-4xl p-8 sm:p-10 max-w-md w-full shadow-card border border-gray-100 relative z-10">
+      <div className="bg-white rounded-3xl p-8 sm:p-10 max-w-md w-full shadow-card border border-slate-200/90 relative z-10">
         <div className="text-center mb-8">
-          <div className="w-14 h-14 rounded-3xl bg-gradient-to-tr from-pastel-purple to-pastel-purpleDark flex items-center justify-center text-white mx-auto mb-4 shadow-md shadow-pastel-purple/20">
+          <div className="w-14 h-14 rounded-2xl bg-indigo-600 flex items-center justify-center text-white mx-auto mb-4 shadow-sm shadow-indigo-600/20">
             <BookOpen className="w-7 h-7" />
           </div>
-          <h2 className="text-2xl sm:text-3xl font-extrabold text-gray-900 tracking-tight">TutorQuiz</h2>
-          <p className="text-xs sm:text-sm text-gray-500 mt-1.5 font-medium">Hệ thống khảo thí & Dạy kèm trắc nghiệm thông minh</p>
+          <h2 className="text-2xl sm:text-3xl font-bold text-slate-900 tracking-tight">TutorQuiz</h2>
+          <p className="text-xs sm:text-sm text-slate-500 mt-1.5 font-medium">Hệ thống khảo thí &amp; Học tập trực tuyến thông minh</p>
         </div>
 
         {error && (
-          <div className="mb-5 bg-rose-50 border border-rose-200 text-rose-700 px-4 py-3 rounded-2xl text-xs sm:text-sm font-medium animate-fadeIn">
+          <div className="mb-5 bg-rose-50 border border-rose-200 text-rose-800 px-4 py-3 rounded-xl text-xs sm:text-sm font-medium animate-fadeIn">
             {error}
           </div>
         )}
@@ -164,11 +164,11 @@ export function Login() {
         {/* --- FORM ĐĂNG NHẬP TRUYỀN THỐNG --- */}
         <form onSubmit={handleLogin} className="space-y-4">
           <div>
-            <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1.5">
+            <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
               Email hoặc Tên đăng nhập
             </label>
             <div className="relative">
-              <span className="absolute inset-y-0 left-0 pl-3.5 flex items-center text-gray-400">
+              <span className="absolute inset-y-0 left-0 pl-3.5 flex items-center text-slate-400">
                 <Mail className="w-5 h-5" />
               </span>
               <input
@@ -176,7 +176,7 @@ export function Login() {
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="w-full pl-11 pr-4 py-3 rounded-2xl border border-gray-200 bg-gray-50/50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-pastel-purple/40 focus:border-pastel-purple text-sm transition"
+                className="w-full pl-11 pr-4 py-3 rounded-xl border border-slate-200 bg-slate-50/60 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-600 text-sm text-slate-900 transition"
                 placeholder="teacher@example.com"
               />
             </div>
@@ -184,15 +184,15 @@ export function Login() {
 
           <div>
             <div className="flex justify-between items-center mb-1.5">
-              <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider">
+              <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider">
                 Mật khẩu
               </label>
-              <Link to="/forgot-password" className="text-xs text-pastel-purpleDark hover:underline font-semibold">
+              <Link to="/forgot-password" className="text-xs text-indigo-600 hover:text-indigo-800 font-semibold hover:underline">
                 Quên mật khẩu?
               </Link>
             </div>
             <div className="relative">
-              <span className="absolute inset-y-0 left-0 pl-3.5 flex items-center text-gray-400">
+              <span className="absolute inset-y-0 left-0 pl-3.5 flex items-center text-slate-400">
                 <Lock className="w-5 h-5" />
               </span>
               <input
@@ -200,13 +200,13 @@ export function Login() {
                 required
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full pl-11 pr-11 py-3 rounded-2xl border border-gray-200 bg-gray-50/50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-pastel-purple/40 focus:border-pastel-purple text-sm transition"
+                className="w-full pl-11 pr-11 py-3 rounded-xl border border-slate-200 bg-slate-50/60 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-600 text-sm text-slate-900 transition"
                 placeholder="••••••••"
               />
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
-                className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-gray-400 hover:text-gray-600 focus:outline-none"
+                className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-slate-400 hover:text-slate-600 focus:outline-none cursor-pointer"
               >
                 {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
               </button>
@@ -216,7 +216,7 @@ export function Login() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-gradient-to-r from-pastel-purple to-pastel-purpleDark text-white py-3.5 rounded-2xl font-bold text-sm hover:opacity-95 transition shadow-sm hover:shadow flex items-center justify-center space-x-2 disabled:opacity-50 mt-2 cursor-pointer"
+            className="w-full bg-indigo-600 hover:bg-indigo-700 text-white py-3.5 rounded-xl font-semibold text-sm transition shadow-xs flex items-center justify-center space-x-2 disabled:opacity-50 mt-2 cursor-pointer"
           >
             <span>{loading ? 'Đang xác thực...' : 'Đăng nhập mật khẩu'}</span>
             {!loading && <ArrowRight className="w-4 h-4" />}
@@ -226,23 +226,23 @@ export function Login() {
         {/* --- DÒNG PHÂN CÁCH HOẶC --- */}
         <div className="relative my-6">
           <div className="absolute inset-0 flex items-center">
-            <div className="w-full border-t border-gray-200"></div>
+            <div className="w-full border-t border-slate-200"></div>
           </div>
           <div className="relative flex justify-center text-xs uppercase">
-            <span className="bg-white px-3 text-gray-400 font-bold tracking-wider text-[11px]">
+            <span className="bg-white px-3 text-slate-400 font-bold tracking-wider text-[11px]">
               Hoặc đăng nhập nhanh bằng
             </span>
           </div>
         </div>
 
-        {/* --- KHỐI ĐĂNG NHẬP GOOGLE & ZALO TO BẢN & NỔI BẬT --- */}
+        {/* --- KHỐI ĐĂNG NHẬP GOOGLE & ZALO --- */}
         <div className="space-y-3">
           {/* Nút Đăng nhập bằng Google */}
           <button
             type="button"
             onClick={() => handleSocialLogin('google')}
             disabled={socialLoading !== null}
-            className="w-full flex items-center justify-center space-x-3 py-3.5 px-4 rounded-2xl border-2 border-gray-200 hover:border-gray-300 bg-white hover:bg-gray-50/90 text-gray-800 font-bold text-sm transition shadow-sm hover:shadow active:scale-[0.99] cursor-pointer"
+            className="w-full flex items-center justify-center space-x-3 py-3 px-4 rounded-xl border border-slate-200 hover:border-slate-300 bg-white hover:bg-slate-50 text-slate-800 font-semibold text-sm transition shadow-2xs active:scale-[0.99] cursor-pointer"
           >
             <svg className="w-5 h-5 shrink-0" viewBox="0 0 24 24">
               <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
@@ -258,9 +258,9 @@ export function Login() {
             type="button"
             onClick={() => handleSocialLogin('zalo')}
             disabled={socialLoading !== null}
-            className="w-full flex items-center justify-center space-x-3 py-3.5 px-4 rounded-2xl bg-[#0068FF] hover:bg-[#0057d9] text-white font-bold text-sm transition shadow-sm hover:shadow active:scale-[0.99] cursor-pointer"
+            className="w-full flex items-center justify-center space-x-3 py-3 px-4 rounded-xl bg-[#0068FF] hover:bg-[#0057d9] text-white font-semibold text-sm transition shadow-2xs active:scale-[0.99] cursor-pointer"
           >
-            <div className="w-6 h-6 rounded-lg bg-white flex items-center justify-center font-black text-[#0068FF] text-[13px] tracking-tighter leading-none shrink-0 shadow-xs">
+            <div className="w-5 h-5 rounded-md bg-white flex items-center justify-center font-black text-[#0068FF] text-[11px] tracking-tighter leading-none shrink-0 shadow-2xs">
               Z
             </div>
             <span>Đăng nhập bằng tài khoản Zalo</span>
@@ -268,10 +268,10 @@ export function Login() {
         </div>
 
         {/* Chuyển hướng đăng ký */}
-        <div className="mt-8 pt-6 border-t border-gray-100 text-center">
-          <p className="text-xs sm:text-sm text-gray-600">
+        <div className="mt-8 pt-6 border-t border-slate-100 text-center">
+          <p className="text-xs sm:text-sm text-slate-600">
             Chưa có tài khoản?{' '}
-            <Link to="/register" className="text-pastel-purpleDark font-bold hover:underline">
+            <Link to="/register" className="text-indigo-600 font-bold hover:underline">
               Đăng ký tài khoản mới
             </Link>
           </p>
@@ -281,10 +281,10 @@ export function Login() {
       {/* --- MODAL XÁC THỰC SOCIAL & CẤU HÌNH LIÊN KẾT --- */}
       {oauthModal && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-fadeIn">
-          <div className="bg-white rounded-3xl max-w-md w-full p-6 sm:p-7 shadow-2xl border border-gray-100 relative">
+          <div className="bg-white rounded-3xl max-w-md w-full p-6 sm:p-7 shadow-2xl border border-slate-200 relative">
             <button
               onClick={() => setOauthModal(null)}
-              className="absolute top-4 right-4 p-2 text-gray-400 hover:text-gray-600 rounded-full hover:bg-gray-100 transition cursor-pointer"
+              className="absolute top-4 right-4 p-2 text-slate-400 hover:text-slate-600 rounded-full hover:bg-slate-100 transition cursor-pointer"
             >
               <X className="w-5 h-5" />
             </button>
@@ -305,21 +305,21 @@ export function Login() {
                 </div>
               )}
               <div>
-                <h3 className="text-base font-extrabold text-gray-900">
+                <h3 className="text-base font-extrabold text-slate-900">
                   {oauthModal === 'google' ? 'Đăng nhập tài khoản Google' : 'Đăng nhập tài khoản Zalo'}
                 </h3>
-                <p className="text-xs text-gray-500 font-medium">Xác thực tài khoản người dùng trực tiếp</p>
+                <p className="text-xs text-slate-500 font-medium">Xác thực tài khoản người dùng trực tiếp</p>
               </div>
             </div>
 
             {/* FORM NHẬP THÔNG TIN TÀI KHOẢN ĐỂ VÀO NGAY */}
             <form onSubmit={handleDirectSocialSubmit} className="space-y-3.5 mb-4">
               <div>
-                <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">
+                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
                   {oauthModal === 'google' ? 'Địa chỉ Email Google' : 'Số điện thoại / ID Zalo'}
                 </label>
                 <div className="relative">
-                  <span className="absolute inset-y-0 left-0 pl-3.5 flex items-center text-gray-400">
+                  <span className="absolute inset-y-0 left-0 pl-3.5 flex items-center text-slate-400">
                     <User className="w-4 h-4" />
                   </span>
                   <input
@@ -327,14 +327,14 @@ export function Login() {
                     required
                     value={socialUserEmail}
                     onChange={(e) => setSocialUserEmail(e.target.value)}
-                    className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-gray-200 bg-gray-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-pastel-purple/40 text-sm font-medium"
+                    className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/30 text-sm font-medium text-slate-900"
                     placeholder={oauthModal === 'google' ? 'vd: nguyen.van.a@gmail.com' : 'vd: 0987654321'}
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">
+                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
                   Họ và tên hiển thị
                 </label>
                 <input
@@ -342,7 +342,7 @@ export function Login() {
                   required
                   value={socialUserName}
                   onChange={(e) => setSocialUserName(e.target.value)}
-                  className="w-full px-4 py-2.5 rounded-xl border border-gray-200 bg-gray-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-pastel-purple/40 text-sm font-medium"
+                  className="w-full px-4 py-2.5 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/30 text-sm font-medium text-slate-900"
                   placeholder="vd: Nguyễn Văn A"
                 />
               </div>
@@ -350,7 +350,7 @@ export function Login() {
               <button
                 type="submit"
                 disabled={socialLoading !== null}
-                className="w-full bg-gradient-to-r from-pastel-purple to-pastel-purpleDark text-white py-3 rounded-2xl font-bold text-sm hover:opacity-95 transition shadow-sm flex items-center justify-center space-x-2 cursor-pointer mt-1"
+                className="w-full bg-indigo-600 hover:bg-indigo-700 text-white py-3 rounded-xl font-semibold text-sm transition shadow-xs flex items-center justify-center space-x-2 cursor-pointer mt-1"
               >
                 <Sparkles className="w-4 h-4" />
                 <span>
@@ -360,36 +360,36 @@ export function Login() {
             </form>
 
             {/* Mục Cấu hình dành cho Quản trị viên */}
-            <div className="border-t border-gray-100 pt-3">
+            <div className="border-t border-slate-100 pt-3">
               <button
                 type="button"
                 onClick={() => setShowConfigDetails(!showConfigDetails)}
-                className="text-[12px] text-gray-500 hover:text-gray-800 flex items-center justify-between w-full font-semibold cursor-pointer"
+                className="text-[12px] text-slate-500 hover:text-slate-800 flex items-center justify-between w-full font-semibold cursor-pointer"
               >
                 <span className="flex items-center space-x-1.5">
-                  <Settings2 className="w-3.5 h-3.5 text-gray-400" />
+                  <Settings2 className="w-3.5 h-3.5 text-slate-400" />
                   <span>Dành cho Quản trị viên: Tích hợp OAuth chính thức</span>
                 </span>
                 <span>{showConfigDetails ? '▲ Ẩn' : '▼ Chi tiết'}</span>
               </button>
 
               {showConfigDetails && (
-                <div className="bg-gray-50 rounded-2xl p-3 border border-gray-200/80 mt-2 space-y-2 text-[11px] animate-fadeIn">
-                  <div className="flex justify-between items-center font-bold text-gray-700">
+                <div className="bg-slate-50 rounded-2xl p-3 border border-slate-200 mt-2 space-y-2 text-[11px] animate-fadeIn">
+                  <div className="flex justify-between items-center font-bold text-slate-700">
                     <span>Callback URL (Redirect URI):</span>
                     <button
                       type="button"
                       onClick={() => copyCallbackUrl(oauthModal === 'google' ? googleCallbackUrl : zaloCallbackUrl)}
-                      className="text-pastel-purpleDark hover:underline flex items-center space-x-1 font-bold cursor-pointer"
+                      className="text-indigo-600 hover:underline flex items-center space-x-1 font-bold cursor-pointer"
                     >
                       {copiedUrl ? <Check className="w-3 h-3 text-emerald-600" /> : <Copy className="w-3 h-3" />}
                       <span>{copiedUrl ? 'Đã sao chép' : 'Sao chép'}</span>
                     </button>
                   </div>
-                  <div className="bg-white p-2 rounded-xl border border-gray-200 font-mono text-gray-600 break-all select-all">
+                  <div className="bg-white p-2 rounded-xl border border-slate-200 font-mono text-slate-600 break-all select-all">
                     {oauthModal === 'google' ? googleCallbackUrl : zaloCallbackUrl}
                   </div>
-                  <p className="text-gray-500">
+                  <p className="text-slate-500">
                     {oauthModal === 'google'
                       ? 'Thêm Callback URL này vào Google Cloud Console và điền GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET trên Vercel.'
                       : 'Thêm Callback URL này vào Zalo for Developers và điền ZALO_APP_ID, ZALO_APP_SECRET trên Vercel.'}

@@ -785,7 +785,7 @@ export function ExamCreator() {
   });
 
   return (
-    <div className="min-h-screen bg-[#f8f9fe] font-sans pb-16">
+    <div className="min-h-screen bg-slate-50 font-sans pb-16">
       <Navbar />
       <div className="flex">
         <Sidebar role="teacher" />
@@ -793,26 +793,26 @@ export function ExamCreator() {
           {/* Header */}
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
             <div>
-              <h1 className="text-2xl font-extrabold text-gray-900 tracking-tight flex items-center space-x-2.5">
-                <div className="w-10 h-10 rounded-2xl bg-pastel-purple/10 flex items-center justify-center text-pastel-purpleDark">
+              <h1 className="text-2xl font-extrabold text-slate-900 tracking-tight flex items-center space-x-2.5">
+                <div className="w-10 h-10 rounded-2xl bg-indigo-50 border border-indigo-100 flex items-center justify-center text-indigo-600">
                   <Sparkles className="w-5 h-5" />
                 </div>
                 <span>Thiết Kế Ma Trận & Sinh Đề Thi Trắc Nghiệm</span>
               </h1>
-              <p className="text-xs sm:text-sm text-gray-500 mt-1">
+              <p className="text-xs sm:text-sm text-slate-500 mt-1">
                 Tạo ma trận chuẩn 4 mức độ nhận thức của Bộ GD&ĐT, sinh hàng loạt mã đề thi xáo trộn câu và đáp án chống quay cóp.
               </p>
             </div>
 
             {/* Mode Tabs */}
-            <div className="flex flex-wrap bg-white p-1.5 rounded-2xl border border-gray-200 shadow-xs gap-1">
+            <div className="flex flex-wrap bg-white p-1.5 rounded-2xl border border-slate-200 shadow-xs gap-1">
               <button
                 type="button"
                 onClick={() => setActiveTab('repository')}
                 className={`px-4 py-2 rounded-xl text-xs font-bold transition flex items-center space-x-2 ${
                   activeTab === 'repository' 
-                    ? 'bg-gradient-to-r from-pastel-purple to-pastel-purpleDark text-white shadow-xs' 
-                    : 'text-gray-600 hover:bg-gray-50'
+                    ? 'bg-indigo-600 text-white shadow-xs' 
+                    : 'text-slate-600 hover:bg-slate-50'
                 }`}
               >
                 <Archive className="w-4 h-4" />
@@ -823,8 +823,8 @@ export function ExamCreator() {
                 onClick={() => setActiveTab('matrix')}
                 className={`px-4 py-2 rounded-xl text-xs font-bold transition flex items-center space-x-2 ${
                   activeTab === 'matrix' 
-                    ? 'bg-gradient-to-r from-pastel-purple to-pastel-purpleDark text-white shadow-xs' 
-                    : 'text-gray-600 hover:bg-gray-50'
+                    ? 'bg-indigo-600 text-white shadow-xs' 
+                    : 'text-slate-600 hover:bg-slate-50'
                 }`}
               >
                 <Layers className="w-4 h-4" />
@@ -835,8 +835,8 @@ export function ExamCreator() {
                 onClick={() => setActiveTab('matrix-select')}
                 className={`px-4 py-2 rounded-xl text-xs font-bold transition flex items-center space-x-2 ${
                   activeTab === 'matrix-select' 
-                    ? 'bg-gradient-to-r from-pastel-purple to-pastel-purpleDark text-white shadow-xs' 
-                    : 'text-gray-600 hover:bg-gray-50'
+                    ? 'bg-indigo-600 text-white shadow-xs' 
+                    : 'text-slate-600 hover:bg-slate-50'
                 }`}
               >
                 <FileText className="w-4 h-4" />
@@ -847,8 +847,8 @@ export function ExamCreator() {
                 onClick={() => setActiveTab('manual')}
                 className={`px-4 py-2 rounded-xl text-xs font-bold transition flex items-center space-x-2 ${
                   activeTab === 'manual' 
-                    ? 'bg-gradient-to-r from-pastel-purple to-pastel-purpleDark text-white shadow-xs' 
-                    : 'text-gray-600 hover:bg-gray-50'
+                    ? 'bg-indigo-600 text-white shadow-xs' 
+                    : 'text-slate-600 hover:bg-slate-50'
                 }`}
               >
                 <BookOpen className="w-4 h-4" />
@@ -857,7 +857,7 @@ export function ExamCreator() {
               <button
                 type="button"
                 onClick={() => setIsImportFileModalOpen(true)}
-                className="px-3.5 py-2 rounded-xl text-xs font-bold transition flex items-center space-x-1.5 bg-gradient-to-r from-pastel-purple to-indigo-600 hover:from-pastel-purpleDark hover:to-indigo-700 text-white shadow-xs interactive-btn"
+                className="px-3.5 py-2 rounded-xl text-xs font-bold transition flex items-center space-x-1.5 bg-slate-900 hover:bg-slate-800 text-white shadow-xs"
                 title="Tự động nhận diện câu hỏi từ tệp Word (.docx, .doc), PDF (.pdf), Markdown (.md)"
               >
                 <Upload className="w-3.5 h-3.5" />
@@ -867,7 +867,7 @@ export function ExamCreator() {
           </div>
 
           {error && (
-            <div className="p-4 bg-rose-50 border border-rose-200 text-rose-700 rounded-2xl text-xs sm:text-sm font-medium flex items-center justify-between">
+            <div className="p-4 bg-rose-50 border border-rose-200 text-rose-700 rounded-xl text-xs sm:text-sm font-medium flex items-center justify-between">
               <span>{error}</span>
               <button onClick={() => setError(null)} className="font-bold text-xs uppercase underline">Đóng</button>
             </div>
@@ -877,17 +877,17 @@ export function ExamCreator() {
           {activeTab === 'repository' && (
             <div className="space-y-4 animate-in fade-in duration-150">
               {/* Stats & Search Bar */}
-              <div className="bg-white rounded-3xl border border-gray-100 p-5 shadow-xs flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
+              <div className="bg-white rounded-2xl border border-slate-200/90 p-5 shadow-xs flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
                 <div className="flex flex-wrap items-center gap-3">
-                  <div className="flex items-center space-x-2 px-3 py-1.5 rounded-xl bg-purple-50 text-pastel-purpleDark font-bold text-xs">
+                  <div className="flex items-center space-x-2 px-3 py-1.5 rounded-xl bg-indigo-50 border border-indigo-100 text-indigo-700 font-bold text-xs">
                     <Archive className="w-3.5 h-3.5" />
                     <span>Tổng số: {totalExams} đề thi</span>
                   </div>
-                  <div className="flex items-center space-x-2 px-3 py-1.5 rounded-xl bg-emerald-50 text-emerald-700 font-bold text-xs">
+                  <div className="flex items-center space-x-2 px-3 py-1.5 rounded-xl bg-emerald-50 border border-emerald-100 text-emerald-700 font-bold text-xs">
                     <CheckCircle2 className="w-3.5 h-3.5" />
                     <span>Đã xuất bản: {exams.filter(e => e.is_published).length}</span>
                   </div>
-                  <div className="flex items-center space-x-2 px-3 py-1.5 rounded-xl bg-amber-50 text-amber-700 font-bold text-xs">
+                  <div className="flex items-center space-x-2 px-3 py-1.5 rounded-xl bg-amber-50 border border-amber-100 text-amber-700 font-bold text-xs">
                     <Clock className="w-3.5 h-3.5" />
                     <span>Bản nháp: {exams.filter(e => !e.is_published).length}</span>
                   </div>
@@ -898,7 +898,7 @@ export function ExamCreator() {
                   <select
                     value={examStatusFilter}
                     onChange={(e) => setExamStatusFilter(e.target.value)}
-                    className="px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs font-semibold text-gray-700 focus:outline-none focus:border-pastel-purple"
+                    className="px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs font-semibold text-slate-700 focus:outline-none focus:border-indigo-600"
                   >
                     <option value="all">Tất cả trạng thái</option>
                     <option value="published">Đã xuất bản</option>
@@ -907,7 +907,7 @@ export function ExamCreator() {
 
                   {/* Search input */}
                   <div className="relative flex-1 sm:w-64">
-                    <Search className="w-4 h-4 text-gray-400 absolute left-3 top-2.5" />
+                    <Search className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
                     <input
                       type="text"
                       placeholder="Tìm kiếm đề thi..."
@@ -916,14 +916,14 @@ export function ExamCreator() {
                         setExamSearch(e.target.value);
                         setExamPage(1);
                       }}
-                      className="w-full pl-9 pr-4 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs sm:text-sm focus:outline-none focus:border-pastel-purple"
+                      className="w-full pl-9 pr-4 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs sm:text-sm focus:outline-none focus:border-indigo-600 focus:ring-2 focus:ring-indigo-100"
                     />
                   </div>
 
                   {/* Quick create button */}
                   <button
                     onClick={() => setActiveTab('matrix')}
-                    className="flex items-center space-x-1.5 px-4 py-2 bg-gradient-to-r from-pastel-purple to-pastel-purpleDark text-white rounded-xl text-xs font-bold shadow-xs hover:opacity-95 transition whitespace-nowrap"
+                    className="flex items-center space-x-1.5 px-4 py-2 bg-indigo-600 text-white rounded-xl text-xs font-bold shadow-xs hover:bg-indigo-700 transition whitespace-nowrap"
                   >
                     <Plus className="w-4 h-4" />
                     <span>Tạo đề mới</span>
@@ -932,11 +932,11 @@ export function ExamCreator() {
               </div>
 
               {/* Exams Table */}
-              <div className="bg-white rounded-3xl border border-gray-100 shadow-xs overflow-hidden">
+              <div className="bg-white rounded-2xl border border-slate-200/90 shadow-sm overflow-hidden">
                 <div className="overflow-x-auto">
                   <table className="w-full text-left border-collapse">
                     <thead>
-                      <tr className="bg-gray-50 text-[11px] font-bold text-gray-500 uppercase tracking-wider border-b border-gray-100">
+                      <tr className="bg-slate-50 text-[11px] font-bold text-slate-500 uppercase tracking-wider border-b border-slate-200">
                         <th className="p-4">Tiêu đề đề thi</th>
                         <th className="p-4">Thời gian</th>
                         <th className="p-4">Số lượng câu</th>
@@ -945,22 +945,22 @@ export function ExamCreator() {
                         <th className="p-4 text-right">Thao tác</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-gray-100 text-xs sm:text-sm">
+                    <tbody className="divide-y divide-slate-100 text-xs sm:text-sm">
                       {loadingExams ? (
                         <tr>
-                          <td colSpan="6" className="py-16 text-center text-gray-400">
+                          <td colSpan="6" className="py-16 text-center text-slate-400">
                             Đang tải kho đề thi...
                           </td>
                         </tr>
                       ) : filteredExams.length === 0 ? (
                         <tr>
-                          <td colSpan="6" className="py-16 text-center text-gray-400">
+                          <td colSpan="6" className="py-16 text-center text-slate-400">
                             <div className="flex flex-col items-center justify-center space-y-2">
-                              <Archive className="w-8 h-8 text-gray-300" />
-                              <span className="font-medium">Chưa có đề thi nào trong kho.</span>
+                              <Archive className="w-8 h-8 text-slate-300" />
+                              <span className="font-semibold text-slate-700">Chưa có đề thi nào trong kho.</span>
                               <button
                                 onClick={() => setActiveTab('matrix')}
-                                className="text-xs font-bold text-pastel-purpleDark hover:underline mt-1"
+                                className="text-xs font-bold text-indigo-600 hover:text-indigo-800 hover:underline mt-1"
                               >
                                 + Thiết kế ma trận & sinh đề thi ngay
                               </button>
@@ -969,12 +969,12 @@ export function ExamCreator() {
                         </tr>
                       ) : (
                         filteredExams.map((exam) => (
-                          <tr key={exam.id} className="hover:bg-gray-50/60 transition">
+                          <tr key={exam.id} className="hover:bg-slate-50/80 transition">
                             <td className="p-4">
-                              <div className="font-bold text-gray-800 text-sm flex items-center space-x-2">
+                              <div className="font-bold text-slate-900 text-sm flex items-center space-x-2">
                                 <span>{exam.title}</span>
                               </div>
-                              <div className="text-[11px] text-gray-400 mt-0.5 flex items-center space-x-2">
+                              <div className="text-[11px] text-slate-400 mt-0.5 flex items-center space-x-2">
                                 <span>Mã ID: #{exam.id}</span>
                                 {exam.created_at && (
                                   <span>• Tạo ngày: {new Date(exam.created_at).toLocaleDateString('vi-VN')}</span>
@@ -985,28 +985,28 @@ export function ExamCreator() {
                               </div>
                             </td>
 
-                            <td className="p-4 text-xs font-semibold text-gray-600">
+                            <td className="p-4 text-xs font-semibold text-slate-700 tabular-nums">
                               <div className="flex items-center space-x-1">
-                                <Clock className="w-3.5 h-3.5 text-gray-400" />
+                                <Clock className="w-3.5 h-3.5 text-slate-400" />
                                 <span>{exam.duration_minutes} phút</span>
                               </div>
                             </td>
 
-                            <td className="p-4 text-xs font-bold text-pastel-purpleDark">
+                            <td className="p-4 text-xs font-bold text-indigo-700 tabular-nums">
                               {exam.question_count ?? exam.questions?.length ?? '-'} câu
                             </td>
 
-                            <td className="p-4 text-xs text-gray-600 font-semibold">
+                            <td className="p-4 text-xs text-slate-700 font-semibold tabular-nums">
                               {exam.pass_score ?? 5.0} / 10
                             </td>
 
                             <td className="p-4">
                               <button
                                 onClick={() => handleTogglePublish(exam)}
-                                className={`inline-flex items-center space-x-1 px-2.5 py-1 rounded-full text-xs font-bold transition ${
+                                className={`inline-flex items-center space-x-1 px-2.5 py-1 rounded-full text-xs font-bold transition border ${
                                   exam.is_published
-                                    ? 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100'
-                                    : 'bg-amber-50 text-amber-700 hover:bg-amber-100'
+                                    ? 'bg-emerald-50 border-emerald-200 text-emerald-700 hover:bg-emerald-100'
+                                    : 'bg-amber-50 border-amber-200 text-amber-700 hover:bg-amber-100'
                                 }`}
                                 title="Bấm để bật/tắt xuất bản"
                               >
@@ -1023,7 +1023,7 @@ export function ExamCreator() {
                               <div className="flex items-center justify-end space-x-1.5">
                                 <button
                                   onClick={() => handleOpenPreview(exam)}
-                                  className="p-2 text-gray-500 hover:text-pastel-purpleDark hover:bg-purple-50 rounded-xl transition"
+                                  className="p-2 text-slate-500 hover:text-indigo-600 hover:bg-indigo-50 rounded-xl transition"
                                   title="Xem trước câu hỏi đề thi"
                                 >
                                   <Eye className="w-4 h-4" />
@@ -1034,7 +1034,7 @@ export function ExamCreator() {
                                     setSelectedExamForAssign(exam);
                                     setAssignmentModalOpen(true);
                                   }}
-                                  className="inline-flex items-center space-x-1 px-3 py-1.5 bg-pastel-purple/10 text-pastel-purpleDark font-bold rounded-xl text-xs hover:bg-pastel-purple hover:text-white transition"
+                                  className="inline-flex items-center space-x-1 px-3 py-1.5 bg-indigo-50 border border-indigo-200/70 text-indigo-700 font-bold rounded-xl text-xs hover:bg-indigo-100 transition"
                                   title="Giao đề thi cho lớp học"
                                 >
                                   <Send className="w-3.5 h-3.5" />
@@ -1043,7 +1043,7 @@ export function ExamCreator() {
 
                                 <button
                                   onClick={() => handleOpenEdit(exam)}
-                                  className="p-2 text-gray-400 hover:text-pastel-purpleDark hover:bg-gray-100 rounded-xl transition"
+                                  className="p-2 text-slate-400 hover:text-slate-800 hover:bg-slate-100 rounded-xl transition"
                                   title="Chỉnh sửa thông tin đề thi"
                                 >
                                   <Edit3 className="w-4 h-4" />
@@ -1051,7 +1051,7 @@ export function ExamCreator() {
 
                                 <button
                                   onClick={() => handleDeleteExam(exam)}
-                                  className="p-2 text-gray-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition"
+                                  className="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition"
                                   title="Xóa đề thi khỏi kho"
                                 >
                                   <Trash2 className="w-4 h-4" />
@@ -1067,20 +1067,20 @@ export function ExamCreator() {
 
                 {/* Pagination */}
                 {totalExamPages > 1 && (
-                  <div className="flex items-center justify-between p-4 border-t border-gray-100 text-xs text-gray-500">
-                    <span>Trang {examPage} / {totalExamPages} (Tổng cộng {totalExams} đề thi)</span>
+                  <div className="flex items-center justify-between p-4 border-t border-slate-100 text-xs text-slate-500">
+                    <span>Trang <strong className="text-slate-800">{examPage}</strong> / {totalExamPages} (Tổng cộng {totalExams} đề thi)</span>
                     <div className="flex items-center space-x-2">
                       <button
                         disabled={examPage === 1}
                         onClick={() => setExamPage(p => Math.max(1, p - 1))}
-                        className="px-3 py-1.5 border border-gray-200 rounded-xl font-bold disabled:opacity-40 hover:bg-gray-50 transition"
+                        className="px-3 py-1.5 border border-slate-300 rounded-xl font-bold disabled:opacity-40 hover:bg-slate-50 transition"
                       >
                         Trước
                       </button>
                       <button
                         disabled={examPage === totalExamPages}
                         onClick={() => setExamPage(p => Math.min(totalExamPages, p + 1))}
-                        className="px-3 py-1.5 border border-gray-200 rounded-xl font-bold disabled:opacity-40 hover:bg-gray-50 transition"
+                        className="px-3 py-1.5 border border-slate-300 rounded-xl font-bold disabled:opacity-40 hover:bg-slate-50 transition"
                       >
                         Sau
                       </button>
@@ -1094,36 +1094,36 @@ export function ExamCreator() {
           {activeTab !== 'repository' && (
           <form onSubmit={handleCreateExamAndMatrix} className="space-y-6">
             {/* 1. THÔNG TIN CHUNG BÀI KIỂM TRA */}
-            <div className="bg-white p-6 sm:p-8 rounded-3xl border border-gray-100 shadow-card space-y-4">
-              <h2 className="text-sm font-bold text-gray-900 uppercase tracking-wider flex items-center space-x-2 border-b border-gray-100 pb-3">
-                <span className="w-6 h-6 bg-pastel-purple/10 text-pastel-purpleDark rounded-lg flex items-center justify-center text-xs font-extrabold">1</span>
+            <div className="bg-white p-6 sm:p-8 rounded-2xl border border-slate-200/90 shadow-sm space-y-4">
+              <h2 className="text-sm font-bold text-slate-900 uppercase tracking-wider flex items-center space-x-2 border-b border-slate-100 pb-3">
+                <span className="w-6 h-6 bg-indigo-50 text-indigo-700 rounded-lg flex items-center justify-center text-xs font-extrabold">1</span>
                 <span>Thông tin chung bài kiểm tra</span>
               </h2>
 
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 pt-1">
                 <div className="md:col-span-2">
-                  <label className="block text-xs font-bold text-gray-700 uppercase mb-1.5">Tiêu đề bài thi / đợt thi *</label>
+                  <label className="block text-xs font-bold text-slate-700 uppercase mb-1.5">Tiêu đề bài thi / đợt thi *</label>
                   <input
                     type="text"
                     value={title}
                     onChange={e => setTitle(e.target.value)}
                     placeholder="Ví dụ: Kiểm tra giữa kì 1 Toán 10"
-                    className="w-full px-4 py-3 rounded-2xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-pastel-purple text-sm bg-gray-50/50"
+                    className="w-full px-4 py-2.5 rounded-xl border border-slate-300 focus:outline-none focus:border-indigo-600 focus:ring-2 focus:ring-indigo-100 text-sm bg-white"
                     required
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-bold text-gray-700 uppercase mb-1.5">Thời gian làm bài (phút)</label>
+                  <label className="block text-xs font-bold text-slate-700 uppercase mb-1.5">Thời gian làm bài (phút)</label>
                   <input
                     type="number"
                     value={duration}
                     onChange={e => setDuration(e.target.value)}
                     min="5"
-                    className="w-full px-4 py-3 rounded-2xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-pastel-purple text-sm bg-gray-50/50 font-bold"
+                    className="w-full px-4 py-2.5 rounded-xl border border-slate-300 focus:outline-none focus:border-indigo-600 focus:ring-2 focus:ring-indigo-100 text-sm bg-white font-bold tabular-nums"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-bold text-gray-700 uppercase mb-1.5">Điểm đạt (Thang 10)</label>
+                  <label className="block text-xs font-bold text-slate-700 uppercase mb-1.5">Điểm đạt (Thang 10)</label>
                   <input
                     type="number"
                     step="0.5"
@@ -1131,18 +1131,18 @@ export function ExamCreator() {
                     onChange={e => setPassScore(e.target.value)}
                     min="0"
                     max="10"
-                    className="w-full px-4 py-3 rounded-2xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-pastel-purple text-sm bg-gray-50/50 font-bold"
+                    className="w-full px-4 py-2.5 rounded-xl border border-slate-300 focus:outline-none focus:border-indigo-600 focus:ring-2 focus:ring-indigo-100 text-sm bg-white font-bold tabular-nums"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-bold text-gray-700 uppercase mb-1.5">Số lần làm tối đa</label>
+                  <label className="block text-xs font-bold text-slate-700 uppercase mb-1.5">Số lần làm tối đa</label>
                   <input
                     type="number"
                     value={maxAttempts}
                     onChange={e => setMaxAttempts(e.target.value)}
                     min="1"
-                    className="w-full px-4 py-3 rounded-2xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-pastel-purple text-sm bg-gray-50/50 font-bold"
+                    className="w-full px-4 py-2.5 rounded-xl border border-slate-300 focus:outline-none focus:border-indigo-600 focus:ring-2 focus:ring-indigo-100 text-sm bg-white font-bold tabular-nums"
                   />
                 </div>
 
@@ -1152,9 +1152,9 @@ export function ExamCreator() {
                       type="checkbox"
                       checked={showAnswers}
                       onChange={e => setShowAnswers(e.target.checked)}
-                      className="rounded border-gray-300 text-pastel-purple focus:ring-pastel-purple w-5 h-5"
+                      className="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 w-4 h-4"
                     />
-                    <span className="text-xs sm:text-sm font-semibold text-gray-700">
+                    <span className="text-xs sm:text-sm font-semibold text-slate-700">
                       Cho phép học sinh xem đáp án và lời giải chi tiết sau khi nộp bài
                     </span>
                   </label>
@@ -1162,18 +1162,18 @@ export function ExamCreator() {
               </div>
             </div>
 
-            {/* 2. CẤU HÌNH SINH MÃ ĐỀ & CHỐNG GIAN LẬN (CHO CẢ TAB 1 VÀ TAB 2) */}
+            {/* 2. CẤU HÌNH SINH MÃ ĐỀ & CHỐNG GIAN LẬN */}
             {(activeTab === 'matrix' || activeTab === 'matrix-select') && (
-              <div className="bg-white p-6 sm:p-8 rounded-3xl border border-gray-100 shadow-card space-y-5">
-                <div className="flex items-center space-x-3 pb-3 border-b border-gray-100">
-                  <div className="w-8 h-8 rounded-xl bg-purple-50 text-pastel-purpleDark flex items-center justify-center">
+              <div className="bg-white p-6 sm:p-8 rounded-2xl border border-slate-200/90 shadow-sm space-y-5">
+                <div className="flex items-center space-x-3 pb-3 border-b border-slate-100">
+                  <div className="w-8 h-8 rounded-xl bg-indigo-50 text-indigo-700 flex items-center justify-center">
                     <Shuffle className="w-4 h-4" />
                   </div>
                   <div>
-                    <h3 className="font-extrabold text-gray-900 text-sm sm:text-base">
+                    <h3 className="font-extrabold text-slate-900 text-sm sm:text-base">
                       Cấu hình Sinh Mã Đề & Xáo Trộn Đề Thi (Chống gian lận)
                     </h3>
-                    <p className="text-xs text-gray-500 mt-0.5">
+                    <p className="text-xs text-slate-500 mt-0.5">
                       Sinh hàng loạt mã đề thi khác nhau từ ma trận, xáo trộn thứ tự câu hỏi và thứ tự đáp án A, B, C, D
                     </p>
                   </div>
@@ -1182,7 +1182,7 @@ export function ExamCreator() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   {/* Số lượng mã đề */}
                   <div className="space-y-2">
-                    <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider">
+                    <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider">
                       Số lượng mẫu đề / mã đề cần sinh
                     </label>
                     <div className="flex flex-wrap items-center gap-2">
@@ -1193,34 +1193,34 @@ export function ExamCreator() {
                           onClick={() => setNumberOfVersions(num)}
                           className={`px-4 py-2 rounded-xl text-xs font-bold transition ${
                             numberOfVersions === num
-                              ? 'bg-pastel-purple text-white shadow-xs'
-                              : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                              ? 'bg-indigo-600 text-white shadow-xs'
+                              : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
                           }`}
                         >
                           {num} đề
                         </button>
                       ))}
                       <div className="flex items-center space-x-1 pl-2">
-                        <span className="text-xs text-gray-500 font-medium">Tùy chỉnh:</span>
+                        <span className="text-xs text-slate-500 font-medium">Tùy chỉnh:</span>
                         <input
                           type="number"
                           min="1"
                           max="20"
                           value={numberOfVersions}
                           onChange={e => setNumberOfVersions(Math.max(1, Math.min(20, parseInt(e.target.value) || 1)))}
-                          className="w-16 px-2.5 py-1.5 text-center font-bold text-sm bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:border-pastel-purple"
+                          className="w-16 px-2.5 py-1.5 text-center font-bold text-sm bg-slate-50 border border-slate-300 rounded-xl focus:outline-none focus:border-indigo-600"
                         />
-                        <span className="text-xs text-gray-500">đề</span>
+                        <span className="text-xs text-slate-500">đề</span>
                       </div>
                     </div>
-                    <p className="text-[11px] text-gray-400">
+                    <p className="text-[11px] text-slate-400">
                       Hệ thống hỗ trợ sinh tối đa 20 mã đề thi song song cho một đợt kiểm tra.
                     </p>
                   </div>
 
                   {/* Tiền tố mã đề */}
                   <div className="space-y-2">
-                    <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider">
+                    <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider">
                       Tiền tố mã đề
                     </label>
                     <input
@@ -1228,17 +1228,17 @@ export function ExamCreator() {
                       value={codePrefix}
                       onChange={e => setCodePrefix(e.target.value)}
                       placeholder="10 (Ví dụ: Mã 101, 102...)"
-                      className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm font-bold focus:outline-none focus:border-pastel-purple"
+                      className="w-full px-4 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-sm font-bold focus:outline-none focus:border-indigo-600"
                     />
-                    <div className="text-[11px] text-gray-500 font-medium flex items-center gap-1.5 flex-wrap">
+                    <div className="text-[11px] text-slate-500 font-medium flex items-center gap-1.5 flex-wrap">
                       <span>Mã đề dự kiến:</span>
                       <div className="flex flex-wrap gap-1">
                         {previewCodes.map((c, i) => (
-                          <span key={i} className="px-2 py-0.5 bg-purple-50 text-pastel-purpleDark rounded-md font-mono font-bold text-[10px] border border-purple-100">
+                          <span key={i} className="px-2 py-0.5 bg-indigo-50 text-indigo-700 rounded-md font-mono font-bold text-[10px] border border-indigo-200/60">
                             {c}
                           </span>
                         ))}
-                        {numberOfVersions > 6 && <span className="text-gray-400 text-[10px]">...</span>}
+                        {numberOfVersions > 6 && <span className="text-slate-400 text-[10px]">...</span>}
                       </div>
                     </div>
                   </div>
@@ -1247,42 +1247,42 @@ export function ExamCreator() {
                 {/* Tùy chọn xáo trộn (Cards) */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-1">
                   {/* Đảo đáp án */}
-                  <label className={`p-4 rounded-2xl border-2 flex items-start space-x-3.5 cursor-pointer transition ${
-                    shuffleOptions ? 'border-pastel-purple bg-purple-50/40 text-gray-900 ring-1 ring-pastel-purple/20' : 'border-gray-200 bg-white text-gray-600'
+                  <label className={`p-4 rounded-xl border-2 flex items-start space-x-3.5 cursor-pointer transition ${
+                    shuffleOptions ? 'border-indigo-600 bg-indigo-50/50 text-slate-900 ring-1 ring-indigo-200' : 'border-slate-200 bg-white text-slate-600'
                   }`}>
                     <input
                       type="checkbox"
                       checked={shuffleOptions}
                       onChange={e => setShuffleOptions(e.target.checked)}
-                      className="mt-0.5 rounded text-pastel-purple focus:ring-pastel-purple w-4 h-4 shrink-0"
+                      className="mt-0.5 rounded text-indigo-600 focus:ring-indigo-500 w-4 h-4 shrink-0"
                     />
                     <div>
-                      <div className="text-xs sm:text-sm font-bold text-gray-900 flex items-center space-x-1.5">
+                      <div className="text-xs sm:text-sm font-bold text-slate-900 flex items-center space-x-1.5">
                         <span>Đảo thứ tự đáp án (A, B, C, D)</span>
                         <span className="px-1.5 py-0.5 bg-emerald-100 text-emerald-800 rounded text-[10px] font-bold">Khuyên dùng</span>
                       </div>
-                      <p className="text-[11px] text-gray-500 mt-1 leading-relaxed">
+                      <p className="text-[11px] text-slate-500 mt-1 leading-relaxed">
                         Tự động hoán vị ngẫu nhiên 4 phương án trắc nghiệm cho từng mã đề. Vị trí đáp án đúng tự động cập nhật chính xác cho hệ thống chấm bài.
                       </p>
                     </div>
                   </label>
 
                   {/* Đảo câu hỏi */}
-                  <label className={`p-4 rounded-2xl border-2 flex items-start space-x-3.5 cursor-pointer transition ${
-                    shuffleQuestions ? 'border-pastel-purple bg-purple-50/40 text-gray-900 ring-1 ring-pastel-purple/20' : 'border-gray-200 bg-white text-gray-600'
+                  <label className={`p-4 rounded-xl border-2 flex items-start space-x-3.5 cursor-pointer transition ${
+                    shuffleQuestions ? 'border-indigo-600 bg-indigo-50/50 text-slate-900 ring-1 ring-indigo-200' : 'border-slate-200 bg-white text-slate-600'
                   }`}>
                     <input
                       type="checkbox"
                       checked={shuffleQuestions}
                       onChange={e => setShuffleQuestions(e.target.checked)}
-                      className="mt-0.5 rounded text-pastel-purple focus:ring-pastel-purple w-4 h-4 shrink-0"
+                      className="mt-0.5 rounded text-indigo-600 focus:ring-indigo-500 w-4 h-4 shrink-0"
                     />
                     <div>
-                      <div className="text-xs sm:text-sm font-bold text-gray-900 flex items-center space-x-1.5">
+                      <div className="text-xs sm:text-sm font-bold text-slate-900 flex items-center space-x-1.5">
                         <span>Đảo thứ tự câu hỏi</span>
                         <span className="px-1.5 py-0.5 bg-emerald-100 text-emerald-800 rounded text-[10px] font-bold">Khuyên dùng</span>
                       </div>
-                      <p className="text-[11px] text-gray-500 mt-1 leading-relaxed">
+                      <p className="text-[11px] text-slate-500 mt-1 leading-relaxed">
                         Xáo trộn vị trí các câu hỏi giữa các mã đề để các thí sinh ngồi cạnh nhau có thứ tự làm bài khác nhau hoàn toàn.
                       </p>
                     </div>
@@ -1291,45 +1291,45 @@ export function ExamCreator() {
 
                 {/* Phương thức bốc câu hỏi khi số đề > 1 */}
                 {numberOfVersions > 1 && (
-                  <div className="pt-3 border-t border-gray-100 space-y-2">
-                    <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider">
+                  <div className="pt-3 border-t border-slate-100 space-y-2">
+                    <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider">
                       Quy chuẩn bốc câu hỏi giữa các mã đề
                     </label>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                      <label className={`p-3.5 rounded-2xl border-2 cursor-pointer transition flex items-start space-x-3 ${
-                        !independentDraw ? 'border-pastel-purple bg-purple-50/40' : 'border-gray-200 bg-white'
+                      <label className={`p-3.5 rounded-xl border-2 cursor-pointer transition flex items-start space-x-3 ${
+                        !independentDraw ? 'border-indigo-600 bg-indigo-50/50' : 'border-slate-200 bg-white'
                       }`}>
                         <input
                           type="radio"
                           name="drawMode"
                           checked={!independentDraw}
                           onChange={() => setIndependentDraw(false)}
-                          className="mt-0.5 text-pastel-purple focus:ring-pastel-purple"
+                          className="mt-0.5 text-indigo-600 focus:ring-indigo-500"
                         />
                         <div>
-                          <div className="text-xs font-bold text-gray-900 flex items-center space-x-1.5">
+                          <div className="text-xs font-bold text-slate-900 flex items-center space-x-1.5">
                             <span>Dùng chung 1 tổ hợp câu hỏi chuẩn</span>
-                            <span className="text-[10px] bg-blue-100 text-blue-800 px-1.5 py-0.2 rounded font-bold">Chuẩn Bộ GD&ĐT</span>
+                            <span className="text-[10px] bg-indigo-100 text-indigo-800 px-1.5 py-0.5 rounded font-bold">Chuẩn Bộ GD&ĐT</span>
                           </div>
-                          <div className="text-[11px] text-gray-500 mt-0.5 leading-relaxed">
-                            Tất cả các mã đề dùng chung một tập câu hỏi nhưng được đảo vị trí câu và đáp án. Đảm bảo độ khó và kiến thức công bằng $100\%$.
+                          <div className="text-[11px] text-slate-500 mt-0.5 leading-relaxed">
+                            Tất cả các mã đề dùng chung một tập câu hỏi nhưng được đảo vị trí câu và đáp án. Đảm bảo độ khó và kiến thức công bằng 100%.
                           </div>
                         </div>
                       </label>
 
-                      <label className={`p-3.5 rounded-2xl border-2 cursor-pointer transition flex items-start space-x-3 ${
-                        independentDraw ? 'border-pastel-purple bg-purple-50/40' : 'border-gray-200 bg-white'
+                      <label className={`p-3.5 rounded-xl border-2 cursor-pointer transition flex items-start space-x-3 ${
+                        independentDraw ? 'border-indigo-600 bg-indigo-50/50' : 'border-slate-200 bg-white'
                       }`}>
                         <input
                           type="radio"
                           name="drawMode"
                           checked={independentDraw}
                           onChange={() => setIndependentDraw(true)}
-                          className="mt-0.5 text-pastel-purple focus:ring-pastel-purple"
+                          className="mt-0.5 text-indigo-600 focus:ring-indigo-500"
                         />
                         <div>
-                          <div className="text-xs font-bold text-gray-900">Bốc câu hỏi độc lập từng đề</div>
-                          <div className="text-[11px] text-gray-500 mt-0.5 leading-relaxed">
+                          <div className="text-xs font-bold text-slate-900">Bốc câu hỏi độc lập từng đề</div>
+                          <div className="text-[11px] text-slate-500 mt-0.5 leading-relaxed">
                             Mỗi mã đề bốc ngẫu nhiên một bộ câu hỏi riêng biệt từ ngân hàng theo ma trận đã đặt. Phù hợp cho luyện tập tự do.
                           </div>
                         </div>
@@ -1345,11 +1345,11 @@ export function ExamCreator() {
               <div className="bg-white p-6 sm:p-8 rounded-3xl border border-gray-100 shadow-card space-y-6">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-gray-100 pb-3 gap-3">
                   <h2 className="text-sm font-bold text-gray-900 uppercase tracking-wider flex items-center space-x-2">
-                    <span className="w-6 h-6 bg-pastel-purple/10 text-pastel-purpleDark rounded-lg flex items-center justify-center text-xs font-extrabold">2</span>
+                    <span className="w-6 h-6 bg-indigo-50 text-indigo-700 rounded-lg flex items-center justify-center text-xs font-extrabold tabular-nums">2</span>
                     <span>Thiết kế ma trận đề thi chuẩn 4 mức độ nhận thức</span>
                   </h2>
                   <div className="flex items-center space-x-2">
-                    <span className="px-3.5 py-1 bg-purple-50 text-pastel-purpleDark rounded-full text-xs font-extrabold border border-purple-100">
+                    <span className="px-3.5 py-1 bg-indigo-50 text-indigo-700 rounded-full text-xs font-extrabold border border-indigo-100 tabular-nums">
                       Tổng: {matrixStats.total} câu ({matrixStats.pointPerQ}đ/câu)
                     </span>
                   </div>
@@ -1364,7 +1364,7 @@ export function ExamCreator() {
                       value={matrixName}
                       onChange={e => setMatrixName(e.target.value)}
                       placeholder="Ví dụ: Ma trận kiểm tra giữa kì 1 - Khối 10"
-                      className="w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-pastel-purple text-sm bg-gray-50/50"
+                      className="w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-sm bg-gray-50/50"
                       required
                     />
                   </div>
@@ -1373,7 +1373,7 @@ export function ExamCreator() {
                     <select
                       value={subject}
                       onChange={e => { setSubject(e.target.value); setChapters([]); setError(null); }}
-                      className="w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-pastel-purple text-sm bg-white font-bold"
+                      className="w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-sm bg-white font-bold"
                     >
                       <option value="">-- Chọn môn --</option>
                       {(stats?.subjects || []).map((s) => (
@@ -1386,7 +1386,7 @@ export function ExamCreator() {
                     <select
                       value={gradeLevel}
                       onChange={e => { setGradeLevel(e.target.value); setChapters([]); setError(null); }}
-                      className="w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-pastel-purple text-sm bg-white font-bold"
+                      className="w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-sm bg-white font-bold"
                     >
                       <option value="">-- Chọn khối --</option>
                       {(stats?.grades || []).map((g) => (
@@ -1397,13 +1397,13 @@ export function ExamCreator() {
                 </div>
 
                 {/* Quick actions & Tree picker */}
-                <div className="p-4 bg-purple-50/50 rounded-2xl border border-purple-100 space-y-3">
+                <div className="p-4 bg-indigo-50/40 rounded-2xl border border-indigo-100 space-y-3">
                   <div className="flex flex-wrap items-center justify-between gap-3">
                     <div className="flex items-center space-x-2">
-                      <Sliders className="w-4 h-4 text-pastel-purpleDark" />
+                      <Sliders className="w-4 h-4 text-indigo-600" />
                       <span className="text-xs font-bold text-gray-800">Công cụ hỗ trợ phân bổ ma trận tự động</span>
                     </div>
-                    <span className="text-xs font-bold text-pastel-purpleDark bg-white px-3 py-1 rounded-full border border-purple-200">
+                    <span className="text-xs font-bold text-indigo-700 bg-white px-3 py-1 rounded-full border border-indigo-200 tabular-nums">
                       Tồn kho DB {subject || '?'} Lớp {gradeLevel || '?'}: {getTotalAvailable()} câu
                     </span>
                   </div>
@@ -1415,7 +1415,7 @@ export function ExamCreator() {
                       type="button"
                       onClick={() => handleAutoDistribute(autoTotal, [40, 30, 20, 10])}
                       disabled={loadingStats || getTotalAvailable() === 0}
-                      className="px-3 py-1.5 bg-white border border-purple-200 text-pastel-purpleDark rounded-xl text-xs font-bold hover:bg-purple-50 shadow-2xs"
+                      className="px-3 py-1.5 bg-white border border-indigo-200 text-indigo-700 rounded-xl text-xs font-bold hover:bg-indigo-50 shadow-2xs cursor-pointer"
                     >
                       Chuẩn Bộ (40-30-20-10)
                     </button>
@@ -1423,7 +1423,7 @@ export function ExamCreator() {
                       type="button"
                       onClick={() => handleAutoDistribute(autoTotal, [30, 30, 30, 10])}
                       disabled={loadingStats || getTotalAvailable() === 0}
-                      className="px-3 py-1.5 bg-white border border-purple-200 text-pastel-purpleDark rounded-xl text-xs font-bold hover:bg-purple-50 shadow-2xs"
+                      className="px-3 py-1.5 bg-white border border-indigo-200 text-indigo-700 rounded-xl text-xs font-bold hover:bg-indigo-50 shadow-2xs cursor-pointer"
                     >
                       ĐGNL (30-30-30-10)
                     </button>
@@ -1431,7 +1431,7 @@ export function ExamCreator() {
                       type="button"
                       onClick={() => handleAutoDistribute(autoTotal, [50, 40, 10, 0])}
                       disabled={loadingStats || getTotalAvailable() === 0}
-                      className="px-3 py-1.5 bg-white border border-purple-200 text-pastel-purpleDark rounded-xl text-xs font-bold hover:bg-purple-50 shadow-2xs"
+                      className="px-3 py-1.5 bg-white border border-indigo-200 text-indigo-700 rounded-xl text-xs font-bold hover:bg-indigo-50 shadow-2xs cursor-pointer"
                     >
                       Cơ bản (50-40-10-0)
                     </button>
@@ -1443,13 +1443,13 @@ export function ExamCreator() {
                         min="1"
                         value={autoTotal}
                         onChange={e => setAutoTotal(e.target.value)}
-                        className="w-14 text-center font-bold text-xs bg-gray-50 border border-gray-200 rounded-lg py-0.5"
+                        className="w-14 text-center font-bold text-xs bg-gray-50 border border-gray-200 rounded-lg py-0.5 tabular-nums focus:outline-none focus:border-indigo-600"
                       />
                       <button
                         type="button"
                         onClick={() => handleAutoDistribute(autoTotal)}
                         disabled={loadingStats || getTotalAvailable() === 0}
-                        className="px-3 py-1 bg-pastel-purple text-white rounded-lg text-xs font-bold hover:bg-pastel-purpleDark"
+                        className="px-3 py-1 bg-indigo-600 text-white rounded-lg text-xs font-bold hover:bg-indigo-700 cursor-pointer shadow-2xs"
                       >
                         Phân bổ đều
                       </button>
@@ -1458,7 +1458,7 @@ export function ExamCreator() {
 
                   {/* Knowledge Tree Picker */}
                   {Object.keys(gradeHierarchy).length > 0 && (
-                    <div className="bg-white rounded-2xl border border-purple-100 overflow-hidden mt-2">
+                    <div className="bg-white rounded-2xl border border-indigo-100 overflow-hidden mt-2">
                       <div className="flex items-center gap-2 px-3 py-2 bg-gray-50/80 border-b border-gray-100">
                         <div className="relative flex-1">
                           <Search className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400" />
@@ -1466,12 +1466,12 @@ export function ExamCreator() {
                             value={pickerSearch}
                             onChange={(e) => setPickerSearch(e.target.value)}
                             placeholder="Tìm nhanh chương / bài / dạng bài..."
-                            className="w-full pl-8 pr-2 py-1.5 text-xs bg-white border border-gray-200 rounded-lg focus:outline-none focus:border-pastel-purple"
+                            className="w-full pl-8 pr-2 py-1.5 text-xs bg-white border border-gray-200 rounded-lg focus:outline-none focus:border-indigo-600 focus:ring-1 focus:ring-indigo-500"
                           />
                         </div>
-                        <button type="button" onClick={expandAllPicker} className="text-[11px] font-bold text-gray-600 hover:text-pastel-purple px-1.5 py-1 whitespace-nowrap">Mở hết</button>
-                        <button type="button" onClick={collapseAllPicker} className="text-[11px] font-bold text-gray-600 hover:text-pastel-purple px-1.5 py-1 whitespace-nowrap">Thu gọn</button>
-                        <span className="text-[11px] text-pastel-purpleDark font-bold whitespace-nowrap">{pickerSelection.size} đã chọn</span>
+                        <button type="button" onClick={expandAllPicker} className="text-[11px] font-bold text-gray-600 hover:text-indigo-600 px-1.5 py-1 whitespace-nowrap cursor-pointer">Mở hết</button>
+                        <button type="button" onClick={collapseAllPicker} className="text-[11px] font-bold text-gray-600 hover:text-indigo-600 px-1.5 py-1 whitespace-nowrap cursor-pointer">Thu gọn</button>
+                        <span className="text-[11px] text-indigo-700 font-bold whitespace-nowrap tabular-nums">{pickerSelection.size} đã chọn</span>
                       </div>
 
                       <div className="max-h-[260px] overflow-y-auto py-1">
@@ -1491,8 +1491,8 @@ export function ExamCreator() {
 
                           return (
                             <div key={chapName}>
-                              <div className="flex items-center gap-1 pl-1.5 pr-2 py-1.5 hover:bg-purple-50/70">
-                                <button type="button" onClick={() => toggleExpand(`c:${chapName}`)} className="p-1 text-gray-500 hover:bg-gray-100 rounded-md shrink-0">
+                              <div className="flex items-center gap-1 pl-1.5 pr-2 py-1.5 hover:bg-indigo-50/70">
+                                <button type="button" onClick={() => toggleExpand(`c:${chapName}`)} className="p-1 text-gray-500 hover:bg-gray-100 rounded-md shrink-0 cursor-pointer">
                                   {open ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronRight className="w-3.5 h-3.5" />}
                                 </button>
                                 <input
@@ -1500,11 +1500,11 @@ export function ExamCreator() {
                                   checked={chapChecked}
                                   ref={(el) => { if (el) el.indeterminate = chapPartial; }}
                                   onChange={() => toggleChapterPicker(chapName)}
-                                  className="w-3.5 h-3.5 rounded border-gray-300 text-pastel-purple shrink-0"
+                                  className="w-3.5 h-3.5 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 shrink-0 cursor-pointer"
                                 />
                                 {open ? <FolderOpen className="w-4 h-4 text-amber-500 shrink-0" /> : <Folder className="w-4 h-4 text-amber-500 shrink-0" />}
                                 <span className="text-xs font-extrabold text-gray-800 flex-1 truncate">{chapName}</span>
-                                <span className="text-[10px] font-bold text-pastel-purpleDark bg-purple-50 border border-purple-100 rounded-full px-2 py-0.5 whitespace-nowrap">{chapAvail} câu</span>
+                                <span className="text-[10px] font-bold text-indigo-700 bg-indigo-50 border border-indigo-100 rounded-full px-2 py-0.5 whitespace-nowrap tabular-nums">{chapAvail} câu</span>
                               </div>
 
                               {open && (
@@ -1518,8 +1518,8 @@ export function ExamCreator() {
 
                                     return (
                                       <div key={lesName}>
-                                        <div className="flex items-center gap-1 pl-1.5 pr-2 py-1.5 hover:bg-purple-50/70">
-                                          <button type="button" onClick={() => toggleExpand(`l:${chapName}|||${lesName}`)} className="p-1 text-gray-500 hover:bg-gray-100 rounded-md shrink-0">
+                                        <div className="flex items-center gap-1 pl-1.5 pr-2 py-1.5 hover:bg-indigo-50/70">
+                                          <button type="button" onClick={() => toggleExpand(`l:${chapName}|||${lesName}`)} className="p-1 text-gray-500 hover:bg-gray-100 rounded-md shrink-0 cursor-pointer">
                                             {lesOpen ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronRight className="w-3.5 h-3.5" />}
                                           </button>
                                           <input
@@ -1527,11 +1527,11 @@ export function ExamCreator() {
                                             checked={lesChecked}
                                             ref={(el) => { if (el) el.indeterminate = lesPartial; }}
                                             onChange={() => toggleLessonPicker(chapName, lesName)}
-                                            className="w-3.5 h-3.5 rounded border-gray-300 text-pastel-purple shrink-0"
+                                            className="w-3.5 h-3.5 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 shrink-0 cursor-pointer"
                                           />
                                           {lesOpen ? <FolderOpen className="w-4 h-4 text-amber-400 shrink-0" /> : <Folder className="w-4 h-4 text-amber-400 shrink-0" />}
                                           <span className="text-xs font-bold text-gray-700 flex-1 truncate">{lesName}</span>
-                                          <span className="text-[10px] text-gray-500 font-bold whitespace-nowrap">{lesAvail} câu</span>
+                                          <span className="text-[10px] text-gray-500 font-bold whitespace-nowrap tabular-nums">{lesAvail} câu</span>
                                         </div>
 
                                         {lesOpen && (
@@ -1546,16 +1546,16 @@ export function ExamCreator() {
                                               const vdc = parseInt(diffMap?.VAN_DUNG_CAO || 0);
 
                                               return (
-                                                <label key={k} className={`flex items-center gap-1.5 pl-1.5 pr-2 py-1.5 cursor-pointer hover:bg-purple-50/70 ${checked ? 'bg-purple-50/60' : ''}`}>
+                                                <label key={k} className={`flex items-center gap-1.5 pl-1.5 pr-2 py-1.5 cursor-pointer hover:bg-indigo-50/70 ${checked ? 'bg-indigo-50/60' : ''}`}>
                                                   <input
                                                     type="checkbox"
                                                     checked={checked}
                                                     onChange={() => togglePicker(k)}
-                                                    className="w-3.5 h-3.5 rounded border-gray-300 text-pastel-purple shrink-0"
+                                                    className="w-3.5 h-3.5 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 shrink-0 cursor-pointer"
                                                   />
                                                   <File className="w-3.5 h-3.5 text-gray-400 shrink-0" />
                                                   <span className="text-xs text-gray-700 font-medium flex-1 truncate">{topName}</span>
-                                                  <span className="text-[10px] text-gray-500 font-bold whitespace-nowrap">
+                                                  <span className="text-[10px] text-gray-500 font-bold whitespace-nowrap tabular-nums">
                                                     {total} câu (NB:{nb} TH:{th} VD:{vd} VDC:{vdc})
                                                   </span>
                                                 </label>
@@ -1580,7 +1580,7 @@ export function ExamCreator() {
                       type="button"
                       onClick={handleAddPicked}
                       disabled={pickerSelection.size === 0}
-                      className="px-4 py-2 bg-pastel-purple text-white rounded-xl text-xs font-bold hover:bg-pastel-purpleDark disabled:opacity-40 flex items-center gap-1.5 shadow-2xs"
+                      className="px-4 py-2 bg-indigo-600 text-white rounded-xl text-xs font-bold hover:bg-indigo-700 disabled:opacity-40 flex items-center gap-1.5 shadow-2xs cursor-pointer"
                     >
                       <Plus className="w-4 h-4" />
                       <span>Thêm {pickerSelection.size} mục đã tích vào ma trận</span>
@@ -1589,7 +1589,7 @@ export function ExamCreator() {
                       type="button"
                       onClick={handleAddAllFromDB}
                       disabled={loadingStats || Object.keys(gradeHierarchy).length === 0}
-                      className="px-4 py-2 bg-white border border-purple-200 text-pastel-purpleDark rounded-xl text-xs font-bold hover:bg-purple-50 disabled:opacity-40 flex items-center gap-1.5"
+                      className="px-4 py-2 bg-white border border-indigo-200 text-indigo-700 rounded-xl text-xs font-bold hover:bg-indigo-50 disabled:opacity-40 flex items-center gap-1.5 cursor-pointer"
                     >
                       <Layers className="w-4 h-4" />
                       <span>Thêm tất cả chương trong ngân hàng</span>
@@ -1597,7 +1597,7 @@ export function ExamCreator() {
                     <button
                       type="button"
                       onClick={handleAddChapter}
-                      className="px-4 py-2 bg-white border border-gray-200 text-gray-700 rounded-xl text-xs font-bold hover:bg-gray-100 flex items-center gap-1.5 ml-auto"
+                      className="px-4 py-2 bg-white border border-gray-200 text-gray-700 rounded-xl text-xs font-bold hover:bg-gray-100 flex items-center gap-1.5 ml-auto cursor-pointer"
                     >
                       <Plus className="w-4 h-4" />
                       <span>Thêm chương thủ công</span>
@@ -1622,7 +1622,7 @@ export function ExamCreator() {
                           {/* Chapter Header */}
                           <div className="p-4 bg-gray-50/90 border-b border-gray-200 flex flex-wrap items-center justify-between gap-3">
                             <div className="flex items-center space-x-2.5 flex-1 min-w-[240px]">
-                              <span className="w-6 h-6 rounded-lg bg-pastel-purple text-white text-xs font-extrabold flex items-center justify-center shrink-0">
+                              <span className="w-6 h-6 rounded-lg bg-indigo-600 text-white text-xs font-extrabold flex items-center justify-center shrink-0 tabular-nums">
                                 {cIdx + 1}
                               </span>
                               <input
@@ -1633,26 +1633,26 @@ export function ExamCreator() {
                                   updated[cIdx].chapter = e.target.value;
                                   setChapters(updated);
                                 }}
-                                className="font-extrabold text-sm text-gray-900 bg-white px-3.5 py-1.5 rounded-xl border border-gray-200 flex-1 focus:outline-none focus:border-pastel-purple"
+                                className="font-extrabold text-sm text-gray-900 bg-white px-3.5 py-1.5 rounded-xl border border-gray-200 flex-1 focus:outline-none focus:border-indigo-600 focus:ring-1 focus:ring-indigo-500"
                                 placeholder="Tên chương học..."
                               />
                             </div>
 
                             <div className="flex items-center space-x-2">
-                              <span className="text-xs font-extrabold text-pastel-purpleDark bg-purple-50 px-3 py-1 rounded-full border border-purple-100">
+                              <span className="text-xs font-extrabold text-indigo-700 bg-indigo-50 px-3 py-1 rounded-full border border-indigo-100 tabular-nums">
                                 {chapTotal} câu hỏi
                               </span>
                               <button
                                 type="button"
                                 onClick={() => handleAddLesson(cIdx)}
-                                className="px-3 py-1 bg-white border border-gray-200 text-gray-700 rounded-xl text-xs font-bold hover:bg-gray-100"
+                                className="px-3 py-1 bg-white border border-gray-200 text-gray-700 rounded-xl text-xs font-bold hover:bg-gray-100 cursor-pointer"
                               >
                                 + Thêm bài
                               </button>
                               <button
                                 type="button"
                                 onClick={() => handleRemoveChapter(cIdx)}
-                                className="p-1.5 text-rose-500 hover:bg-rose-50 rounded-lg transition"
+                                className="p-1.5 text-rose-500 hover:bg-rose-50 rounded-lg transition cursor-pointer"
                                 title="Xóa chương"
                               >
                                 <Trash2 className="w-4 h-4" />
@@ -1675,7 +1675,7 @@ export function ExamCreator() {
                                         updated[cIdx].topics[lIdx].topic = e.target.value;
                                         setChapters(updated);
                                       }}
-                                      className="font-bold text-xs text-gray-800 bg-white px-3 py-1.5 rounded-xl border border-gray-200 flex-1 focus:outline-none focus:border-pastel-purple"
+                                      className="font-bold text-xs text-gray-800 bg-white px-3 py-1.5 rounded-xl border border-gray-200 flex-1 focus:outline-none focus:border-indigo-600 focus:ring-1 focus:ring-indigo-500"
                                       placeholder="Tên bài học..."
                                     />
                                   </div>
@@ -1683,14 +1683,14 @@ export function ExamCreator() {
                                     <button
                                       type="button"
                                       onClick={() => handleAddTopic(cIdx, lIdx)}
-                                      className="px-2.5 py-1 bg-white border border-purple-200 text-pastel-purpleDark rounded-lg text-[11px] font-bold hover:bg-purple-50"
+                                      className="px-2.5 py-1 bg-white border border-indigo-200 text-indigo-700 rounded-lg text-[11px] font-bold hover:bg-indigo-50 cursor-pointer"
                                     >
                                       + Dạng bài
                                     </button>
                                     <button
                                       type="button"
                                       onClick={() => handleRemoveLesson(cIdx, lIdx)}
-                                      className="text-gray-400 hover:text-rose-600 p-1"
+                                      className="text-gray-400 hover:text-rose-600 p-1 cursor-pointer"
                                       title="Xóa bài"
                                     >
                                       <Trash2 className="w-3.5 h-3.5" />
@@ -1727,7 +1727,7 @@ export function ExamCreator() {
                                                   updated[cIdx].topics[lIdx].topics[tIdx].topic = e.target.value;
                                                   setChapters(updated);
                                                 }}
-                                                className="w-full bg-white px-2.5 py-1.5 rounded-lg border border-gray-200 text-xs font-medium focus:outline-none focus:border-pastel-purple"
+                                                className="w-full bg-white px-2.5 py-1.5 rounded-lg border border-gray-200 text-xs font-medium focus:outline-none focus:border-indigo-600 focus:ring-1 focus:ring-indigo-500"
                                                 placeholder="Nội dung chi tiết..."
                                               />
                                             </td>
@@ -1798,10 +1798,10 @@ export function ExamCreator() {
                 )}
 
                 {/* MATRIX SUMMARY BAR (Bảng tổng kết ma trận) */}
-                <div className="p-6 bg-gradient-to-r from-purple-50/80 via-white to-purple-50/80 rounded-3xl border border-purple-100 shadow-xs space-y-4">
-                  <div className="flex items-center justify-between pb-3 border-b border-purple-100">
+                <div className="p-6 bg-gradient-to-r from-indigo-50/80 via-white to-indigo-50/80 rounded-3xl border border-indigo-100 shadow-xs space-y-4">
+                  <div className="flex items-center justify-between pb-3 border-b border-indigo-100">
                     <h3 className="font-extrabold text-gray-900 text-sm flex items-center space-x-2">
-                      <Sparkles className="w-4 h-4 text-pastel-purpleDark" />
+                      <Sparkles className="w-4 h-4 text-indigo-600" />
                       <span>Tổng kết cấu trúc phân bổ ma trận đề thi</span>
                     </h3>
                     <span className="text-xs text-gray-500 font-medium">Thang điểm chuẩn: 10.0 điểm</span>
@@ -1810,32 +1810,32 @@ export function ExamCreator() {
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
                     <div className="bg-white p-3.5 rounded-2xl border border-emerald-100 shadow-2xs">
                       <div className="text-[11px] font-bold text-emerald-700 uppercase">Nhận biết (NB)</div>
-                      <div className="text-xl font-extrabold text-gray-900 mt-1">{matrixStats.nb} câu</div>
-                      <div className="text-[11px] text-gray-500 font-semibold mt-0.5">
+                      <div className="text-xl font-extrabold text-gray-900 mt-1 tabular-nums">{matrixStats.nb} câu</div>
+                      <div className="text-[11px] text-gray-500 font-semibold mt-0.5 tabular-nums">
                         {matrixStats.pctNb}% • {(matrixStats.nb * matrixStats.pointPerQ).toFixed(1)}đ
                       </div>
                     </div>
 
                     <div className="bg-white p-3.5 rounded-2xl border border-blue-100 shadow-2xs">
                       <div className="text-[11px] font-bold text-blue-700 uppercase">Thông hiểu (TH)</div>
-                      <div className="text-xl font-extrabold text-gray-900 mt-1">{matrixStats.th} câu</div>
-                      <div className="text-[11px] text-gray-500 font-semibold mt-0.5">
+                      <div className="text-xl font-extrabold text-gray-900 mt-1 tabular-nums">{matrixStats.th} câu</div>
+                      <div className="text-[11px] text-gray-500 font-semibold mt-0.5 tabular-nums">
                         {matrixStats.pctTh}% • {(matrixStats.th * matrixStats.pointPerQ).toFixed(1)}đ
                       </div>
                     </div>
 
                     <div className="bg-white p-3.5 rounded-2xl border border-amber-100 shadow-2xs">
                       <div className="text-[11px] font-bold text-amber-700 uppercase">Vận dụng (VD)</div>
-                      <div className="text-xl font-extrabold text-gray-900 mt-1">{matrixStats.vd} câu</div>
-                      <div className="text-[11px] text-gray-500 font-semibold mt-0.5">
+                      <div className="text-xl font-extrabold text-gray-900 mt-1 tabular-nums">{matrixStats.vd} câu</div>
+                      <div className="text-[11px] text-gray-500 font-semibold mt-0.5 tabular-nums">
                         {matrixStats.pctVd}% • {(matrixStats.vd * matrixStats.pointPerQ).toFixed(1)}đ
                       </div>
                     </div>
 
                     <div className="bg-white p-3.5 rounded-2xl border border-rose-100 shadow-2xs">
                       <div className="text-[11px] font-bold text-rose-700 uppercase">Vận dụng cao (VDC)</div>
-                      <div className="text-xl font-extrabold text-gray-900 mt-1">{matrixStats.vdc} câu</div>
-                      <div className="text-[11px] text-gray-500 font-semibold mt-0.5">
+                      <div className="text-xl font-extrabold text-gray-900 mt-1 tabular-nums">{matrixStats.vdc} câu</div>
+                      <div className="text-[11px] text-gray-500 font-semibold mt-0.5 tabular-nums">
                         {matrixStats.pctVdc}% • {(matrixStats.vdc * matrixStats.pointPerQ).toFixed(1)}đ
                       </div>
                     </div>
@@ -1843,11 +1843,11 @@ export function ExamCreator() {
 
                   <div className="flex flex-col sm:flex-row items-center justify-between pt-2 gap-3 text-xs">
                     <div className="flex items-center space-x-2">
-                      <span className="font-extrabold text-gray-900 text-sm">
+                      <span className="font-extrabold text-gray-900 text-sm tabular-nums">
                         Tổng cộng: {matrixStats.total} câu hỏi
                       </span>
                       <span>•</span>
-                      <span className="font-semibold text-pastel-purpleDark">
+                      <span className="font-semibold text-indigo-700 tabular-nums">
                         {matrixStats.pointPerQ} điểm / mỗi câu
                       </span>
                     </div>
@@ -1856,7 +1856,7 @@ export function ExamCreator() {
                       type="button"
                       onClick={handleSaveMatrixOnly}
                       disabled={saving || matrixStats.total === 0}
-                      className="px-4 py-2 bg-white border border-purple-200 text-pastel-purpleDark rounded-xl text-xs font-bold hover:bg-purple-50 transition flex items-center space-x-1.5 shadow-2xs"
+                      className="px-4 py-2 bg-white border border-indigo-200 text-indigo-700 rounded-xl text-xs font-bold hover:bg-indigo-50 transition flex items-center space-x-1.5 shadow-2xs cursor-pointer"
                     >
                       <Save className="w-3.5 h-3.5" />
                       <span>Lưu ma trận làm mẫu dùng lại</span>
@@ -1871,10 +1871,10 @@ export function ExamCreator() {
               <div className="bg-white p-6 sm:p-8 rounded-3xl border border-gray-100 shadow-card space-y-6">
                 <div className="flex items-center justify-between border-b border-gray-100 pb-3">
                   <h2 className="text-sm font-bold text-gray-900 uppercase tracking-wider flex items-center space-x-2">
-                    <span className="w-6 h-6 bg-pastel-purple/10 text-pastel-purpleDark rounded-lg flex items-center justify-center text-xs font-extrabold">2</span>
+                    <span className="w-6 h-6 bg-indigo-50 text-indigo-700 rounded-lg flex items-center justify-center text-xs font-extrabold tabular-nums">2</span>
                     <span>Chọn ma trận đề thi đã lưu</span>
                   </h2>
-                  <span className="text-xs font-bold text-gray-400">{matrices.length} ma trận khả dụng</span>
+                  <span className="text-xs font-bold text-gray-400 tabular-nums">{matrices.length} ma trận khả dụng</span>
                 </div>
 
                 <div className="space-y-4">
@@ -1883,7 +1883,7 @@ export function ExamCreator() {
                     <select
                       value={selectedMatrixId}
                       onChange={e => setSelectedMatrixId(e.target.value)}
-                      className="w-full px-4 py-3 rounded-2xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-pastel-purple text-sm bg-white font-bold"
+                      className="w-full px-4 py-3 rounded-2xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-sm bg-white font-bold"
                     >
                       <option value="">-- Chọn ma trận --</option>
                       {matrices.map(m => (
@@ -1898,7 +1898,7 @@ export function ExamCreator() {
                   <div className="pt-2 border-t border-gray-100 space-y-3">
                     <div className="flex items-center justify-between">
                       <h3 className="text-xs font-extrabold text-gray-700 uppercase tracking-wider flex items-center gap-1.5">
-                        <FileText className="w-4 h-4 text-pastel-purpleDark" />
+                        <FileText className="w-4 h-4 text-indigo-600" />
                         <span>Danh sách ma trận mẫu</span>
                       </h3>
                       <div className="relative w-64">
@@ -1907,7 +1907,7 @@ export function ExamCreator() {
                           value={matrixSearch}
                           onChange={(e) => setMatrixSearch(e.target.value)}
                           placeholder="Tìm ma trận..."
-                          className="w-full pl-8 pr-2 py-1 text-xs bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:border-pastel-purple"
+                          className="w-full pl-8 pr-2 py-1 text-xs bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:border-indigo-600 focus:ring-1 focus:ring-indigo-500"
                         />
                       </div>
                     </div>
@@ -1933,15 +1933,15 @@ export function ExamCreator() {
                                 onClick={() => setSelectedMatrixId(String(m.id))}
                                 className={`p-4 rounded-2xl border-2 transition cursor-pointer flex flex-col justify-between ${
                                   isSel 
-                                    ? 'border-pastel-purple bg-purple-50/50 shadow-xs ring-1 ring-pastel-purple/20' 
-                                    : 'border-gray-200 bg-white hover:border-purple-200'
+                                    ? 'border-indigo-600 bg-indigo-50/50 shadow-xs ring-1 ring-indigo-500/20' 
+                                    : 'border-gray-200 bg-white hover:border-indigo-200'
                                 }`}
                               >
                                 <div>
                                   <div className="flex items-start justify-between gap-2">
                                     <h4 className="font-extrabold text-sm text-gray-900 line-clamp-1">{m.name}</h4>
                                     {isSel && (
-                                      <span className="text-[10px] bg-pastel-purple text-white px-2 py-0.5 rounded-full font-bold shrink-0">
+                                      <span className="text-[10px] bg-indigo-600 text-white px-2 py-0.5 rounded-full font-bold shrink-0">
                                         Đang chọn
                                       </span>
                                     )}
@@ -1950,7 +1950,7 @@ export function ExamCreator() {
                                     <span className="px-2 py-0.5 bg-gray-100 rounded-md font-semibold text-gray-700">
                                       {m.subject} • Lớp {m.grade_level}
                                     </span>
-                                    <span className="px-2 py-0.5 bg-purple-100 text-pastel-purpleDark rounded-md font-bold">
+                                    <span className="px-2 py-0.5 bg-indigo-50 text-indigo-700 rounded-md font-bold tabular-nums">
                                       {total} câu hỏi
                                     </span>
                                   </div>
@@ -1960,7 +1960,7 @@ export function ExamCreator() {
                                 </div>
 
                                 <div className="flex items-center justify-between mt-3 pt-3 border-t border-gray-100 text-[11px]">
-                                  <span className="text-gray-400">
+                                  <span className="text-gray-400 tabular-nums">
                                     {m.created_at ? new Date(m.created_at).toLocaleDateString('vi-VN') : ''}
                                   </span>
                                   <button
@@ -1970,7 +1970,7 @@ export function ExamCreator() {
                                       handleDeleteMatrix(m.id);
                                     }}
                                     disabled={deletingMatrixId === m.id}
-                                    className="p-1 text-gray-400 hover:text-rose-600 rounded-md"
+                                    className="p-1 text-gray-400 hover:text-rose-600 rounded-md cursor-pointer"
                                     title="Xóa ma trận"
                                   >
                                     <Trash2 className="w-3.5 h-3.5" />
@@ -2003,7 +2003,7 @@ export function ExamCreator() {
               <button
                 type="button"
                 onClick={() => navigate('/teacher/assignments')}
-                className="w-full sm:w-auto px-6 py-3 rounded-2xl border border-gray-200 text-gray-600 text-sm font-bold hover:bg-gray-50 transition"
+                className="w-full sm:w-auto px-6 py-2.5 rounded-xl border border-slate-300 text-slate-700 text-sm font-semibold hover:bg-slate-50 transition"
               >
                 Hủy bỏ
               </button>
@@ -2011,9 +2011,9 @@ export function ExamCreator() {
               <button
                 type="submit"
                 disabled={saving}
-                className="w-full sm:w-auto px-8 py-3.5 rounded-2xl bg-gradient-to-r from-pastel-purple to-pastel-purpleDark text-white text-sm font-extrabold hover:opacity-95 transition shadow-sm hover:shadow flex items-center justify-center space-x-2 disabled:opacity-50"
+                className="w-full sm:w-auto px-8 py-2.5 rounded-xl bg-indigo-600 text-white text-sm font-bold hover:bg-indigo-700 active:scale-95 transition shadow-sm flex items-center justify-center space-x-2 disabled:opacity-50"
               >
-                <Save className="w-5 h-5" />
+                <Save className="w-4 h-4" />
                 <span>
                   {saving 
                     ? 'Đang xử lý & Sinh đề...' 
@@ -2133,8 +2133,8 @@ export function ExamCreator() {
                         )}
 
                         {q.explanation && (
-                          <div className="p-3 bg-pastel-purple/5 border border-pastel-purple/20 rounded-xl text-xs text-gray-700 mt-2">
-                            <span className="font-bold text-pastel-purpleDark mr-1">Lời giải chi tiết:</span>
+                          <div className="p-3 bg-indigo-50/50 border border-indigo-100 rounded-xl text-xs text-gray-700 mt-2">
+                            <span className="font-bold text-indigo-700 mr-1">Lời giải chi tiết:</span>
                             <MathRenderer content={q.explanation} />
                           </div>
                         )}
@@ -2164,7 +2164,7 @@ export function ExamCreator() {
                   required
                   value={editTitle}
                   onChange={(e) => setEditTitle(e.target.value)}
-                  className="w-full p-2.5 bg-gray-50 border border-gray-200 rounded-xl text-xs sm:text-sm font-semibold focus:outline-none focus:border-pastel-purple"
+                  className="w-full p-2.5 bg-gray-50 border border-gray-200 rounded-xl text-xs sm:text-sm font-semibold focus:outline-none focus:border-indigo-600 focus:ring-1 focus:ring-indigo-500"
                 />
               </div>
 
@@ -2177,7 +2177,7 @@ export function ExamCreator() {
                     required
                     value={editDuration}
                     onChange={(e) => setEditDuration(e.target.value)}
-                    className="w-full p-2 bg-gray-50 border border-gray-200 rounded-xl text-xs sm:text-sm focus:outline-none focus:border-pastel-purple"
+                    className="w-full p-2 bg-gray-50 border border-gray-200 rounded-xl text-xs sm:text-sm focus:outline-none focus:border-indigo-600 focus:ring-1 focus:ring-indigo-500 tabular-nums"
                   />
                 </div>
                 <div>
@@ -2190,7 +2190,7 @@ export function ExamCreator() {
                     required
                     value={editPassScore}
                     onChange={(e) => setEditPassScore(e.target.value)}
-                    className="w-full p-2 bg-gray-50 border border-gray-200 rounded-xl text-xs sm:text-sm focus:outline-none focus:border-pastel-purple"
+                    className="w-full p-2 bg-gray-50 border border-gray-200 rounded-xl text-xs sm:text-sm focus:outline-none focus:border-indigo-600 focus:ring-1 focus:ring-indigo-500 tabular-nums"
                   />
                 </div>
               </div>
@@ -2203,7 +2203,7 @@ export function ExamCreator() {
                   max="10"
                   value={editMaxAttempts}
                   onChange={(e) => setEditMaxAttempts(e.target.value)}
-                  className="w-full p-2 bg-gray-50 border border-gray-200 rounded-xl text-xs sm:text-sm focus:outline-none focus:border-pastel-purple"
+                  className="w-full p-2 bg-gray-50 border border-gray-200 rounded-xl text-xs sm:text-sm focus:outline-none focus:border-indigo-600 focus:ring-1 focus:ring-indigo-500 tabular-nums"
                 />
               </div>
 
@@ -2213,7 +2213,7 @@ export function ExamCreator() {
                     type="checkbox"
                     checked={editShowAnswers}
                     onChange={(e) => setEditShowAnswers(e.target.checked)}
-                    className="rounded border-gray-300 text-pastel-purple focus:ring-pastel-purple"
+                    className="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
                   />
                   <span className="font-medium text-gray-700">Cho học sinh xem đáp án sau khi nộp</span>
                 </label>
@@ -2223,7 +2223,7 @@ export function ExamCreator() {
                     type="checkbox"
                     checked={editPublished}
                     onChange={(e) => setEditPublished(e.target.checked)}
-                    className="rounded border-gray-300 text-pastel-purple focus:ring-pastel-purple"
+                    className="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
                   />
                   <span className="font-medium text-gray-700">Xuất bản đề thi ngay</span>
                 </label>
@@ -2233,14 +2233,14 @@ export function ExamCreator() {
                 <button
                   type="button"
                   onClick={() => setEditModalOpen(false)}
-                  className="px-4 py-2 border border-gray-200 rounded-xl text-xs sm:text-sm font-semibold text-gray-600 hover:bg-gray-50 transition"
+                  className="px-4 py-2 border border-gray-200 rounded-xl text-xs sm:text-sm font-semibold text-gray-600 hover:bg-gray-50 transition cursor-pointer"
                 >
                   Hủy
                 </button>
                 <button
                   type="submit"
                   disabled={savingEdit}
-                  className="px-5 py-2 bg-gradient-to-r from-pastel-purple to-pastel-purpleDark text-white rounded-xl text-xs sm:text-sm font-bold hover:opacity-95 disabled:opacity-50 transition shadow-sm"
+                  className="px-5 py-2 bg-indigo-600 text-white rounded-xl text-xs sm:text-sm font-bold hover:bg-indigo-700 disabled:opacity-50 transition shadow-xs cursor-pointer"
                 >
                   {savingEdit ? 'Đang lưu...' : 'Lưu thay đổi'}
                 </button>

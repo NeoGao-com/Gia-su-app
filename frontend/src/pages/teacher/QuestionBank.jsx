@@ -373,59 +373,59 @@ export function QuestionBank() {
   const totalPages = Math.ceil(totalQuestions / limit) || 1;
 
   return (
-    <div className="min-h-screen bg-pastel-bg">
+    <div className="min-h-screen bg-slate-50">
       <Navbar />
       <div className="flex">
         <Sidebar role="teacher" />
-        <main className="flex-1 p-6 lg:p-10 max-w-7xl mx-auto w-full">
+        <main className="flex-1 p-5 sm:p-6 lg:p-8 max-w-7xl mx-auto w-full">
           {/* Top Header */}
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
             <div>
-              <h1 className="text-2xl font-bold text-gray-800 flex items-center space-x-2">
-                <FolderTree className="w-7 h-7 text-pastel-purpleDark" />
-                <span>Ngân hàng Câu hỏi & Cây kiến thức</span>
+              <h1 className="text-2xl font-bold text-slate-900 flex items-center space-x-2">
+                <FolderTree className="w-6 h-6 text-indigo-600" />
+                <span>Ngân hàng Câu hỏi & Cây phân loại</span>
               </h1>
-              <p className="text-xs text-gray-500 mt-1">Quản lý câu hỏi phân tầng theo Môn, Khối, Chương, Bài và Dạng bài chuẩn giáo dục.</p>
+              <p className="text-xs text-slate-500 mt-1">Quản lý kho câu hỏi phân tầng theo Môn, Khối, Chương, Bài và Dạng bài chuẩn giáo dục.</p>
             </div>
-            <div className="flex flex-wrap items-center gap-2.5">
+            <div className="flex flex-wrap items-center gap-2">
               <button
                 onClick={() => setIsAuditFixModalOpen(true)}
-                className="flex items-center space-x-1.5 px-4 py-2.5 bg-gradient-to-r from-amber-500 to-rose-500 hover:from-amber-600 hover:to-rose-600 text-white rounded-2xl font-bold text-xs shadow-xs transition shadow-amber-200"
-                title="AI rà soát toàn diện: câu nào sai thì sửa thành đúng, câu nào chưa có đáp án thì chọn đáp án"
+                className="flex items-center space-x-1.5 px-3.5 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded-xl font-medium text-xs shadow-2xs transition"
+                title="Tự động kiểm tra: câu nào sai thì sửa đáp án đúng, câu nào thiếu đáp án thì bổ sung"
               >
                 <Wand2 className="w-4 h-4" />
-                <span>AI Sửa &amp; Điền đáp án</span>
+                <span>Tự động kiểm tra & Điền đáp án</span>
               </button>
               <button
                 onClick={handleBatchVerifyAI}
                 disabled={batchVerifying}
-                className="flex items-center space-x-1.5 px-3.5 py-2.5 bg-purple-50 hover:bg-purple-100 text-pastel-purpleDark rounded-2xl font-bold text-xs shadow-xs transition"
-                title="AI kiểm tra hàng loạt câu hỏi theo danh mục đang chọn"
+                className="flex items-center space-x-1.5 px-3.5 py-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 rounded-xl font-medium text-xs shadow-2xs transition"
+                title="Kiểm tra hàng loạt câu hỏi trong danh mục"
               >
                 {batchVerifying ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
-                <span>{batchVerifying ? 'Đang kiểm tra...' : 'AI Kiểm tra'}</span>
+                <span>{batchVerifying ? 'Đang kiểm tra…' : 'Kiểm tra đáp án'}</span>
               </button>
               <button
                 onClick={() => setIsImportFileModalOpen(true)}
-                className="flex items-center space-x-1.5 px-3.5 py-2.5 bg-gradient-to-r from-pastel-purple to-indigo-600 hover:from-pastel-purpleDark hover:to-indigo-700 text-white rounded-2xl font-bold text-xs shadow-xs transition interactive-btn"
-                title="Tự động trích xuất và nhập câu hỏi từ tệp Word (.docx, .doc), PDF (.pdf), Markdown (.md)"
+                className="flex items-center space-x-1.5 px-3.5 py-2 bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 rounded-xl font-medium text-xs shadow-2xs transition"
+                title="Trích xuất và nhập câu hỏi từ tệp Word (.docx, .doc), PDF (.pdf)"
               >
-                <Upload className="w-4 h-4" />
-                <span>Nhập từ File (Word/PDF/MD)</span>
+                <Upload className="w-4 h-4 text-indigo-600" />
+                <span>Nhập từ File (Word/PDF)</span>
               </button>
               <button
                 onClick={() => setIsJsonModalOpen(true)}
-                className="flex items-center space-x-1.5 px-3.5 py-2.5 bg-emerald-600 text-white rounded-2xl font-semibold text-xs shadow-xs hover:bg-emerald-700 transition"
+                className="flex items-center space-x-1.5 px-3.5 py-2 bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 rounded-xl font-medium text-xs shadow-2xs transition"
               >
-                <FileText className="w-4 h-4" />
+                <FileText className="w-4 h-4 text-emerald-600" />
                 <span>Nhập JSON</span>
               </button>
               <button
                 onClick={() => handleOpenModal()}
-                className="flex items-center space-x-1.5 px-4 py-2.5 bg-pastel-purple text-white rounded-2xl font-bold text-xs shadow-xs hover:bg-pastel-purpleDark transition"
+                className="flex items-center space-x-1.5 px-4 py-2 bg-indigo-600 text-white rounded-xl font-semibold text-xs shadow-xs hover:bg-indigo-700 transition"
               >
                 <Plus className="w-4 h-4" />
-                <span>Tạo câu hỏi</span>
+                <span>Soạn câu hỏi</span>
               </button>
             </div>
           </div>
@@ -447,26 +447,26 @@ export function QuestionBank() {
             {/* Right Column: Questions List & Filters */}
             <div className="col-span-12 lg:col-span-8 space-y-4">
               {/* Search Bar */}
-              <div className="bg-white p-3.5 rounded-3xl border border-gray-100 shadow-xs flex items-center space-x-3">
-                <Search className="w-4 h-4 text-gray-400 ml-2 shrink-0" />
+              <div className="bg-white p-3 rounded-2xl border border-slate-200/90 shadow-xs flex items-center space-x-3">
+                <Search className="w-4 h-4 text-slate-400 ml-2 shrink-0" />
                 <input
                   type="text"
-                  placeholder="Tìm kiếm câu hỏi theo nội dung hoặc mã..."
+                  placeholder="Tìm kiếm câu hỏi theo nội dung hoặc mã câu..."
                   value={searchQuery}
                   onChange={e => handleSearchChange(e.target.value)}
-                  className="w-full bg-transparent border-none text-sm focus:outline-none placeholder-gray-400"
+                  className="w-full bg-transparent border-none text-xs sm:text-sm focus:outline-none placeholder-slate-400 text-slate-800"
                 />
                 {searchQuery && (
-                  <button onClick={() => handleSearchChange('')} className="p-1 hover:bg-gray-100 rounded-full text-gray-400">
+                  <button onClick={() => handleSearchChange('')} className="p-1 hover:bg-slate-100 rounded-full text-slate-400">
                     <X className="w-3.5 h-3.5" />
                   </button>
                 )}
               </div>
 
               {/* Filters Panel */}
-              <div className="bg-white p-4 rounded-3xl border border-gray-100 shadow-xs space-y-3">
+              <div className="bg-white p-4 rounded-2xl border border-slate-200/90 shadow-xs space-y-3">
                 <div className="flex flex-wrap items-center gap-2">
-                  <span className="text-xs font-bold text-gray-500 w-20 shrink-0">Dạng câu hỏi:</span>
+                  <span className="text-xs font-semibold text-slate-500 w-24 shrink-0">Dạng câu hỏi:</span>
                   {[
                     ['all', 'Tất cả'],
                     ['MULTIPLE_CHOICE', 'Trắc nghiệm'],
@@ -477,7 +477,7 @@ export function QuestionBank() {
                     <button
                       key={val}
                       onClick={() => handleTypeFilter(val)}
-                      className={`px-3 py-1 rounded-xl text-xs font-semibold transition ${typeFilter === val ? 'bg-pastel-purple text-white shadow-xs' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
+                      className={`px-3 py-1 rounded-lg text-xs font-medium transition ${typeFilter === val ? 'bg-indigo-600 text-white shadow-2xs font-semibold' : 'bg-slate-100 text-slate-600 hover:bg-slate-200/80'}`}
                     >
                       {label}
                     </button>
@@ -485,7 +485,7 @@ export function QuestionBank() {
                 </div>
 
                 <div className="flex flex-wrap items-center gap-2">
-                  <span className="text-xs font-bold text-gray-500 w-20 shrink-0">Mức độ:</span>
+                  <span className="text-xs font-semibold text-slate-500 w-24 shrink-0">Mức độ:</span>
                   {[
                     ['all', 'Tất cả'],
                     ['NHAN_BIET', 'Nhận biết'],
@@ -496,7 +496,7 @@ export function QuestionBank() {
                     <button
                       key={val}
                       onClick={() => handleDifficultyFilter(val)}
-                      className={`px-3 py-1 rounded-xl text-xs font-semibold transition ${difficultyFilter === val ? 'bg-indigo-600 text-white shadow-xs' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
+                      className={`px-3 py-1 rounded-lg text-xs font-medium transition ${difficultyFilter === val ? 'bg-indigo-600 text-white shadow-2xs font-semibold' : 'bg-slate-100 text-slate-600 hover:bg-slate-200/80'}`}
                     >
                       {label}
                     </button>
@@ -504,17 +504,17 @@ export function QuestionBank() {
                 </div>
 
                 <div className="flex flex-wrap items-center gap-2">
-                  <span className="text-xs font-bold text-gray-500 w-20 shrink-0">Duyệt AI:</span>
+                  <span className="text-xs font-semibold text-slate-500 w-24 shrink-0">Kiểm tra:</span>
                   {[
                     ['all', 'Tất cả'],
-                    ['unverified', 'Chưa duyệt'],
-                    ['correct', 'Đã duyệt: Đúng'],
-                    ['incorrect', 'Đã duyệt: Cảnh báo'],
+                    ['unverified', 'Chưa kiểm tra'],
+                    ['correct', 'Đáp án chuẩn'],
+                    ['incorrect', 'Cần xem lại'],
                   ].map(([val, label]) => (
                     <button
                       key={val}
                       onClick={() => handleAiFilter(val)}
-                      className={`px-3 py-1 rounded-xl text-xs font-semibold transition ${aiFilter === val ? 'bg-purple-600 text-white shadow-xs' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
+                      className={`px-3 py-1 rounded-lg text-xs font-medium transition ${aiFilter === val ? 'bg-indigo-600 text-white shadow-2xs font-semibold' : 'bg-slate-100 text-slate-600 hover:bg-slate-200/80'}`}
                     >
                       {label}
                     </button>
@@ -523,21 +523,21 @@ export function QuestionBank() {
               </div>
 
               {/* Questions List Card */}
-              <div className="bg-white rounded-3xl border border-gray-100 shadow-xs overflow-hidden">
-                <div className="p-4 border-b border-gray-100 flex flex-wrap justify-between items-center gap-2">
-                  <div className="flex items-center space-x-2 font-bold text-sm text-gray-700">
+              <div className="bg-white rounded-2xl border border-slate-200/90 shadow-xs overflow-hidden">
+                <div className="p-4 border-b border-slate-100 flex flex-wrap justify-between items-center gap-2">
+                  <div className="flex items-center space-x-2 font-bold text-sm text-slate-800">
                     <span>Danh sách câu hỏi ({totalQuestions} câu)</span>
                     {loading && (
-                      <span className="flex items-center space-x-1 text-xs font-normal text-pastel-purple">
+                      <span className="flex items-center space-x-1 text-xs font-normal text-indigo-600">
                         <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                        <span>Đang đồng bộ...</span>
+                        <span>Đang đồng bộ…</span>
                       </span>
                     )}
                   </div>
                   {selectedCategory && (
-                    <div className="flex items-center space-x-1.5 text-xs text-pastel-purpleDark bg-purple-50 px-3 py-1 rounded-full border border-purple-100">
+                    <div className="flex items-center space-x-1.5 text-xs text-indigo-700 bg-indigo-50 px-3 py-1 rounded-full border border-indigo-200">
                       <span>{selectedCategory.subject} › Khối {selectedCategory.grade_level || 10}{selectedCategory.chapter ? ` › ${selectedCategory.chapter}` : ''}{selectedCategory.lesson ? ` › ${selectedCategory.lesson}` : ''}{selectedCategory.topic ? ` › ${selectedCategory.topic}` : ''}</span>
-                      <button onClick={() => handleSelectCategory(null)} className="p-0.5 hover:bg-purple-200 rounded-full text-purple-700">
+                      <button onClick={() => handleSelectCategory(null)} className="p-0.5 hover:bg-indigo-100 rounded-full text-indigo-700">
                         <X className="w-3 h-3" />
                       </button>
                     </div>
@@ -547,53 +547,53 @@ export function QuestionBank() {
                 {loading && questions.length === 0 ? (
                   <div className="p-6 space-y-4">
                     {[1, 2, 3].map(i => (
-                      <div key={i} className="animate-pulse p-5 rounded-2xl bg-gray-50/70 border border-gray-100 space-y-3">
+                      <div key={i} className="animate-pulse p-5 rounded-2xl bg-slate-50 border border-slate-100 space-y-3">
                         <div className="flex items-center space-x-2">
-                          <div className="h-5 w-20 bg-gray-200 rounded-md" />
-                          <div className="h-5 w-24 bg-gray-200 rounded-full" />
-                          <div className="h-5 w-16 bg-gray-200 rounded-full" />
+                          <div className="h-5 w-20 bg-slate-200 rounded-md" />
+                          <div className="h-5 w-24 bg-slate-200 rounded-full" />
+                          <div className="h-5 w-16 bg-slate-200 rounded-full" />
                         </div>
-                        <div className="h-4 bg-gray-200 rounded w-4/5" />
-                        <div className="h-4 bg-gray-200 rounded w-2/3" />
+                        <div className="h-4 bg-slate-200 rounded w-4/5" />
+                        <div className="h-4 bg-slate-200 rounded w-2/3" />
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-2 pt-1">
-                          <div className="h-9 bg-gray-200 rounded-xl" />
-                          <div className="h-9 bg-gray-200 rounded-xl" />
+                          <div className="h-9 bg-slate-200 rounded-xl" />
+                          <div className="h-9 bg-slate-200 rounded-xl" />
                         </div>
                       </div>
                     ))}
                   </div>
                 ) : questions.length === 0 ? (
-                  <div className="text-center py-20 text-gray-400 text-xs">
+                  <div className="text-center py-20 text-slate-400 text-xs">
                     Không tìm thấy câu hỏi nào phù hợp với bộ lọc.
                   </div>
                 ) : (
-                  <div className={`divide-y divide-gray-100 transition-opacity duration-200 ${loading ? 'opacity-50' : 'opacity-100'}`}>
+                  <div className={`divide-y divide-slate-100 transition-opacity duration-200 ${loading ? 'opacity-50' : 'opacity-100'}`}>
                     {questions.map((q, qIndex) => {
                       const typeConfig = QUESTION_TYPE_LABELS[q.question_type] || QUESTION_TYPE_LABELS.MULTIPLE_CHOICE;
                       const diffConfig = DIFFICULTY_LABELS[q.difficulty] || DIFFICULTY_LABELS.THONG_HIEU;
 
                       return (
-                        <div key={q.id} className="p-5 space-y-3.5 hover:bg-gray-50/40 transition">
+                        <div key={q.id} className="p-5 space-y-3.5 hover:bg-slate-50/70 transition">
                           {/* Card Top Meta */}
                           <div className="flex justify-between items-start gap-2">
                             <div className="flex flex-wrap items-center gap-2">
-                              <span className="text-xs font-mono font-bold text-gray-600 bg-gray-100 px-2 py-0.5 rounded-md">
+                              <span className="text-xs font-mono font-bold text-slate-600 bg-slate-100 px-2 py-0.5 rounded-md">
                                 #{(page - 1) * limit + qIndex + 1} ({q.code || `ID-${q.id}`})
                               </span>
-                              <span className={`text-[11px] font-semibold px-2 py-0.5 rounded-full border ${typeConfig.bg}`}>
+                              <span className={`text-[11px] font-semibold px-2 py-0.5 rounded-md border ${typeConfig.bg}`}>
                                 {typeConfig.label}
                               </span>
-                              <span className={`text-[11px] font-semibold px-2 py-0.5 rounded-full ${diffConfig.bg}`}>
+                              <span className={`text-[11px] font-semibold px-2 py-0.5 rounded-md ${diffConfig.bg}`}>
                                 {diffConfig.label}
                               </span>
                               {((q.question_type === 'MULTIPLE_CHOICE' && (q.correct_option === null || q.correct_option === undefined)) ||
                                 (q.question_type === 'SHORT_ANSWER' && !q.correct_answer)) && (
-                                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 border border-amber-300 flex items-center space-x-1 animate-pulse">
+                                <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-amber-50 text-amber-800 border border-amber-200 flex items-center space-x-1">
                                   <AlertCircle className="w-3 h-3 text-amber-600" />
                                   <span>Chưa có đáp án</span>
                                 </span>
                               )}
-                              <span className="text-[11px] text-gray-400">
+                              <span className="text-[11px] text-slate-400">
                                 {q.subject} • Khối {q.grade_level}{q.chapter ? ` • ${q.chapter}` : ''}
                               </span>
                             </div>
@@ -603,33 +603,33 @@ export function QuestionBank() {
                               <button
                                 onClick={() => handleAuditAndFixSingle(q)}
                                 disabled={auditingId === q.id}
-                                className="px-2.5 py-1 bg-amber-50 hover:bg-amber-100 text-amber-800 rounded-xl text-xs font-bold transition flex items-center space-x-1 border border-amber-200 shadow-xs"
-                                title="AI rà soát: sửa nếu đáp án sai hoặc tự động chọn đáp án đúng nếu còn thiếu"
+                                className="px-2.5 py-1 bg-amber-50 hover:bg-amber-100 text-amber-800 rounded-lg text-xs font-medium transition flex items-center space-x-1 border border-amber-200 shadow-2xs"
+                                title="Tự động kiểm tra: sửa nếu đáp án sai hoặc tự động chọn đáp án đúng nếu còn thiếu"
                               >
                                 {auditingId === q.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Wand2 className="w-3.5 h-3.5 text-amber-600" />}
                                 <span className="hidden sm:inline">
-                                  {q.question_type === 'MULTIPLE_CHOICE' && q.correct_option === null ? 'AI Điền đáp án' : 'AI Sửa câu'}
+                                  {q.question_type === 'MULTIPLE_CHOICE' && q.correct_option === null ? 'Điền đáp án' : 'Sửa câu'}
                                 </span>
                               </button>
                               <button
                                 onClick={() => handleVerifyAI(q)}
                                 disabled={verifyingId === q.id}
-                                className="px-2.5 py-1 bg-purple-50 hover:bg-purple-100 text-pastel-purpleDark rounded-xl text-xs font-semibold transition flex items-center space-x-1"
-                                title="Kiểm tra đáp án & lời giải bằng AI"
+                                className="px-2.5 py-1 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded-lg text-xs font-medium transition flex items-center space-x-1 border border-indigo-200"
+                                title="Kiểm tra đáp án & lời giải"
                               >
                                 {verifyingId === q.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5" />}
-                                <span className="hidden sm:inline">AI Soát lỗi</span>
+                                <span className="hidden sm:inline">Kiểm tra</span>
                               </button>
                               <button 
                                 onClick={() => handleOpenModal(q)} 
-                                className="p-1.5 text-gray-400 hover:text-pastel-purpleDark hover:bg-purple-50 rounded-xl transition"
+                                className="p-1.5 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition"
                                 title="Sửa câu hỏi"
                               >
                                 <Edit3 className="w-4 h-4" />
                               </button>
                               <button 
                                 onClick={() => handleDeleteQuestion(q.id)} 
-                                className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition"
+                                className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition"
                                 title="Xóa câu hỏi"
                               >
                                 <Trash2 className="w-4 h-4" />

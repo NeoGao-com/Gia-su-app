@@ -115,27 +115,27 @@ export function OAuthCallback() {
   }, [navigate, searchParams, toast]);
 
   return (
-    <div className="min-h-screen bg-[#f8f9fe] flex items-center justify-center p-4 font-sans">
-      <div className="bg-white rounded-3xl p-8 max-w-sm w-full shadow-card border border-gray-100 text-center">
+    <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4 font-sans">
+      <div className="bg-white rounded-3xl p-8 max-w-sm w-full shadow-card border border-slate-200/90 text-center">
         {error ? (
           <div className="space-y-4">
-            <div className="w-14 h-14 rounded-2xl bg-rose-100 text-rose-600 flex items-center justify-center mx-auto">
+            <div className="w-14 h-14 rounded-2xl bg-rose-50 text-rose-600 border border-rose-200 flex items-center justify-center mx-auto">
               <AlertCircle className="w-8 h-8" />
             </div>
-            <h3 className="text-lg font-bold text-gray-900">Xác thực thất bại</h3>
-            <p className="text-xs text-rose-600 font-medium">{error}</p>
-            <p className="text-[11px] text-gray-400">Đang quay lại trang đăng nhập...</p>
+            <h3 className="text-lg font-bold text-slate-900">Xác thực thất bại</h3>
+            <p className="text-xs text-rose-700 font-medium">{error}</p>
+            <p className="text-[11px] text-slate-400">Đang quay lại trang đăng nhập...</p>
           </div>
         ) : (
           <div className="space-y-4">
-            <div className="w-14 h-14 rounded-2xl bg-purple-50 text-pastel-purple flex items-center justify-center mx-auto animate-pulse">
+            <div className="w-14 h-14 rounded-2xl bg-indigo-50 text-indigo-600 border border-indigo-100 flex items-center justify-center mx-auto animate-pulse">
               <Loader2 className="w-8 h-8 animate-spin" />
             </div>
-            <h3 className="text-lg font-bold text-gray-900">Đang kết nối</h3>
-            <p className="text-xs text-gray-500 font-medium">{statusText}</p>
-            <div className="flex items-center justify-center space-x-1 text-pastel-purple text-xs font-semibold">
+            <h3 className="text-lg font-bold text-slate-900">Đang kết nối</h3>
+            <p className="text-xs text-slate-600 font-medium">{statusText}</p>
+            <div className="flex items-center justify-center space-x-1.5 text-indigo-600 text-xs font-semibold">
               <Sparkles className="w-3.5 h-3.5" />
-              <span>TutorQuiz Smart Auth</span>
+              <span>TutorQuiz — Hệ thống khảo thí &amp; Học tập</span>
             </div>
           </div>
         )}

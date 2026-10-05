@@ -54,12 +54,12 @@ export function TextToolbar({ onInsertLatex }) {
   };
 
   return (
-    <div className="flex flex-wrap items-center gap-1.5 p-2 bg-gray-50 border border-gray-200 rounded-xl mb-2">
+    <div className="flex flex-wrap items-center gap-1.5 p-2 bg-slate-50 border border-slate-200/80 rounded-xl mb-2">
       <button
         type="button"
         onClick={handleUndo}
         title="Hoàn tác (Undo)"
-        className="p-1.5 text-gray-600 hover:text-pastel-purpleDark hover:bg-white rounded-lg transition text-xs font-medium flex items-center space-x-1"
+        className="p-1.5 text-slate-600 hover:text-indigo-600 hover:bg-white rounded-lg transition text-xs font-medium flex items-center space-x-1 cursor-pointer"
       >
         <Undo2 className="w-4 h-4" />
         <span className="hidden sm:inline">Undo</span>
@@ -68,17 +68,17 @@ export function TextToolbar({ onInsertLatex }) {
         type="button"
         onClick={handleRedo}
         title="Làm lại (Redo)"
-        className="p-1.5 text-gray-600 hover:text-pastel-purpleDark hover:bg-white rounded-lg transition text-xs font-medium flex items-center space-x-1"
+        className="p-1.5 text-slate-600 hover:text-indigo-600 hover:bg-white rounded-lg transition text-xs font-medium flex items-center space-x-1 cursor-pointer"
       >
         <Redo2 className="w-4 h-4" />
         <span className="hidden sm:inline">Redo</span>
       </button>
-      <div className="h-4 w-px bg-gray-300 mx-1" />
+      <div className="h-4 w-px bg-slate-300 mx-1" />
       <button
         type="button"
         onClick={handleCut}
         title="Cắt (Cut)"
-        className="p-1.5 text-gray-600 hover:text-pastel-purpleDark hover:bg-white rounded-lg transition text-xs font-medium flex items-center space-x-1"
+        className="p-1.5 text-slate-600 hover:text-indigo-600 hover:bg-white rounded-lg transition text-xs font-medium flex items-center space-x-1 cursor-pointer"
       >
         <Scissors className="w-4 h-4" />
         <span className="hidden sm:inline">Cắt</span>
@@ -87,7 +87,7 @@ export function TextToolbar({ onInsertLatex }) {
         type="button"
         onClick={handleCopy}
         title="Sao chép (Copy)"
-        className="p-1.5 text-gray-600 hover:text-pastel-purpleDark hover:bg-white rounded-lg transition text-xs font-medium flex items-center space-x-1"
+        className="p-1.5 text-slate-600 hover:text-indigo-600 hover:bg-white rounded-lg transition text-xs font-medium flex items-center space-x-1 cursor-pointer"
       >
         <Copy className="w-4 h-4" />
         <span className="hidden sm:inline">Sao chép</span>
@@ -96,19 +96,19 @@ export function TextToolbar({ onInsertLatex }) {
         type="button"
         onClick={handlePaste}
         title="Dán (Paste)"
-        className="p-1.5 text-gray-600 hover:text-pastel-purpleDark hover:bg-white rounded-lg transition text-xs font-medium flex items-center space-x-1"
+        className="p-1.5 text-slate-600 hover:text-indigo-600 hover:bg-white rounded-lg transition text-xs font-medium flex items-center space-x-1 cursor-pointer"
       >
         <ClipboardPaste className="w-4 h-4" />
         <span className="hidden sm:inline">Dán</span>
       </button>
       {onInsertLatex && (
         <>
-          <div className="h-4 w-px bg-gray-300 mx-1" />
+          <div className="h-4 w-px bg-slate-300 mx-1" />
           <button
             type="button"
             onClick={onInsertLatex}
             title="Chèn công thức Toán ($...$)"
-            className="p-1.5 text-pastel-purpleDark bg-pastel-purple/10 hover:bg-pastel-purple/20 rounded-lg transition text-xs font-bold flex items-center space-x-1"
+            className="p-1.5 text-indigo-700 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200/60 rounded-lg transition text-xs font-bold flex items-center space-x-1 cursor-pointer"
           >
             <Sigma className="w-4 h-4" />
             <span>Chèn Công thức $...$</span>

@@ -311,7 +311,7 @@ export function AIConfigManagement() {
   };
 
   return (
-    <div className="min-h-screen bg-pastel-bg">
+    <div className="min-h-screen bg-slate-50 font-sans">
       <Navbar />
       <div className="flex">
         <Sidebar role="teacher" />
@@ -320,42 +320,42 @@ export function AIConfigManagement() {
           {/* Header */}
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
             <div>
-              <div className="flex items-center space-x-2">
-                <span className="p-2 rounded-2xl bg-purple-100 text-pastel-purpleDark">
+              <div className="flex items-center space-x-2.5">
+                <span className="p-2.5 rounded-xl bg-indigo-50 border border-indigo-100 text-indigo-600">
                   <Cpu className="w-6 h-6" />
                 </span>
-                <h1 className="text-2xl font-extrabold text-gray-800 tracking-tight">
-                  Quản lý AI Providers & Cấu hình
+                <h1 className="text-2xl font-extrabold text-slate-900 tracking-tight">
+                  Trợ lý Soạn đề & Cài đặt AI
                 </h1>
               </div>
-              <p className="text-xs sm:text-sm text-gray-500 mt-1">
-                Kết nối các mô hình AI (Google Gemini, OpenAI GPT-4o, DeepSeek, Claude) để tự động hóa sinh đề, thẩm định đáp án và chấm bài.
+              <p className="text-xs sm:text-sm text-slate-500 mt-1">
+                Kết nối các mô hình AI (Google Gemini, OpenAI GPT-4o, DeepSeek, Claude) để hỗ trợ sinh câu hỏi, chuẩn hóa đề thi và gợi ý lời giải.
               </p>
             </div>
 
             <div className="flex items-center space-x-2">
               <button
                 onClick={() => handleOpenAddModal()}
-                className="flex items-center space-x-1.5 px-4 py-2.5 bg-pastel-purple text-white rounded-2xl font-bold text-xs sm:text-sm shadow-xs hover:bg-pastel-purpleDark transition interactive-btn"
+                className="flex items-center space-x-1.5 px-4 py-2.5 bg-indigo-600 text-white rounded-xl font-bold text-xs sm:text-sm shadow-sm hover:bg-indigo-700 active:scale-95 transition"
               >
                 <Plus className="w-4 h-4" />
-                <span>Thêm AI Provider</span>
+                <span>+ Thêm nhà cung cấp AI</span>
               </button>
             </div>
           </div>
 
           {/* Active Provider Status Banner */}
-          <div className="bg-white rounded-3xl p-5 border border-purple-100 shadow-card flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+          <div className="bg-white rounded-2xl p-5 border border-slate-200/90 shadow-sm flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
             <div className="flex items-center space-x-4">
-              <div className={`w-12 h-12 rounded-2xl flex items-center justify-center ${activeConfig ? 'bg-emerald-100 text-emerald-600' : 'bg-amber-100 text-amber-600'}`}>
+              <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${activeConfig ? 'bg-emerald-50 text-emerald-600 border border-emerald-200' : 'bg-amber-50 text-amber-600 border border-amber-200'}`}>
                 <Zap className="w-6 h-6" />
               </div>
               <div>
-                <div className="text-xs font-bold text-gray-400 uppercase tracking-wider">Trạng thái AI hệ thống</div>
+                <div className="text-xs font-bold text-slate-400 uppercase tracking-wider">Trạng thái AI hệ thống</div>
                 {activeConfig ? (
                   <div className="flex items-center space-x-2 mt-0.5">
-                    <span className="text-base font-extrabold text-gray-800">{activeConfig.name}</span>
-                    <span className="px-2.5 py-0.5 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-full text-xs font-bold flex items-center space-x-1">
+                    <span className="text-base font-extrabold text-slate-900">{activeConfig.name}</span>
+                    <span className="px-2.5 py-0.5 bg-emerald-50 text-emerald-700 border border-emerald-200/80 rounded-full text-xs font-bold flex items-center space-x-1">
                       <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
                       <span>Đang hoạt động</span>
                     </span>
@@ -366,8 +366,8 @@ export function AIConfigManagement() {
                   </div>
                 )}
                 {activeConfig && (
-                  <div className="text-xs text-gray-500 mt-0.5">
-                    Model: <strong className="text-gray-700">{activeConfig.model_name}</strong> • Nhà cung cấp: <strong className="text-gray-700">{activeConfig.provider}</strong>
+                  <div className="text-xs text-slate-500 mt-0.5">
+                    Mô hình: <strong className="text-slate-800">{activeConfig.model_name}</strong> • Nhà cung cấp: <strong className="text-slate-800">{activeConfig.provider}</strong>
                   </div>
                 )}
               </div>
@@ -377,10 +377,10 @@ export function AIConfigManagement() {
               <button
                 onClick={() => handleTestExisting(activeConfig.id)}
                 disabled={testingId === activeConfig.id}
-                className="flex items-center space-x-1.5 px-4 py-2 bg-purple-50 hover:bg-purple-100 text-pastel-purpleDark rounded-xl text-xs font-bold transition disabled:opacity-50 interactive-btn"
+                className="flex items-center space-x-1.5 px-4 py-2 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200/70 text-indigo-700 rounded-xl text-xs font-bold transition disabled:opacity-50"
               >
                 <RefreshCw className={`w-3.5 h-3.5 ${testingId === activeConfig.id ? 'animate-spin' : ''}`} />
-                <span>{testingId === activeConfig.id ? 'Đang kiểm tra...' : 'Kiểm tra kết nối ngay'}</span>
+                <span>{testingId === activeConfig.id ? 'Đang kiểm tra...' : 'Kiểm tra kết nối'}</span>
               </button>
             )}
           </div>
@@ -388,11 +388,11 @@ export function AIConfigManagement() {
           {/* Quick Connect Preset Cards */}
           <div className="space-y-3">
             <div className="flex items-center justify-between">
-              <h2 className="text-sm font-extrabold text-gray-700 flex items-center space-x-1.5">
-                <Sparkles className="w-4 h-4 text-pastel-purple" />
+              <h2 className="text-sm font-extrabold text-slate-800 flex items-center space-x-1.5">
+                <Sparkles className="w-4 h-4 text-indigo-600" />
                 <span>Kết nối nhanh các nhà cung cấp phổ biến</span>
               </h2>
-              <span className="text-xs text-gray-400">Nhấn vào để điền sẵn mẫu cấu hình</span>
+              <span className="text-xs text-slate-400">Nhấn vào để điền sẵn mẫu cấu hình</span>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5">
@@ -400,23 +400,23 @@ export function AIConfigManagement() {
                 <div
                   key={p.id}
                   onClick={() => handleOpenAddModal(p)}
-                  className={`p-4 rounded-3xl border bg-gradient-to-br ${p.bg} hover:scale-[1.02] cursor-pointer transition shadow-2xs flex flex-col justify-between`}
+                  className={`p-4 rounded-2xl border bg-gradient-to-br ${p.bg} hover:border-indigo-400 cursor-pointer transition shadow-xs flex flex-col justify-between`}
                 >
                   <div className="space-y-2">
                     <div className="flex items-center justify-between">
-                      <span className="text-sm font-extrabold text-gray-800">{p.name}</span>
-                      <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-white/80 border text-gray-600">
+                      <span className="text-sm font-extrabold text-slate-900">{p.name}</span>
+                      <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-white/90 border border-slate-200 text-slate-700">
                         {p.badge}
                       </span>
                     </div>
-                    <p className="text-xs text-gray-600 line-clamp-2">
+                    <p className="text-xs text-slate-600 line-clamp-2">
                       {p.description}
                     </p>
                   </div>
 
-                  <div className="pt-3 mt-3 border-t border-gray-200/50 flex items-center justify-between text-xs font-bold text-pastel-purpleDark">
+                  <div className="pt-3 mt-3 border-t border-slate-200/60 flex items-center justify-between text-xs font-bold text-indigo-700">
                     <span>+ Thiết lập cấu hình</span>
-                    <span className="text-[11px] font-mono text-gray-400">{p.model_name}</span>
+                    <span className="text-[11px] font-mono text-slate-400">{p.model_name}</span>
                   </div>
                 </div>
               ))}
@@ -424,64 +424,64 @@ export function AIConfigManagement() {
           </div>
 
           {/* Configured AI List */}
-          <div className="bg-white rounded-3xl border border-gray-100 shadow-card overflow-hidden">
-            <div className="p-5 border-b border-gray-100 font-extrabold text-sm text-gray-700 flex justify-between items-center">
-              <span>Danh sách AI Providers đã lưu ({configs.length})</span>
+          <div className="bg-white rounded-2xl border border-slate-200/90 shadow-sm overflow-hidden">
+            <div className="p-5 border-b border-slate-100 font-extrabold text-sm text-slate-800 flex justify-between items-center">
+              <span>Danh sách nhà cung cấp AI đã lưu ({configs.length})</span>
             </div>
 
             {loading ? (
-              <div className="text-center py-16 text-gray-400 text-sm">Đang tải danh sách AI Providers...</div>
+              <div className="text-center py-16 text-slate-400 text-sm">Đang tải danh sách...</div>
             ) : configs.length === 0 ? (
-              <div className="text-center py-16 text-gray-400 text-sm space-y-2">
-                <Cpu className="w-8 h-8 text-gray-300 mx-auto" />
+              <div className="text-center py-16 text-slate-400 text-sm space-y-2">
+                <Cpu className="w-8 h-8 text-slate-300 mx-auto" />
                 <div>Chưa có cấu hình AI nào được lưu.</div>
                 <button
                   onClick={() => handleOpenAddModal()}
-                  className="text-xs font-bold text-pastel-purpleDark hover:underline"
+                  className="text-xs font-bold text-indigo-600 hover:underline"
                 >
-                  + Thêm AI Provider đầu tiên
+                  + Thêm nhà cung cấp AI đầu tiên
                 </button>
               </div>
             ) : (
-              <div className="divide-y divide-gray-100">
+              <div className="divide-y divide-slate-100">
                 {configs.map(c => (
-                  <div key={c.id} className="p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 hover:bg-gray-50/60 transition">
+                  <div key={c.id} className="p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 hover:bg-slate-50/80 transition">
                     <div className="space-y-1.5 min-w-0 flex-1">
                       <div className="flex flex-wrap items-center gap-2">
-                        <span className="font-extrabold text-base text-gray-800">{c.name}</span>
-                        <span className="px-3 py-0.5 bg-purple-50 text-pastel-purpleDark rounded-full text-xs font-bold border border-purple-100">
+                        <span className="font-extrabold text-base text-slate-900">{c.name}</span>
+                        <span className="px-2.5 py-0.5 bg-indigo-50 border border-indigo-200/60 text-indigo-700 rounded-full text-xs font-bold">
                           {c.provider}
                         </span>
                         {c.is_active && (
-                          <span className="inline-flex items-center space-x-1 px-3 py-0.5 bg-emerald-50 text-emerald-700 rounded-full text-xs font-bold border border-emerald-200">
+                          <span className="inline-flex items-center space-x-1 px-2.5 py-0.5 bg-emerald-50 text-emerald-700 rounded-full text-xs font-bold border border-emerald-200">
                             <CheckCircle className="w-3.5 h-3.5" />
                             <span>Đang hoạt động</span>
                           </span>
                         )}
                       </div>
 
-                      <div className="text-xs text-gray-500 flex flex-wrap items-center gap-x-4 gap-y-1 font-mono">
-                        <span className="flex items-center space-x-1.5 bg-gray-50 px-2 py-0.5 rounded-lg border border-gray-200/60">
-                          <Key className="w-3 h-3 text-gray-400" />
+                      <div className="text-xs text-slate-500 flex flex-wrap items-center gap-x-4 gap-y-1 font-mono">
+                        <span className="flex items-center space-x-1.5 bg-slate-50 px-2 py-0.5 rounded-lg border border-slate-200/80">
+                          <Key className="w-3 h-3 text-slate-400" />
                           <span>{revealedKeys[c.id] ? c.api_key : c.api_key_masked}</span>
                           <button
                             type="button"
                             onClick={() => setRevealedKeys(prev => ({ ...prev, [c.id]: !prev[c.id] }))}
-                            className="text-gray-400 hover:text-gray-700 ml-1 p-0.5"
+                            className="text-slate-400 hover:text-slate-700 ml-1 p-0.5"
                             title={revealedKeys[c.id] ? 'Ẩn key' : 'Hiện key'}
                           >
                             {revealedKeys[c.id] ? <EyeOff className="w-3 h-3" /> : <Eye className="w-3 h-3" />}
                           </button>
                         </span>
 
-                        <span className="flex items-center space-x-1 text-gray-400 font-sans">
-                          <Layers className="w-3.5 h-3.5 text-gray-400" />
-                          <span>Model: <strong className="text-gray-700">{c.model_name}</strong></span>
+                        <span className="flex items-center space-x-1 text-slate-400 font-sans">
+                          <Layers className="w-3.5 h-3.5 text-slate-400" />
+                          <span>Mô hình: <strong className="text-slate-700">{c.model_name}</strong></span>
                         </span>
 
                         {c.base_url && (
-                          <span className="flex items-center space-x-1 text-gray-400 font-sans truncate max-w-xs" title={c.base_url}>
-                            <Globe className="w-3.5 h-3.5 text-gray-400 shrink-0" />
+                          <span className="flex items-center space-x-1 text-slate-400 font-sans truncate max-w-xs" title={c.base_url}>
+                            <Globe className="w-3.5 h-3.5 text-slate-400 shrink-0" />
                             <span className="truncate">{c.base_url}</span>
                           </span>
                         )}
@@ -492,16 +492,16 @@ export function AIConfigManagement() {
                       <button
                         onClick={() => handleTestExisting(c.id)}
                         disabled={testingId === c.id}
-                        className="flex items-center space-x-1 px-3 py-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded-xl text-xs font-bold transition disabled:opacity-50 interactive-btn"
+                        className="flex items-center space-x-1 px-3 py-2 bg-indigo-50 border border-indigo-200/70 hover:bg-indigo-100 text-indigo-700 rounded-xl text-xs font-bold transition disabled:opacity-50"
                         title="Kiểm tra kết nối và đo độ trễ"
                       >
                         <Play className="w-3 h-3" />
-                        <span>{testingId === c.id ? 'Test...' : 'Test'}</span>
+                        <span>{testingId === c.id ? 'Test...' : 'Kiểm tra'}</span>
                       </button>
 
                       <button
                         onClick={() => handleOpenEditModal(c)}
-                        className="p-2 text-gray-400 hover:text-pastel-purpleDark hover:bg-purple-50 rounded-xl transition interactive-btn"
+                        className="p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-xl transition"
                         title="Chỉnh sửa cấu hình"
                       >
                         <Edit3 className="w-4 h-4" />
@@ -510,19 +510,19 @@ export function AIConfigManagement() {
                       {!c.is_active ? (
                         <button
                           onClick={() => handleActivate(c.id, c.name)}
-                          className="px-3.5 py-2 bg-pastel-purple text-white hover:bg-pastel-purpleDark rounded-xl text-xs font-bold transition shadow-2xs interactive-btn"
+                          className="px-3.5 py-2 bg-indigo-600 text-white hover:bg-indigo-700 rounded-xl text-xs font-bold transition shadow-xs"
                         >
                           Kích hoạt
                         </button>
                       ) : (
-                        <span className="px-3.5 py-2 text-emerald-600 bg-emerald-50 rounded-xl text-xs font-extrabold border border-emerald-200">
-                          Active
+                        <span className="px-3.5 py-2 text-emerald-700 bg-emerald-50 rounded-xl text-xs font-bold border border-emerald-200">
+                          Đang dùng
                         </span>
                       )}
 
                       <button
                         onClick={() => handleDelete(c.id, c.name)}
-                        className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition interactive-btn"
+                        className="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition"
                         title="Xóa cấu hình"
                       >
                         <Trash2 className="w-4 h-4" />
@@ -535,35 +535,35 @@ export function AIConfigManagement() {
           </div>
 
           {/* Interactive AI Playground */}
-          <div className="bg-white rounded-3xl border border-gray-100 shadow-card p-6 space-y-6">
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 border-b border-gray-100 pb-4">
+          <div className="bg-white rounded-2xl border border-slate-200/90 shadow-sm p-6 space-y-6">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 border-b border-slate-100 pb-4">
               <div>
-                <h2 className="text-base font-extrabold text-gray-800 flex items-center space-x-2">
-                  <Terminal className="w-5 h-5 text-pastel-purpleDark" />
-                  <span>Trải nghiệm & Kiểm tra tính năng AI trực tiếp</span>
+                <h2 className="text-base font-extrabold text-slate-900 flex items-center space-x-2">
+                  <Terminal className="w-5 h-5 text-indigo-600" />
+                  <span>Trải nghiệm & Thử nghiệm tính năng AI</span>
                 </h2>
-                <p className="text-xs text-gray-500 mt-0.5">
+                <p className="text-xs text-slate-500 mt-0.5">
                   Thử nghiệm khả năng sinh câu hỏi, giải toán LaTeX và chấm bài tự luận của AI Provider đang kích hoạt.
                 </p>
               </div>
 
               {/* Tabs */}
-              <div className="flex items-center space-x-1 bg-gray-100/80 p-1 rounded-2xl text-xs font-bold">
+              <div className="flex items-center space-x-1 bg-slate-100 p-1 rounded-xl text-xs font-bold">
                 <button
                   onClick={() => setPlaygroundTab('generate')}
-                  className={`px-3 py-1.5 rounded-xl transition ${playgroundTab === 'generate' ? 'bg-white text-pastel-purpleDark shadow-2xs' : 'text-gray-600 hover:text-gray-900'}`}
+                  className={`px-3 py-1.5 rounded-lg transition ${playgroundTab === 'generate' ? 'bg-white text-indigo-700 shadow-xs' : 'text-slate-600 hover:text-slate-900'}`}
                 >
                   Sinh câu hỏi
                 </button>
                 <button
                   onClick={() => setPlaygroundTab('verify')}
-                  className={`px-3 py-1.5 rounded-xl transition ${playgroundTab === 'verify' ? 'bg-white text-pastel-purpleDark shadow-2xs' : 'text-gray-600 hover:text-gray-900'}`}
+                  className={`px-3 py-1.5 rounded-lg transition ${playgroundTab === 'verify' ? 'bg-white text-indigo-700 shadow-xs' : 'text-slate-600 hover:text-slate-900'}`}
                 >
                   Thẩm định câu hỏi
                 </button>
                 <button
                   onClick={() => setPlaygroundTab('grade')}
-                  className={`px-3 py-1.5 rounded-xl transition ${playgroundTab === 'grade' ? 'bg-white text-pastel-purpleDark shadow-2xs' : 'text-gray-600 hover:text-gray-900'}`}
+                  className={`px-3 py-1.5 rounded-lg transition ${playgroundTab === 'grade' ? 'bg-white text-indigo-700 shadow-xs' : 'text-slate-600 hover:text-slate-900'}`}
                 >
                   Chấm tự luận
                 </button>
@@ -581,16 +581,16 @@ export function AIConfigManagement() {
                       value={promptText}
                       onChange={e => setPromptText(e.target.value)}
                       placeholder="VD: Cho tam giác ABC..."
-                      className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 text-xs sm:text-sm bg-gray-50/50 focus:bg-white focus:outline-none focus:border-pastel-purple"
+                      className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs sm:text-sm bg-slate-50/50 focus:bg-white focus:outline-none focus:border-indigo-600 text-slate-800"
                     />
                   </div>
                   <div>
-                    <label className="block text-xs font-bold text-gray-600 mb-1">Số lượng câu</label>
+                    <label className="block text-xs font-bold text-slate-700 mb-1">Số lượng câu</label>
                     <div className="flex items-center space-x-2">
                       <select
                         value={numQuestions}
                         onChange={e => setNumQuestions(Number(e.target.value))}
-                        className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 text-xs sm:text-sm bg-gray-50/50 font-bold focus:outline-none focus:border-pastel-purple"
+                        className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs sm:text-sm bg-slate-50/50 font-bold focus:outline-none focus:border-indigo-600 text-slate-800"
                       >
                         <option value={1}>1 câu</option>
                         <option value={2}>2 câu</option>
@@ -600,7 +600,7 @@ export function AIConfigManagement() {
                       <button
                         onClick={handlePlaygroundGenerate}
                         disabled={playgroundLoading}
-                        className="px-4 py-2.5 bg-pastel-purple hover:bg-pastel-purpleDark text-white rounded-xl text-xs font-bold transition disabled:opacity-50 shrink-0 interactive-btn"
+                        className="px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold transition disabled:opacity-50 shrink-0 cursor-pointer shadow-xs"
                       >
                         {playgroundLoading ? 'Đang tạo...' : 'Tạo'}
                       </button>
@@ -610,14 +610,14 @@ export function AIConfigManagement() {
 
                 {generatedQuestions.length > 0 && (
                   <div className="space-y-3 pt-2">
-                    <div className="text-xs font-bold text-gray-600">Kết quả sinh từ AI:</div>
+                    <div className="text-xs font-bold text-slate-700">Kết quả sinh từ AI:</div>
                     {generatedQuestions.map((q, idx) => (
-                      <div key={idx} className="p-4 rounded-2xl border border-purple-100 bg-purple-50/20 space-y-2">
+                      <div key={idx} className="p-4 rounded-2xl border border-indigo-100 bg-indigo-50/20 space-y-2">
                         <div className="flex items-center justify-between">
-                          <span className="font-extrabold text-xs text-pastel-purpleDark">Câu {idx + 1} ({q.question_type})</span>
-                          <span className="text-[11px] font-bold text-gray-500">{q.difficulty}</span>
+                          <span className="font-extrabold text-xs text-indigo-700 tabular-nums">Câu {idx + 1} ({q.question_type})</span>
+                          <span className="text-[11px] font-bold text-slate-500">{q.difficulty}</span>
                         </div>
-                        <div className="text-xs text-gray-800 font-medium">
+                        <div className="text-xs text-slate-800 font-medium">
                           <MathRenderer content={q.content} />
                         </div>
                         {q.options && (
@@ -628,7 +628,7 @@ export function AIConfigManagement() {
                                 className={`px-3 py-1.5 rounded-xl border text-xs flex items-center space-x-2 ${
                                   q.correct_option === oIdx
                                     ? 'bg-emerald-50 border-emerald-300 text-emerald-900 font-bold'
-                                    : 'bg-white border-gray-200 text-gray-700'
+                                    : 'bg-white border-slate-200 text-slate-700'
                                 }`}
                               >
                                 <span className="font-bold">{String.fromCharCode(65 + oIdx)}.</span>
@@ -638,7 +638,7 @@ export function AIConfigManagement() {
                           </div>
                         )}
                         {q.explanation && (
-                          <div className="text-[11px] text-gray-500 italic bg-white p-2 rounded-xl border border-gray-100">
+                          <div className="text-[11px] text-slate-500 italic bg-white p-2 rounded-xl border border-slate-100">
                             <strong>Lời giải:</strong> <MathRenderer content={q.explanation} />
                           </div>
                         )}
@@ -653,12 +653,12 @@ export function AIConfigManagement() {
             {playgroundTab === 'verify' && (
               <div className="space-y-4">
                 <div>
-                  <label className="block text-xs font-bold text-gray-600 mb-1">Nội dung câu hỏi cần thẩm định</label>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">Nội dung câu hỏi cần thẩm định</label>
                   <input
                     type="text"
                     value={verifyContent}
                     onChange={e => setVerifyContent(e.target.value)}
-                    className="w-full px-3.5 py-2 rounded-xl border border-gray-200 text-xs sm:text-sm bg-white focus:outline-none focus:border-pastel-purple"
+                    className="w-full px-3.5 py-2 rounded-xl border border-slate-200 text-xs sm:text-sm bg-white focus:outline-none focus:border-indigo-600 text-slate-800"
                   />
                 </div>
 
@@ -670,9 +670,9 @@ export function AIConfigManagement() {
                         name="verify-correct"
                         checked={verifyCorrectOption === idx}
                         onChange={() => setVerifyCorrectOption(idx)}
-                        className="text-pastel-purple focus:ring-pastel-purple cursor-pointer"
+                        className="text-indigo-600 focus:ring-indigo-500 cursor-pointer"
                       />
-                      <span className="text-xs font-bold w-4">{String.fromCharCode(65 + idx)}.</span>
+                      <span className="text-xs font-bold w-4 text-slate-700">{String.fromCharCode(65 + idx)}.</span>
                       <input
                         type="text"
                         value={opt}
@@ -681,7 +681,7 @@ export function AIConfigManagement() {
                           newOpts[idx] = e.target.value;
                           setVerifyOptions(newOpts);
                         }}
-                        className="flex-1 px-3 py-1.5 border border-gray-200 rounded-xl text-xs bg-white"
+                        className="flex-1 px-3 py-1.5 border border-slate-200 rounded-xl text-xs bg-white text-slate-800 focus:outline-none focus:border-indigo-600"
                       />
                     </div>
                   ))}
@@ -691,7 +691,7 @@ export function AIConfigManagement() {
                   <button
                     onClick={handlePlaygroundVerify}
                     disabled={playgroundLoading}
-                    className="flex items-center space-x-1.5 px-5 py-2.5 bg-pastel-purple hover:bg-pastel-purpleDark text-white rounded-xl text-xs font-bold transition disabled:opacity-50 interactive-btn"
+                    className="flex items-center space-x-1.5 px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold transition disabled:opacity-50 cursor-pointer shadow-xs"
                   >
                     <CheckCircle2 className="w-4 h-4" />
                     <span>{playgroundLoading ? 'Đang thẩm định...' : 'Bắt đầu thẩm định'}</span>
@@ -711,17 +711,17 @@ export function AIConfigManagement() {
                             CẦN KIỂM TRA LẠI
                           </span>
                         )}
-                        <span className="text-xs text-gray-500 font-medium">
+                        <span className="text-xs text-slate-500 font-medium tabular-nums">
                           Độ tin cậy: {Math.round((verifyResult.confidence || 0.9) * 100)}%
                         </span>
                       </div>
                     </div>
                     {verifyResult.ai_answer && (
-                      <div className="text-xs font-bold text-gray-700">
-                        Đáp án AI tính toán: <strong className="text-pastel-purpleDark">{verifyResult.ai_answer}</strong>
+                      <div className="text-xs font-bold text-slate-700">
+                        Đáp án AI tính toán: <strong className="text-indigo-700">{verifyResult.ai_answer}</strong>
                       </div>
                     )}
-                    <div className="text-xs text-gray-600 leading-relaxed">
+                    <div className="text-xs text-slate-600 leading-relaxed">
                       {verifyResult.feedback}
                     </div>
                   </div>
@@ -734,32 +734,32 @@ export function AIConfigManagement() {
               <div className="space-y-4">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-xs font-bold text-gray-600 mb-1">Đề bài tự luận</label>
+                    <label className="block text-xs font-bold text-slate-700 mb-1">Đề bài tự luận</label>
                     <textarea
                       rows="2"
                       value={essayPrompt}
                       onChange={e => setEssayPrompt(e.target.value)}
-                      className="w-full p-2.5 border border-gray-200 rounded-xl text-xs bg-white focus:outline-none focus:border-pastel-purple"
+                      className="w-full p-2.5 border border-slate-200 rounded-xl text-xs bg-white focus:outline-none focus:border-indigo-600 text-slate-800"
                     />
                   </div>
                   <div>
-                    <label className="block text-xs font-bold text-gray-600 mb-1">Đáp án mẫu / Thang điểm</label>
+                    <label className="block text-xs font-bold text-slate-700 mb-1">Đáp án mẫu / Thang điểm</label>
                     <textarea
                       rows="2"
                       value={essaySolution}
                       onChange={e => setEssaySolution(e.target.value)}
-                      className="w-full p-2.5 border border-gray-200 rounded-xl text-xs bg-white focus:outline-none focus:border-pastel-purple"
+                      className="w-full p-2.5 border border-slate-200 rounded-xl text-xs bg-white focus:outline-none focus:border-indigo-600 text-slate-800"
                     />
                   </div>
                 </div>
 
                 <div>
-                  <label className="block text-xs font-bold text-gray-600 mb-1">Bài làm của học sinh</label>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">Bài làm của học sinh</label>
                   <textarea
                     rows="3"
                     value={studentAnswer}
                     onChange={e => setStudentAnswer(e.target.value)}
-                    className="w-full p-2.5 border border-gray-200 rounded-xl text-xs bg-white focus:outline-none focus:border-pastel-purple"
+                    className="w-full p-2.5 border border-slate-200 rounded-xl text-xs bg-white focus:outline-none focus:border-indigo-600 text-slate-800"
                   />
                 </div>
 
@@ -767,7 +767,7 @@ export function AIConfigManagement() {
                   <button
                     onClick={handlePlaygroundGrade}
                     disabled={playgroundLoading}
-                    className="flex items-center space-x-1.5 px-5 py-2.5 bg-pastel-purple hover:bg-pastel-purpleDark text-white rounded-xl text-xs font-bold transition disabled:opacity-50 interactive-btn"
+                    className="flex items-center space-x-1.5 px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold transition disabled:opacity-50 cursor-pointer shadow-xs"
                   >
                     <Award className="w-4 h-4" />
                     <span>{playgroundLoading ? 'Đang chấm...' : 'Chấm bài'}</span>
@@ -775,13 +775,13 @@ export function AIConfigManagement() {
                 </div>
 
                 {gradeResult && (
-                  <div className="p-4 rounded-2xl border border-purple-200 bg-purple-50/30 space-y-2">
+                  <div className="p-4 rounded-2xl border border-indigo-200 bg-indigo-50/30 space-y-2">
                     <div className="flex items-center space-x-3">
-                      <span className="text-xl font-extrabold text-pastel-purpleDark">
+                      <span className="text-xl font-extrabold text-indigo-700 tabular-nums">
                         {gradeResult.score !== undefined ? `${gradeResult.score} / 10 Điểm` : 'Đã chấm'}
                       </span>
                     </div>
-                    <div className="text-xs text-gray-700 leading-relaxed whitespace-pre-wrap">
+                    <div className="text-xs text-slate-700 leading-relaxed whitespace-pre-wrap">
                       {gradeResult.feedback}
                     </div>
                   </div>
@@ -799,7 +799,7 @@ export function AIConfigManagement() {
           >
             <form onSubmit={handleSave} className="space-y-4">
               <div>
-                <label className="block text-xs font-bold text-gray-600 mb-1">Nhà cung cấp (Provider)</label>
+                <label className="block text-xs font-bold text-slate-700 mb-1">Nhà cung cấp (Provider)</label>
                 <select
                   value={formData.provider}
                   onChange={e => {
@@ -815,7 +815,7 @@ export function AIConfigManagement() {
                       model_name: defaultModel
                     });
                   }}
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 bg-white text-xs sm:text-sm font-semibold focus:outline-none focus:border-pastel-purple"
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 bg-white text-xs sm:text-sm font-semibold focus:outline-none focus:border-indigo-600 text-slate-800"
                 >
                   <option value="Gemini">Google Gemini (Gemini 2.0 Flash, 1.5 Pro)</option>
                   <option value="OpenAI">OpenAI (GPT-4o, GPT-4o-mini, o3-mini)</option>
@@ -828,20 +828,20 @@ export function AIConfigManagement() {
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-gray-600 mb-1">Tên hiển thị</label>
+                <label className="block text-xs font-bold text-slate-700 mb-1">Tên hiển thị</label>
                 <input
                   type="text"
                   required
                   placeholder="VD: Google Gemini 2.0 Flash chính"
                   value={formData.name}
                   onChange={e => setFormData({ ...formData, name: e.target.value })}
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 bg-white text-xs sm:text-sm font-semibold focus:outline-none focus:border-pastel-purple"
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 bg-white text-xs sm:text-sm font-semibold focus:outline-none focus:border-indigo-600 text-slate-800"
                 />
               </div>
 
               <div>
                 <div className="flex justify-between items-center mb-1">
-                  <label className="text-xs font-bold text-gray-600">
+                  <label className="text-xs font-bold text-slate-700">
                     API Key {formData.provider === 'Ollama' ? '(Không bắt buộc với Ollama)' : ''}
                   </label>
                   {formData.provider === 'Gemini' && (
@@ -849,7 +849,7 @@ export function AIConfigManagement() {
                       href="https://aistudio.google.com/app/apikey"
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="text-[11px] text-pastel-purpleDark hover:underline font-bold"
+                      className="text-[11px] text-indigo-600 hover:underline font-bold"
                     >
                       Lấy Gemini Key miễn phí ↗
                     </a>
@@ -859,7 +859,7 @@ export function AIConfigManagement() {
                       href="https://platform.openai.com/api-keys"
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="text-[11px] text-pastel-purpleDark hover:underline font-bold"
+                      className="text-[11px] text-indigo-600 hover:underline font-bold"
                     >
                       Lấy OpenAI Key ↗
                     </a>
@@ -871,30 +871,30 @@ export function AIConfigManagement() {
                   placeholder={formData.provider === 'Ollama' ? 'Để trống nếu dùng Ollama nội bộ' : 'sk-... hoặc AIzaSy...'}
                   value={formData.api_key}
                   onChange={e => setFormData({ ...formData, api_key: e.target.value })}
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 bg-white text-xs sm:text-sm font-mono focus:outline-none focus:border-pastel-purple"
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 bg-white text-xs sm:text-sm font-mono focus:outline-none focus:border-indigo-600 text-slate-800"
                 />
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-bold text-gray-600 mb-1">Base URL (API Endpoint)</label>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">Base URL (API Endpoint)</label>
                   <input
                     type="text"
                     required
                     value={formData.base_url}
                     onChange={e => setFormData({ ...formData, base_url: e.target.value })}
-                    className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 bg-white text-xs focus:outline-none focus:border-pastel-purple"
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 bg-white text-xs text-slate-800 focus:outline-none focus:border-indigo-600"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-bold text-gray-600 mb-1">Model Name</label>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">Model Name</label>
                   <input
                     type="text"
                     required
                     value={formData.model_name}
                     onChange={e => setFormData({ ...formData, model_name: e.target.value })}
-                    className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 bg-white text-xs font-mono focus:outline-none focus:border-pastel-purple"
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 bg-white text-xs font-mono text-slate-800 focus:outline-none focus:border-indigo-600"
                   />
                 </div>
               </div>
@@ -904,34 +904,34 @@ export function AIConfigManagement() {
                   type="button"
                   onClick={handleTestInModal}
                   disabled={testingCustom}
-                  className="flex items-center space-x-1.5 px-3.5 py-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded-xl text-xs font-bold transition disabled:opacity-50"
+                  className="flex items-center space-x-1.5 px-3.5 py-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded-xl text-xs font-bold transition disabled:opacity-50 cursor-pointer"
                 >
                   <Play className="w-3.5 h-3.5" />
                   <span>{testingCustom ? 'Đang test key...' : 'Kiểm tra key trước khi lưu'}</span>
                 </button>
 
-                <label className="flex items-center space-x-2 cursor-pointer text-xs font-bold text-gray-700">
+                <label className="flex items-center space-x-2 cursor-pointer text-xs font-bold text-slate-700">
                   <input
                     type="checkbox"
                     checked={formData.is_active}
                     onChange={e => setFormData({ ...formData, is_active: e.target.checked })}
-                    className="w-4 h-4 text-pastel-purple rounded border-gray-300 focus:ring-pastel-purple cursor-pointer"
+                    className="w-4 h-4 text-indigo-600 rounded border-slate-300 focus:ring-indigo-500 cursor-pointer"
                   />
                   <span>Kích hoạt ngay</span>
                 </label>
               </div>
 
-              <div className="flex justify-end space-x-3 pt-3 border-t border-gray-100">
+              <div className="flex justify-end space-x-3 pt-3 border-t border-slate-200">
                 <button
                   type="button"
                   onClick={() => setIsModalOpen(false)}
-                  className="px-4 py-2 border border-gray-200 rounded-xl text-xs font-semibold text-gray-600 hover:bg-gray-50"
+                  className="px-4 py-2 border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 hover:bg-slate-50 cursor-pointer"
                 >
                   Hủy
                 </button>
                 <button
                   type="submit"
-                  className="px-5 py-2 bg-pastel-purple hover:bg-pastel-purpleDark text-white rounded-xl text-xs font-bold transition shadow-xs"
+                  className="px-5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold transition shadow-xs cursor-pointer"
                 >
                   {editingConfigId ? 'Cập nhật' : 'Lưu cấu hình'}
                 </button>

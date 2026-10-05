@@ -181,9 +181,9 @@ export function TakeExam() {
 
   if (loading || !exam) {
     return (
-      <div className="min-h-screen bg-pastel-bg flex flex-col items-center justify-center space-y-3">
-        <div className="w-12 h-12 border-4 border-pastel-purple/30 border-t-pastel-purple rounded-full animate-spin" />
-        <div className="text-pastel-purpleDark font-semibold text-base animate-pulse">Đang chuẩn bị đề thi...</div>
+      <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center space-y-3">
+        <div className="w-10 h-10 border-3 border-indigo-200 border-t-indigo-600 rounded-full animate-spin" />
+        <div className="text-slate-700 font-semibold text-sm animate-pulse">Đang tải câu hỏi bài thi...</div>
       </div>
     );
   }
@@ -206,17 +206,17 @@ export function TakeExam() {
   const isWarning = timeLeft < 300 && !isUrgent;
 
   return (
-    <div className="min-h-screen bg-[#f8f9fe] pb-16 font-sans">
+    <div className="min-h-screen bg-slate-50 pb-16 font-sans">
       {/* Sticky Exam Top Bar */}
-      <header className="bg-white/90 backdrop-blur-md border-b border-gray-100 shadow-xs sticky top-0 z-40 px-4 sm:px-8 py-3.5 flex justify-between items-center transition">
+      <header className="bg-white/95 backdrop-blur-md border-b border-slate-200 shadow-xs sticky top-0 z-40 px-4 sm:px-8 py-3 flex justify-between items-center transition">
         <div className="flex items-center space-x-3 truncate">
-          <div className="w-10 h-10 rounded-2xl bg-pastel-purple/10 flex items-center justify-center text-pastel-purpleDark shrink-0">
-            <Sparkles className="w-5 h-5" />
+          <div className="w-9 h-9 rounded-xl bg-indigo-50 border border-indigo-100 flex items-center justify-center text-indigo-600 shrink-0">
+            <Sparkles className="w-4 h-4" />
           </div>
           <div className="truncate">
-            <h1 className="text-base sm:text-lg font-bold text-gray-900 truncate">{exam.title}</h1>
-            <div className="flex items-center space-x-2 text-xs text-gray-500 mt-0.5">
-              <span>Đã trả lời <strong className="text-gray-900 font-semibold">{answeredCount}/{questions.length}</strong> câu</span>
+            <h1 className="text-base sm:text-lg font-bold text-slate-900 truncate">{exam.title}</h1>
+            <div className="flex items-center space-x-2 text-xs text-slate-500 mt-0.5">
+              <span>Đã trả lời <strong className="text-slate-900 font-semibold tabular-nums">{answeredCount}/{questions.length}</strong> câu</span>
               <span>•</span>
               <span className="inline-flex items-center space-x-1 text-emerald-600 font-medium">
                 <Cloud className="w-3.5 h-3.5" />
@@ -228,12 +228,12 @@ export function TakeExam() {
 
         {/* Dynamic Countdown Timer */}
         <div className="flex items-center space-x-3 shrink-0">
-          <div className={`flex items-center space-x-2 px-3.5 py-1.5 sm:px-4 sm:py-2 rounded-2xl font-mono text-sm sm:text-base font-bold transition ${
+          <div className={`flex items-center space-x-2 px-3.5 py-1.5 sm:px-4 sm:py-2 rounded-xl font-mono tabular-nums text-sm sm:text-base font-bold transition ${
             isUrgent 
-              ? 'bg-rose-50 text-rose-600 border border-rose-200 animate-pulse' 
+              ? 'bg-rose-50 text-rose-700 border border-rose-300 animate-pulse' 
               : isWarning 
-              ? 'bg-amber-50 text-amber-600 border border-amber-200 animate-pulse' 
-              : 'bg-purple-50 text-pastel-purpleDark border border-purple-100'
+              ? 'bg-amber-50 text-amber-700 border border-amber-300 animate-pulse' 
+              : 'bg-indigo-50 text-indigo-700 border border-indigo-200'
           }`}>
             <Clock className={`w-4 h-4 sm:w-5 sm:h-5 ${isUrgent ? 'animate-bounce' : ''}`} />
             <span>{formatTime(timeLeft)}</span>
@@ -242,7 +242,7 @@ export function TakeExam() {
           <button
             onClick={() => handleSubmit(false)}
             disabled={submitting}
-            className="flex items-center space-x-1.5 px-4 sm:px-6 py-2 bg-gradient-to-r from-pastel-purple to-pastel-purpleDark text-white font-bold text-xs sm:text-sm rounded-2xl hover:opacity-95 transition shadow-sm hover:shadow disabled:opacity-50"
+            className="flex items-center space-x-1.5 px-4 sm:px-5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-xs sm:text-sm rounded-xl transition shadow-xs disabled:opacity-50 cursor-pointer"
           >
             <Send className="w-4 h-4" />
             <span>{submitting ? 'Đang nộp...' : 'Nộp bài'}</span>
@@ -253,13 +253,13 @@ export function TakeExam() {
       {/* Progress Bar & Anti-cheat alert */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 mt-4">
         {tabSwitches > 0 && (
-          <div className="bg-amber-50 border border-amber-200 text-amber-800 text-xs px-4 py-2.5 rounded-2xl flex items-center justify-between mb-3 shadow-2xs">
-            <span className="font-semibold">⚠️ Giám sát thi: Bạn đã rời khỏi màn hình bài thi {tabSwitches} lần. Lịch sử chuyển đổi cửa sổ đang được tự động lưu.</span>
+          <div className="bg-amber-50 border border-amber-200 text-amber-900 text-xs px-4 py-2.5 rounded-xl flex items-center justify-between mb-3 shadow-2xs">
+            <span className="font-semibold">⚠️ Giám sát thi: Bạn đã rời khỏi màn hình bài thi {tabSwitches} lần. Lịch sử chuyển đổi cửa sổ đang được tự động ghi nhận.</span>
           </div>
         )}
-        <div className="w-full bg-gray-200/80 h-1.5 rounded-full overflow-hidden">
+        <div className="w-full bg-slate-200 h-1.5 rounded-full overflow-hidden">
           <div 
-            className="bg-gradient-to-r from-pastel-purple to-pastel-purpleDark h-full transition-all duration-300"
+            className="bg-indigo-600 h-full transition-all duration-300"
             style={{ width: `${questions.length > 0 ? (answeredCount / questions.length) * 100 : 0}%` }}
           />
         </div>
@@ -270,14 +270,14 @@ export function TakeExam() {
         {/* Question Panel */}
         <main className="lg:col-span-3 space-y-6">
           {currentQ ? (
-            <div className="bg-white rounded-3xl p-6 sm:p-8 border border-gray-100 shadow-card">
+            <div className="bg-white rounded-2xl p-6 sm:p-8 border border-slate-200/90 shadow-xs">
               {/* Question Header */}
-              <div className="flex justify-between items-center mb-6 pb-4 border-b border-gray-100">
+              <div className="flex justify-between items-center mb-6 pb-4 border-b border-slate-100">
                 <div className="flex items-center space-x-2">
-                  <span className="text-xs font-bold px-3 py-1 bg-pastel-purple/10 text-pastel-purpleDark rounded-xl">
+                  <span className="text-xs font-bold px-3 py-1 bg-indigo-50 text-indigo-700 border border-indigo-100 rounded-xl tabular-nums">
                     Câu {currentIndex + 1} / {questions.length}
                   </span>
-                  <span className="text-xs font-semibold px-2.5 py-1 bg-gray-100 text-gray-600 rounded-xl">
+                  <span className="text-xs font-semibold px-2.5 py-1 bg-slate-100 text-slate-700 rounded-xl">
                     {currentQ.question_type === 'TRUE_FALSE' ? 'Đúng / Sai' : currentQ.question_type === 'SHORT_ANSWER' ? 'Điền khuyết / Trả lời ngắn' : 'Trắc nghiệm 1 đáp án'}
                   </span>
                 </div>
@@ -285,19 +285,19 @@ export function TakeExam() {
                 <button
                   type="button"
                   onClick={() => toggleBookmark(currentQ.id)}
-                  className={`flex items-center space-x-1.5 text-xs font-bold px-3 py-1.5 rounded-xl transition ${
+                  className={`flex items-center space-x-1.5 text-xs font-semibold px-3 py-1.5 rounded-xl transition cursor-pointer ${
                     bookmarked[currentQ.id] 
-                      ? 'bg-amber-100 text-amber-800 border border-amber-300' 
-                      : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                      ? 'bg-amber-50 text-amber-800 border border-amber-300' 
+                      : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
                   }`}
                 >
                   <Bookmark className={`w-3.5 h-3.5 ${bookmarked[currentQ.id] ? 'fill-amber-600 text-amber-600' : ''}`} />
-                  <span>{bookmarked[currentQ.id] ? 'Đã ghim xem lại' : 'Đánh dấu xem lại'}</span>
+                  <span>{bookmarked[currentQ.id] ? 'Đã đánh dấu' : 'Đánh dấu xem lại'}</span>
                 </button>
               </div>
 
               {/* Question Content */}
-              <div className="text-base sm:text-lg font-medium text-gray-900 mb-6 leading-relaxed">
+              <div className="text-base sm:text-lg font-medium text-slate-900 mb-6 leading-relaxed">
                 {currentQ.content && currentQ.content.includes('/key') ? (
                   <div>
                     {currentQ.content.split('/key').map((part, pIdx, arr) => (
@@ -309,7 +309,7 @@ export function TakeExam() {
                             value={typeof answers[currentQ.id] === 'string' ? answers[currentQ.id] : ''}
                             onChange={(e) => handleAnswerChange(currentQ.id, e.target.value)}
                             placeholder="(Điền đáp án)"
-                            className="inline-block mx-2 px-3 py-1 border-b-2 border-pastel-purple bg-purple-50/60 rounded-xl text-pastel-purpleDark font-bold w-40 text-center focus:outline-none focus:bg-purple-100/70"
+                            className="inline-block mx-2 px-3 py-1 border-b-2 border-indigo-600 bg-indigo-50/60 rounded-xl text-indigo-700 font-bold w-40 text-center focus:outline-none focus:bg-indigo-100/70"
                           />
                         )}
                       </React.Fragment>
@@ -326,14 +326,14 @@ export function TakeExam() {
                   <img 
                     src={resolveImageUrl(currentQ.image_url)} 
                     alt="Hình minh họa" 
-                    className="max-h-72 rounded-2xl border border-gray-200 shadow-xs object-contain" 
+                    className="max-h-72 rounded-2xl border border-slate-200 shadow-2xs object-contain" 
                     onError={(e) => { e.currentTarget.style.display = 'none'; }} 
                   />
                 </div>
               )}
 
               {/* Interactive Answers Section */}
-              <div className="space-y-3.5 pt-2">
+              <div className="space-y-3 pt-2">
                 {currentQ.question_type === 'MULTIPLE_CHOICE' || currentQ.question_type === 'SINGLE_CHOICE' || !currentQ.question_type ? (
                   currentQ.options && currentQ.options.map((opt, idx) => {
                     const optContent = typeof opt === 'string' ? opt : (opt.content ?? '');
@@ -344,16 +344,16 @@ export function TakeExam() {
                     return (
                       <label
                         key={idx}
-                        className={`flex items-start space-x-3.5 p-4 rounded-2xl border-2 cursor-pointer transition-all ${
+                        className={`flex items-start space-x-3.5 p-4 rounded-xl border-2 cursor-pointer transition-all ${
                           isSelected
-                            ? 'border-pastel-purple bg-purple-50/50 text-gray-900 shadow-xs ring-1 ring-pastel-purple/20'
-                            : 'border-gray-200/90 hover:border-purple-200 hover:bg-gray-50/60 text-gray-700'
+                            ? 'border-indigo-600 bg-indigo-50/60 text-slate-900 shadow-2xs ring-1 ring-indigo-500/20'
+                            : 'border-slate-200/90 hover:border-indigo-300 hover:bg-slate-50/70 text-slate-700'
                         }`}
                       >
-                        <div className={`w-8 h-8 rounded-xl font-bold flex items-center justify-center text-sm shrink-0 transition ${
+                        <div className={`w-8 h-8 rounded-lg font-bold flex items-center justify-center text-sm shrink-0 transition ${
                           isSelected 
-                            ? 'bg-pastel-purple text-white shadow-xs' 
-                            : 'bg-gray-100 text-gray-600'
+                            ? 'bg-indigo-600 text-white shadow-xs' 
+                            : 'bg-slate-100 text-slate-600'
                         }`}>
                           {letter}
                         </div>
@@ -364,7 +364,7 @@ export function TakeExam() {
                           onChange={() => handleAnswerChange(currentQ.id, optValue)}
                           className="sr-only"
                         />
-                        <div className="flex-1 pt-1 text-sm sm:text-base leading-relaxed">
+                        <div className="flex-1 pt-1 text-sm sm:text-base leading-relaxed text-slate-800">
                           <MathRenderer content={optContent} />
                         </div>
                       </label>
@@ -378,9 +378,9 @@ export function TakeExam() {
                       const subVal = currentSubAnswers[sqId];
 
                       return (
-                        <div key={sqId} className="flex flex-col sm:flex-row sm:items-center justify-between p-4 rounded-2xl border border-gray-200 bg-gray-50/50 gap-3">
-                          <div className="text-gray-800 text-sm font-medium flex-1">
-                            <span className="font-bold mr-2 text-pastel-purpleDark">Ý {sIdx + 1}:</span>
+                        <div key={sqId} className="flex flex-col sm:flex-row sm:items-center justify-between p-4 rounded-xl border border-slate-200 bg-slate-50/60 gap-3">
+                          <div className="text-slate-800 text-sm font-medium flex-1">
+                            <span className="font-bold mr-2 text-indigo-700">Ý {sIdx + 1}:</span>
                             <span>{sq.text || sq.statement || `Khẳng định ${sIdx + 1}`}</span>
                           </div>
                           <div className="flex space-x-2 shrink-0">
@@ -390,10 +390,10 @@ export function TakeExam() {
                                 const newSub = { ...currentSubAnswers, [sqId]: true };
                                 handleAnswerChange(currentQ.id, newSub);
                               }}
-                              className={`flex items-center space-x-1.5 px-4 py-2 rounded-xl text-xs font-bold transition ${
+                              className={`flex items-center space-x-1.5 px-4 py-2 rounded-xl text-xs font-bold transition cursor-pointer ${
                                 subVal === true 
                                   ? 'bg-emerald-600 text-white shadow-xs' 
-                                  : 'bg-white border border-gray-200 text-gray-700 hover:bg-emerald-50'
+                                  : 'bg-white border border-slate-200 text-slate-700 hover:bg-emerald-50'
                               }`}
                             >
                               <Check className="w-3.5 h-3.5" />
@@ -405,10 +405,10 @@ export function TakeExam() {
                                 const newSub = { ...currentSubAnswers, [sqId]: false };
                                 handleAnswerChange(currentQ.id, newSub);
                               }}
-                              className={`flex items-center space-x-1.5 px-4 py-2 rounded-xl text-xs font-bold transition ${
+                              className={`flex items-center space-x-1.5 px-4 py-2 rounded-xl text-xs font-bold transition cursor-pointer ${
                                 subVal === false 
                                   ? 'bg-rose-600 text-white shadow-xs' 
-                                  : 'bg-white border border-gray-200 text-gray-700 hover:bg-rose-50'
+                                  : 'bg-white border border-slate-200 text-slate-700 hover:bg-rose-50'
                               }`}
                             >
                               <X className="w-3.5 h-3.5" />
@@ -425,18 +425,18 @@ export function TakeExam() {
                     value={typeof answers[currentQ.id] === 'string' ? answers[currentQ.id] : ''}
                     onChange={(e) => handleAnswerChange(currentQ.id, e.target.value)}
                     placeholder="Nhập câu trả lời của bạn..."
-                    className="w-full p-4 rounded-2xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-pastel-purple text-gray-900 bg-white"
+                    className="w-full p-4 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-600 text-slate-900 bg-white"
                   />
                 ) : null}
               </div>
 
               {/* Navigation controls */}
-              <div className="flex justify-between items-center pt-6 mt-8 border-t border-gray-100">
+              <div className="flex justify-between items-center pt-6 mt-8 border-t border-slate-100">
                 <button
                   type="button"
                   onClick={() => setCurrentIndex(prev => Math.max(0, prev - 1))}
                   disabled={currentIndex === 0}
-                  className="flex items-center space-x-1.5 px-5 py-2.5 rounded-2xl border border-gray-200 text-xs font-bold text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-40 transition shadow-xs"
+                  className="flex items-center space-x-1.5 px-5 py-2.5 rounded-xl border border-slate-200 text-xs font-semibold text-slate-700 bg-white hover:bg-slate-50 disabled:opacity-40 transition shadow-2xs cursor-pointer"
                 >
                   <ChevronLeft className="w-4 h-4" />
                   <span>Câu trước</span>
@@ -445,7 +445,7 @@ export function TakeExam() {
                   type="button"
                   onClick={() => setCurrentIndex(prev => Math.min(questions.length - 1, prev + 1))}
                   disabled={currentIndex === questions.length - 1}
-                  className="flex items-center space-x-1.5 px-5 py-2.5 rounded-2xl bg-pastel-purple text-xs font-bold text-white hover:bg-pastel-purpleDark disabled:opacity-40 transition shadow-sm"
+                  className="flex items-center space-x-1.5 px-5 py-2.5 rounded-xl bg-indigo-600 text-xs font-semibold text-white hover:bg-indigo-700 disabled:opacity-40 transition shadow-xs cursor-pointer"
                 >
                   <span>Câu sau</span>
                   <ChevronRight className="w-4 h-4" />
@@ -453,17 +453,17 @@ export function TakeExam() {
               </div>
             </div>
           ) : (
-            <div className="bg-white rounded-3xl p-12 text-center border border-gray-100 shadow-card">
-              <p className="text-gray-500 font-medium">Không tìm thấy câu hỏi nào trong đề thi này.</p>
+            <div className="bg-white rounded-2xl p-12 text-center border border-slate-200/90 shadow-xs">
+              <p className="text-slate-500 font-medium">Không tìm thấy câu hỏi nào trong đề thi này.</p>
             </div>
           )}
         </main>
 
         {/* Question Palette Sidebar */}
-        <aside className="bg-white rounded-3xl p-6 border border-gray-100 shadow-card h-fit space-y-4">
-          <div className="flex items-center justify-between pb-3 border-b border-gray-100">
-            <h3 className="font-bold text-gray-900 text-xs uppercase tracking-wider">Bảng câu hỏi</h3>
-            <span className="text-xs font-bold text-pastel-purpleDark bg-purple-50 px-2.5 py-0.5 rounded-full">
+        <aside className="bg-white rounded-2xl p-5 border border-slate-200/90 shadow-xs h-fit space-y-4">
+          <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+            <h3 className="font-bold text-slate-900 text-xs uppercase tracking-wider">Bảng câu hỏi</h3>
+            <span className="text-xs font-bold text-indigo-700 bg-indigo-50 border border-indigo-100 px-2.5 py-0.5 rounded-full tabular-nums">
               {answeredCount}/{questions.length}
             </span>
           </div>
@@ -479,12 +479,12 @@ export function TakeExam() {
                 <button
                   key={q.id || idx}
                   onClick={() => setCurrentIndex(idx)}
-                  className={`h-11 rounded-2xl font-bold text-xs transition flex flex-col items-center justify-center relative shadow-xs ${
+                  className={`h-11 rounded-xl font-bold text-xs transition flex flex-col items-center justify-center relative cursor-pointer tabular-nums shadow-2xs ${
                     isCurrent
-                      ? 'ring-2 ring-pastel-purple bg-pastel-purple text-white shadow-md'
+                      ? 'ring-2 ring-indigo-500 bg-indigo-600 text-white shadow-xs'
                       : isAnswered
                       ? 'bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100'
-                      : 'bg-gray-50 text-gray-600 border border-gray-200 hover:bg-gray-100'
+                      : 'bg-slate-50 text-slate-700 border border-slate-200 hover:bg-slate-100'
                   }`}
                 >
                   <span>{idx + 1}</span>
@@ -497,13 +497,13 @@ export function TakeExam() {
           </div>
 
           {/* Legend */}
-          <div className="mt-4 pt-4 border-t border-gray-100 space-y-2 text-xs text-gray-500 font-medium">
+          <div className="mt-4 pt-4 border-t border-slate-100 space-y-2 text-xs text-slate-500 font-medium">
             <div className="flex items-center space-x-2">
-              <span className="w-3.5 h-3.5 rounded-lg bg-emerald-50 border border-emerald-300"></span>
+              <span className="w-3.5 h-3.5 rounded-md bg-emerald-50 border border-emerald-300"></span>
               <span>Đã trả lời ({answeredCount})</span>
             </div>
             <div className="flex items-center space-x-2">
-              <span className="w-3.5 h-3.5 rounded-lg bg-gray-50 border border-gray-200"></span>
+              <span className="w-3.5 h-3.5 rounded-md bg-slate-50 border border-slate-200"></span>
               <span>Chưa làm ({Math.max(0, questions.length - answeredCount)})</span>
             </div>
             <div className="flex items-center space-x-2">
@@ -517,24 +517,24 @@ export function TakeExam() {
       {/* Conflict Modal */}
       {conflictModal && (
         <div className="fixed inset-0 bg-black/45 backdrop-blur-xs flex items-center justify-center z-50 p-4">
-          <div className="bg-white p-6 rounded-3xl max-w-md w-full space-y-4 shadow-float">
-            <h3 className="text-lg font-bold text-red-600 flex items-center space-x-2">
+          <div className="bg-white p-6 rounded-2xl max-w-md w-full space-y-4 shadow-float border border-slate-200">
+            <h3 className="text-lg font-bold text-rose-600 flex items-center space-x-2">
               <AlertCircle className="w-5 h-5" />
               <span>Phát hiện xung đột bài làm</span>
             </h3>
-            <p className="text-sm text-gray-600">Dữ liệu bài làm đã được cập nhật từ một thiết bị hoặc phiên khác. Bạn có muốn đồng bộ lại không?</p>
+            <p className="text-sm text-slate-600">Dữ liệu bài làm đã được cập nhật từ một thiết bị hoặc phiên khác. Bạn có muốn đồng bộ lại không?</p>
             <div className="flex justify-end space-x-3 pt-2">
               <button 
                 type="button"
                 onClick={() => setConflictModal(false)} 
-                className="px-4 py-2 border rounded-xl text-sm font-semibold text-gray-600 hover:bg-gray-50"
+                className="px-4 py-2 border border-slate-200 rounded-xl text-sm font-semibold text-slate-600 hover:bg-slate-50 cursor-pointer"
               >
                 Đóng
               </button>
               <button 
                 type="button"
                 onClick={() => { setAnswers(serverAnswers); setConflictModal(false); }} 
-                className="px-4 py-2 bg-pastel-purple text-white rounded-xl text-sm font-bold hover:bg-pastel-purpleDark"
+                className="px-4 py-2 bg-indigo-600 text-white rounded-xl text-sm font-semibold hover:bg-indigo-700 cursor-pointer shadow-xs"
               >
                 Đồng bộ lại
               </button>

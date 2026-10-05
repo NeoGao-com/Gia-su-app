@@ -219,22 +219,22 @@ export function ImportFileModal({ isOpen, onClose, onSuccess }) {
     >
       <div className="space-y-5">
         {/* Step Indicator */}
-        <div className="flex items-center justify-between px-3 py-2 bg-purple-50/60 rounded-2xl border border-purple-100/80 text-xs font-bold text-gray-600">
+        <div className="flex items-center justify-between px-3 py-2 bg-indigo-50/60 rounded-xl border border-indigo-100/80 text-xs font-semibold text-slate-700">
           <div className="flex items-center space-x-2">
-            <span className={`w-6 h-6 rounded-full flex items-center justify-center text-xs ${step === 'upload' ? 'bg-pastel-purple text-white' : 'bg-emerald-500 text-white'}`}>
+            <span className={`w-6 h-6 rounded-full flex items-center justify-center text-xs ${step === 'upload' ? 'bg-indigo-600 text-white' : 'bg-emerald-600 text-white'}`}>
               {step === 'upload' ? '1' : <Check className="w-3.5 h-3.5" />}
             </span>
-            <span className={step === 'upload' ? 'text-pastel-purpleDark font-extrabold' : 'text-gray-700'}>
+            <span className={step === 'upload' ? 'text-indigo-700 font-bold' : 'text-slate-700'}>
               Tải lên tài liệu
             </span>
           </div>
-          <ChevronRight className="w-4 h-4 text-gray-400" />
+          <ChevronRight className="w-4 h-4 text-slate-400" />
           <div className="flex items-center space-x-2">
-            <span className={`w-6 h-6 rounded-full flex items-center justify-center text-xs ${step === 'review' ? 'bg-pastel-purple text-white' : 'bg-gray-200 text-gray-500'}`}>
+            <span className={`w-6 h-6 rounded-full flex items-center justify-center text-xs ${step === 'review' ? 'bg-indigo-600 text-white' : 'bg-slate-200 text-slate-500'}`}>
               2
             </span>
-            <span className={step === 'review' ? 'text-pastel-purpleDark font-extrabold' : 'text-gray-400'}>
-              Kiểm tra & Phê duyệt ({extractedQuestions.length})
+            <span className={step === 'review' ? 'text-indigo-700 font-bold' : 'text-slate-400'}>
+              Kiểm tra &amp; Phê duyệt ({extractedQuestions.length})
             </span>
           </div>
         </div>
@@ -248,12 +248,12 @@ export function ImportFileModal({ isOpen, onClose, onSuccess }) {
               onDragLeave={handleDragLeave}
               onDrop={handleDrop}
               onClick={() => fileInputRef.current?.click()}
-              className={`border-2 border-dashed rounded-3xl p-8 text-center cursor-pointer transition flex flex-col items-center justify-center gap-3 ${
+              className={`border-2 border-dashed rounded-2xl p-8 text-center cursor-pointer transition flex flex-col items-center justify-center gap-3 ${
                 isDragging 
-                  ? 'border-pastel-purple bg-purple-50/50 scale-[1.01]' 
+                  ? 'border-indigo-600 bg-indigo-50/50 scale-[1.01]' 
                   : selectedFile 
                     ? 'border-emerald-300 bg-emerald-50/30' 
-                    : 'border-gray-200 hover:border-pastel-purple hover:bg-gray-50/50'
+                    : 'border-slate-200 hover:border-indigo-400 hover:bg-slate-50/60'
               }`}
             >
               <input
@@ -270,20 +270,20 @@ export function ImportFileModal({ isOpen, onClose, onSuccess }) {
                     <FileCheck className="w-7 h-7" />
                   </div>
                   <div>
-                    <p className="font-extrabold text-sm text-gray-800">{selectedFile.name}</p>
-                    <p className="text-xs text-gray-500">{(selectedFile.size / 1024).toFixed(1)} KB • Nhấn để đổi tệp khác</p>
+                    <p className="font-bold text-sm text-slate-800">{selectedFile.name}</p>
+                    <p className="text-xs text-slate-500">{(selectedFile.size / 1024).toFixed(1)} KB • Nhấn để đổi tệp khác</p>
                   </div>
                 </div>
               ) : (
                 <div className="flex flex-col items-center space-y-2">
-                  <div className="w-14 h-14 rounded-2xl bg-purple-50 text-pastel-purpleDark flex items-center justify-center">
+                  <div className="w-14 h-14 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center border border-indigo-100">
                     <Upload className="w-7 h-7" />
                   </div>
                   <div>
-                    <p className="font-extrabold text-sm text-gray-700">
-                      Kéo thả hoặc <span className="text-pastel-purpleDark underline">chọn tệp từ máy tính</span>
+                    <p className="font-bold text-sm text-slate-800">
+                      Kéo thả hoặc <span className="text-indigo-600 underline">chọn tệp từ máy tính</span>
                     </p>
-                    <p className="text-xs text-gray-400 mt-1">
+                    <p className="text-xs text-slate-400 mt-1">
                       Hỗ trợ: Word (.docx, .doc), PDF (.pdf), Markdown (.md), Text (.txt)
                     </p>
                   </div>
@@ -292,19 +292,19 @@ export function ImportFileModal({ isOpen, onClose, onSuccess }) {
             </div>
 
             {/* Target Taxonomy Settings */}
-            <div className="p-4 bg-gray-50/70 border border-gray-100 rounded-2xl space-y-3">
-              <div className="text-xs font-bold text-gray-700 flex items-center space-x-1.5">
-                <Layers className="w-4 h-4 text-pastel-purple" />
+            <div className="p-4 bg-slate-50 border border-slate-200/80 rounded-xl space-y-3">
+              <div className="text-xs font-bold text-slate-800 flex items-center space-x-1.5">
+                <Layers className="w-4 h-4 text-indigo-600" />
                 <span>Thiết lập thông tin phân loại câu hỏi</span>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <div>
-                  <label className="block text-[11px] font-bold text-gray-600 mb-1">Môn học</label>
+                  <label className="block text-[11px] font-bold text-slate-700 mb-1">Môn học</label>
                   <select
                     value={subject}
                     onChange={e => setSubject(e.target.value)}
-                    className="w-full px-3 py-2 bg-white border border-gray-200 rounded-xl text-xs font-semibold focus:outline-none focus:border-pastel-purple"
+                    className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-semibold focus:outline-none focus:border-indigo-500 text-slate-800"
                   >
                     <option value="Toán">Toán</option>
                     <option value="Vật lý">Vật lý</option>
@@ -318,11 +318,11 @@ export function ImportFileModal({ isOpen, onClose, onSuccess }) {
                 </div>
 
                 <div>
-                  <label className="block text-[11px] font-bold text-gray-600 mb-1">Khối lớp</label>
+                  <label className="block text-[11px] font-bold text-slate-700 mb-1">Khối lớp</label>
                   <select
                     value={gradeLevel}
                     onChange={e => setGradeLevel(Number(e.target.value))}
-                    className="w-full px-3 py-2 bg-white border border-gray-200 rounded-xl text-xs font-semibold focus:outline-none focus:border-pastel-purple"
+                    className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-semibold focus:outline-none focus:border-indigo-500 text-slate-800"
                   >
                     {[6, 7, 8, 9, 10, 11, 12].map(g => (
                       <option key={g} value={g}>Khối {g}</option>
@@ -331,25 +331,25 @@ export function ImportFileModal({ isOpen, onClose, onSuccess }) {
                 </div>
 
                 <div>
-                  <label className="block text-[11px] font-bold text-gray-600 mb-1">Chương / Chuyên đề (Tùy chọn)</label>
+                  <label className="block text-[11px] font-bold text-slate-700 mb-1">Chương / Chuyên đề (Tùy chọn)</label>
                   <input
                     type="text"
                     value={chapter}
                     onChange={e => setChapter(e.target.value)}
                     placeholder="VD: Hàm số bậc hai"
-                    className="w-full px-3 py-2 bg-white border border-gray-200 rounded-xl text-xs focus:outline-none focus:border-pastel-purple"
+                    className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs focus:outline-none focus:border-indigo-500 text-slate-800"
                   />
                 </div>
               </div>
 
               {/* AI toggle */}
-              <div className="flex items-center justify-between pt-2 border-t border-gray-200/60">
+              <div className="flex items-center justify-between pt-2 border-t border-slate-200">
                 <div className="flex items-center space-x-2">
-                  <Sparkles className="w-4 h-4 text-pastel-purple" />
+                  <Sparkles className="w-4 h-4 text-indigo-600" />
                   <div>
-                    <div className="text-xs font-bold text-gray-800">Sử dụng AI phân tích thông minh</div>
-                    <div className="text-[11px] text-gray-500">
-                      Tự động chuyển đổi công thức Toán LaTeX, giải đề nếu thiếu đáp án, xử lý đúng/sai & tự luận.
+                    <div className="text-xs font-bold text-slate-800">Sử dụng AI phân tích thông minh</div>
+                    <div className="text-[11px] text-slate-500">
+                      Tự động chuyển đổi công thức Toán LaTeX, giải đề nếu thiếu đáp án, xử lý đúng/sai &amp; tự luận.
                     </div>
                   </div>
                 </div>
@@ -360,7 +360,7 @@ export function ImportFileModal({ isOpen, onClose, onSuccess }) {
                     onChange={e => setUseAI(e.target.checked)}
                     className="sr-only peer"
                   />
-                  <div className="w-9 h-5 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-pastel-purple"></div>
+                  <div className="w-9 h-5 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-indigo-600"></div>
                 </label>
               </div>
             </div>
@@ -370,7 +370,7 @@ export function ImportFileModal({ isOpen, onClose, onSuccess }) {
               <button
                 type="button"
                 onClick={handleClose}
-                className="px-4 py-2 border border-gray-200 rounded-xl text-xs font-semibold text-gray-600 hover:bg-gray-50"
+                className="px-4 py-2 border border-slate-200 rounded-xl text-xs font-semibold text-slate-600 hover:bg-slate-50 cursor-pointer"
               >
                 Hủy
               </button>
@@ -378,12 +378,12 @@ export function ImportFileModal({ isOpen, onClose, onSuccess }) {
                 type="button"
                 onClick={handleExtract}
                 disabled={!selectedFile || isExtracting}
-                className="flex items-center space-x-2 px-6 py-2.5 bg-pastel-purple hover:bg-pastel-purpleDark text-white rounded-xl text-xs font-bold shadow-xs transition disabled:opacity-50 interactive-btn"
+                className="flex items-center space-x-2 px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-semibold shadow-xs transition disabled:opacity-50 cursor-pointer"
               >
                 {isExtracting ? (
                   <>
                     <Loader2 className="w-4 h-4 animate-spin" />
-                    <span>Đang đọc & phân tích đề thi...</span>
+                    <span>Đang đọc &amp; phân tích đề thi...</span>
                   </>
                 ) : (
                   <>
@@ -400,13 +400,13 @@ export function ImportFileModal({ isOpen, onClose, onSuccess }) {
         {step === 'review' && (
           <div className="space-y-4">
             {/* Header Toolbar */}
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 p-3 bg-purple-50/60 border border-purple-100 rounded-2xl">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 p-3 bg-indigo-50/60 border border-indigo-100 rounded-xl">
               <div>
-                <span className="text-xs font-bold text-gray-800">
-                  Tìm thấy <strong className="text-pastel-purpleDark">{extractedQuestions.length} câu hỏi</strong> từ tệp{' '}
-                  <code className="bg-white px-1.5 py-0.5 rounded text-gray-600 font-mono text-[11px]">{fileMeta?.filename}</code>
+                <span className="text-xs font-bold text-slate-800">
+                  Tìm thấy <strong className="text-indigo-700 tabular-nums">{extractedQuestions.length} câu hỏi</strong> từ tệp{' '}
+                  <code className="bg-white px-1.5 py-0.5 rounded text-slate-700 font-mono text-[11px] border border-slate-200">{fileMeta?.filename}</code>
                 </span>
-                <span className="text-xs text-gray-500 ml-2">
+                <span className="text-xs text-slate-500 ml-2 tabular-nums">
                   (Đã chọn {selectedIndices.size} / {extractedQuestions.length})
                 </span>
               </div>
@@ -415,14 +415,14 @@ export function ImportFileModal({ isOpen, onClose, onSuccess }) {
                 <button
                   type="button"
                   onClick={toggleSelectAll}
-                  className="px-3 py-1.5 bg-white border border-gray-200 rounded-xl text-xs font-bold text-gray-700 hover:bg-gray-50 transition"
+                  className="px-3 py-1.5 bg-white border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 hover:bg-slate-50 transition cursor-pointer"
                 >
                   {selectedIndices.size === extractedQuestions.length ? 'Bỏ chọn tất cả' : 'Chọn tất cả'}
                 </button>
                 <button
                   type="button"
                   onClick={() => setStep('upload')}
-                  className="flex items-center space-x-1 px-3 py-1.5 bg-white border border-gray-200 rounded-xl text-xs font-semibold text-gray-600 hover:bg-gray-50 transition"
+                  className="flex items-center space-x-1 px-3 py-1.5 bg-white border border-slate-200 rounded-xl text-xs font-semibold text-slate-600 hover:bg-slate-50 transition cursor-pointer"
                 >
                   <ArrowLeft className="w-3.5 h-3.5" />
                   <span>Chọn tệp khác</span>
@@ -440,21 +440,21 @@ export function ImportFileModal({ isOpen, onClose, onSuccess }) {
 
                 if (isEditing && editFormData) {
                   return (
-                    <div key={idx} className="p-4 bg-purple-50/40 border-2 border-pastel-purple rounded-2xl space-y-3">
+                    <div key={idx} className="p-4 bg-indigo-50/30 border-2 border-indigo-600 rounded-xl space-y-3">
                       <div className="flex justify-between items-center">
-                        <span className="font-extrabold text-xs text-pastel-purpleDark">Chỉnh sửa Câu #{idx + 1}</span>
+                        <span className="font-bold text-xs text-indigo-700 tabular-nums">Chỉnh sửa Câu #{idx + 1}</span>
                         <div className="flex space-x-2">
                           <button
                             type="button"
                             onClick={() => setEditingIndex(null)}
-                            className="px-2.5 py-1 text-xs border border-gray-200 rounded-lg hover:bg-white"
+                            className="px-2.5 py-1 text-xs border border-slate-200 rounded-lg hover:bg-white text-slate-700 cursor-pointer"
                           >
                             Hủy
                           </button>
                           <button
                             type="button"
                             onClick={handleSaveEdit}
-                            className="px-3 py-1 text-xs bg-pastel-purple text-white font-bold rounded-lg hover:bg-pastel-purpleDark"
+                            className="px-3 py-1 text-xs bg-indigo-600 text-white font-semibold rounded-lg hover:bg-indigo-700 cursor-pointer"
                           >
                             Lưu
                           </button>
@@ -462,18 +462,18 @@ export function ImportFileModal({ isOpen, onClose, onSuccess }) {
                       </div>
 
                       <div>
-                        <label className="block text-[11px] font-bold text-gray-600 mb-1">Nội dung câu hỏi</label>
+                        <label className="block text-[11px] font-bold text-slate-700 mb-1">Nội dung câu hỏi</label>
                         <textarea
                           rows="3"
                           value={editFormData.content}
                           onChange={e => setEditFormData({ ...editFormData, content: e.target.value })}
-                          className="w-full p-2.5 border border-gray-200 rounded-xl text-xs focus:outline-none focus:border-pastel-purple bg-white"
+                          className="w-full p-2.5 border border-slate-200 rounded-xl text-xs focus:outline-none focus:border-indigo-500 bg-white text-slate-800"
                         />
                       </div>
 
                       {editFormData.question_type === 'MULTIPLE_CHOICE' && editFormData.options && (
                         <div className="space-y-2">
-                          <label className="block text-[11px] font-bold text-gray-600">4 Phương án (Chọn đáp án đúng)</label>
+                          <label className="block text-[11px] font-bold text-slate-700">4 Phương án (Chọn đáp án đúng)</label>
                           {editFormData.options.map((opt, optIdx) => (
                             <div key={optIdx} className="flex items-center space-x-2">
                               <input
@@ -481,9 +481,9 @@ export function ImportFileModal({ isOpen, onClose, onSuccess }) {
                                 name={`edit-correct-${idx}`}
                                 checked={editFormData.correct_option === optIdx}
                                 onChange={() => setEditFormData({ ...editFormData, correct_option: optIdx })}
-                                className="text-pastel-purple focus:ring-pastel-purple cursor-pointer"
+                                className="text-indigo-600 focus:ring-indigo-500 cursor-pointer"
                               />
-                              <span className="text-xs font-bold w-5">{String.fromCharCode(65 + optIdx)}.</span>
+                              <span className="text-xs font-bold w-5 text-slate-700">{String.fromCharCode(65 + optIdx)}.</span>
                               <input
                                 type="text"
                                 value={opt}
@@ -492,7 +492,7 @@ export function ImportFileModal({ isOpen, onClose, onSuccess }) {
                                   newOpts[optIdx] = e.target.value;
                                   setEditFormData({ ...editFormData, options: newOpts });
                                 }}
-                                className="flex-1 px-3 py-1.5 border border-gray-200 rounded-xl text-xs bg-white"
+                                className="flex-1 px-3 py-1.5 border border-slate-200 rounded-xl text-xs bg-white text-slate-800 focus:outline-none focus:border-indigo-500"
                               />
                             </div>
                           ))}
@@ -501,23 +501,23 @@ export function ImportFileModal({ isOpen, onClose, onSuccess }) {
 
                       {editFormData.question_type === 'SHORT_ANSWER' && (
                         <div>
-                          <label className="block text-[11px] font-bold text-gray-600 mb-1">Đáp án đúng</label>
+                          <label className="block text-[11px] font-bold text-slate-700 mb-1">Đáp án đúng</label>
                           <input
                             type="text"
                             value={editFormData.correct_answer || ''}
                             onChange={e => setEditFormData({ ...editFormData, correct_answer: e.target.value })}
-                            className="w-full px-3 py-1.5 border border-gray-200 rounded-xl text-xs bg-white"
+                            className="w-full px-3 py-1.5 border border-slate-200 rounded-xl text-xs bg-white text-slate-800 focus:outline-none focus:border-indigo-500"
                           />
                         </div>
                       )}
 
                       <div>
-                        <label className="block text-[11px] font-bold text-gray-600 mb-1">Lời giải / Giải thích chi tiết</label>
+                        <label className="block text-[11px] font-bold text-slate-700 mb-1">Lời giải / Giải thích chi tiết</label>
                         <input
                           type="text"
                           value={editFormData.explanation || ''}
                           onChange={e => setEditFormData({ ...editFormData, explanation: e.target.value })}
-                          className="w-full px-3 py-1.5 border border-gray-200 rounded-xl text-xs bg-white"
+                          className="w-full px-3 py-1.5 border border-slate-200 rounded-xl text-xs bg-white text-slate-800 focus:outline-none focus:border-indigo-500"
                         />
                       </div>
                     </div>
@@ -529,8 +529,8 @@ export function ImportFileModal({ isOpen, onClose, onSuccess }) {
                     key={idx}
                     className={`p-4 rounded-2xl border transition ${
                       isSelected
-                        ? 'bg-white border-purple-200 shadow-2xs'
-                        : 'bg-gray-50/50 border-gray-200 opacity-60'
+                        ? 'bg-white border-indigo-200 shadow-2xs'
+                        : 'bg-slate-50/50 border-slate-200 opacity-60'
                     }`}
                   >
                     <div className="flex items-start justify-between gap-3">
@@ -539,12 +539,12 @@ export function ImportFileModal({ isOpen, onClose, onSuccess }) {
                           type="checkbox"
                           checked={isSelected}
                           onChange={() => toggleSelectIndex(idx)}
-                          className="mt-1 w-4 h-4 text-pastel-purple rounded border-gray-300 focus:ring-pastel-purple cursor-pointer"
+                          className="mt-1 w-4 h-4 text-indigo-600 rounded border-slate-300 focus:ring-indigo-500 cursor-pointer"
                         />
 
                         <div className="space-y-2 flex-1 min-w-0">
                           <div className="flex flex-wrap items-center gap-2">
-                            <span className="font-extrabold text-xs text-gray-800">Câu {idx + 1}</span>
+                            <span className="font-extrabold text-xs text-slate-800 tabular-nums">Câu {idx + 1}</span>
                             <span className={`px-2 py-0.5 rounded-lg text-[10px] font-bold border ${typeInfo.bg}`}>
                               {typeInfo.label}
                             </span>
@@ -620,7 +620,7 @@ export function ImportFileModal({ isOpen, onClose, onSuccess }) {
                         <button
                           type="button"
                           onClick={() => handleStartEdit(idx)}
-                          className="p-1.5 text-gray-400 hover:text-pastel-purpleDark hover:bg-purple-50 rounded-lg transition"
+                          className="p-1.5 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition cursor-pointer"
                           title="Sửa câu hỏi"
                         >
                           <Edit3 className="w-4 h-4" />
@@ -628,7 +628,7 @@ export function ImportFileModal({ isOpen, onClose, onSuccess }) {
                         <button
                           type="button"
                           onClick={() => handleDeleteQuestion(idx)}
-                          className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition"
+                          className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition cursor-pointer"
                           title="Xóa câu hỏi này"
                         >
                           <Trash2 className="w-4 h-4" />
@@ -641,15 +641,15 @@ export function ImportFileModal({ isOpen, onClose, onSuccess }) {
             </div>
 
             {/* Bottom Actions */}
-            <div className="flex justify-between items-center pt-3 border-t border-gray-100">
-              <span className="text-xs text-gray-500">
-                Sẽ nhập <strong className="text-pastel-purpleDark">{selectedIndices.size}</strong> câu hỏi vào ngân hàng.
+            <div className="flex justify-between items-center pt-3 border-t border-slate-200">
+              <span className="text-xs text-slate-500">
+                Sẽ nhập <strong className="text-indigo-600 font-bold tabular-nums">{selectedIndices.size}</strong> câu hỏi vào ngân hàng.
               </span>
               <div className="flex space-x-2.5">
                 <button
                   type="button"
                   onClick={handleClose}
-                  className="px-4 py-2 border border-gray-200 rounded-xl text-xs font-semibold hover:bg-gray-50 transition"
+                  className="px-4 py-2 border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 hover:bg-slate-50 transition cursor-pointer"
                 >
                   Đóng
                 </button>
@@ -657,7 +657,7 @@ export function ImportFileModal({ isOpen, onClose, onSuccess }) {
                   type="button"
                   onClick={handleImportToBank}
                   disabled={selectedIndices.size === 0 || isImporting}
-                  className="flex items-center space-x-1.5 px-5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold shadow-xs transition disabled:opacity-50 interactive-btn"
+                  className="flex items-center space-x-1.5 px-5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold shadow-xs transition disabled:opacity-50 cursor-pointer"
                 >
                   {isImporting ? (
                     <>
@@ -667,7 +667,7 @@ export function ImportFileModal({ isOpen, onClose, onSuccess }) {
                   ) : (
                     <>
                       <Check className="w-4 h-4" />
-                      <span>Lưu {selectedIndices.size} câu vào Ngân hàng</span>
+                      <span className="tabular-nums">Lưu {selectedIndices.size} câu vào Ngân hàng</span>
                     </>
                   )}
                 </button>

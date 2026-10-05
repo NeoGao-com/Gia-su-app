@@ -6,19 +6,21 @@ export function Pagination({ currentPage, totalPages, onPageChange }) {
   return (
     <div className="flex justify-center items-center space-x-2 mt-6">
       <button
+        type="button"
         onClick={() => onPageChange(currentPage - 1)}
         disabled={currentPage === 1}
-        className="px-3 py-1.5 rounded-xl border border-gray-200 text-sm font-medium text-gray-600 disabled:opacity-50 hover:bg-pastel-bg"
+        className="px-3.5 py-1.5 rounded-xl border border-slate-200 text-xs font-semibold text-slate-600 disabled:opacity-40 hover:bg-slate-50 transition cursor-pointer"
       >
         Trước
       </button>
-      <span className="text-sm text-gray-600 px-3">
-        Trang {currentPage} / {totalPages}
+      <span className="text-xs text-slate-600 px-3 tabular-nums">
+        Trang <strong className="text-slate-800 font-bold">{currentPage}</strong> / {totalPages}
       </span>
       <button
+        type="button"
         onClick={() => onPageChange(currentPage + 1)}
         disabled={currentPage === totalPages}
-        className="px-3 py-1.5 rounded-xl border border-gray-200 text-sm font-medium text-gray-600 disabled:opacity-50 hover:bg-pastel-bg"
+        className="px-3.5 py-1.5 rounded-xl border border-slate-200 text-xs font-semibold text-slate-600 disabled:opacity-40 hover:bg-slate-50 transition cursor-pointer"
       >
         Sau
       </button>

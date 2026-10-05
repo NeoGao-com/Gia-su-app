@@ -21,8 +21,8 @@ export function RootRedirect() {
 
 export function PageLoader() {
   return (
-    <div className="min-h-screen flex items-center justify-center bg-pastel-bg">
-      <div className="text-pastel-purpleDark font-medium text-lg animate-pulse">Đang tải trang...</div>
+    <div className="min-h-screen flex items-center justify-center bg-slate-50">
+      <div className="text-indigo-600 font-semibold text-base animate-pulse">Đang tải trang...</div>
     </div>
   );
 }

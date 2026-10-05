@@ -75,12 +75,12 @@ export function EditAssignmentModal({ assignment, isOpen, onClose, onSaved }) {
       )}
 
       {/* Info card */}
-      <div className="mb-5 p-3.5 bg-purple-50/70 border border-purple-100 rounded-2xl">
-        <div className="text-xs text-purple-600 font-semibold uppercase tracking-wider">Đề thi / Bài tập</div>
-        <div className="font-bold text-gray-800 text-sm mt-0.5">{assignment.exam?.title || `Đề thi #${assignment.exam_id}`}</div>
+      <div className="mb-5 p-3.5 bg-indigo-50/70 border border-indigo-100 rounded-xl">
+        <div className="text-xs text-indigo-700 font-bold uppercase tracking-wider">Đề thi / Bài tập</div>
+        <div className="font-bold text-slate-900 text-sm mt-0.5">{assignment.exam?.title || `Đề thi #${assignment.exam_id}`}</div>
         {assignment.classroom_name && (
-          <div className="text-xs text-gray-500 mt-1">
-            Lớp học: <span className="font-semibold text-gray-700">{assignment.classroom_name}</span>
+          <div className="text-xs text-slate-500 mt-1">
+            Lớp học: <span className="font-semibold text-slate-700">{assignment.classroom_name}</span>
           </div>
         )}
       </div>
@@ -88,38 +88,38 @@ export function EditAssignmentModal({ assignment, isOpen, onClose, onSaved }) {
       <form onSubmit={handleSubmit} className="space-y-4">
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
-            <label className="block text-xs font-semibold text-gray-700 mb-1 flex items-center space-x-1">
-              <Calendar className="w-3.5 h-3.5 text-pastel-purpleDark" />
+            <label className="block text-xs font-semibold text-slate-700 mb-1 flex items-center space-x-1">
+              <Calendar className="w-3.5 h-3.5 text-indigo-600" />
               <span>Thời gian mở đề</span>
             </label>
             <input
               type="datetime-local"
               value={openDate}
               onChange={(e) => setOpenDate(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-200 rounded-xl text-xs sm:text-sm focus:outline-none focus:border-pastel-purple bg-white"
+              className="w-full px-3 py-2 border border-slate-300 rounded-xl text-xs sm:text-sm focus:outline-none focus:border-indigo-600 focus:ring-2 focus:ring-indigo-100 bg-white"
             />
-            <span className="text-[11px] text-gray-400 mt-0.5 block">Để trống nếu mở ngay</span>
+            <span className="text-[11px] text-slate-400 mt-0.5 block">Để trống nếu mở ngay</span>
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-gray-700 mb-1 flex items-center space-x-1">
-              <Clock className="w-3.5 h-3.5 text-pastel-purpleDark" />
+            <label className="block text-xs font-semibold text-slate-700 mb-1 flex items-center space-x-1">
+              <Clock className="w-3.5 h-3.5 text-indigo-600" />
               <span>Hạn nộp bài</span>
             </label>
             <input
               type="datetime-local"
               value={dueDate}
               onChange={(e) => setDueDate(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-200 rounded-xl text-xs sm:text-sm focus:outline-none focus:border-pastel-purple bg-white"
+              className="w-full px-3 py-2 border border-slate-300 rounded-xl text-xs sm:text-sm focus:outline-none focus:border-indigo-600 focus:ring-2 focus:ring-indigo-100 bg-white"
             />
-            <span className="text-[11px] text-gray-400 mt-0.5 block">Để trống nếu không giới hạn</span>
+            <span className="text-[11px] text-slate-400 mt-0.5 block">Để trống nếu không giới hạn</span>
           </div>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
-            <label className="block text-xs font-semibold text-gray-700 mb-1 flex items-center space-x-1">
-              <RotateCcw className="w-3.5 h-3.5 text-pastel-purpleDark" />
+            <label className="block text-xs font-semibold text-slate-700 mb-1 flex items-center space-x-1">
+              <RotateCcw className="w-3.5 h-3.5 text-indigo-600" />
               <span>Số lần làm bài tối đa</span>
             </label>
             <input
@@ -128,14 +128,14 @@ export function EditAssignmentModal({ assignment, isOpen, onClose, onSaved }) {
               max={10}
               value={maxAttempts}
               onChange={(e) => setMaxAttempts(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-200 rounded-xl text-xs sm:text-sm focus:outline-none focus:border-pastel-purple bg-white"
+              className="w-full px-3 py-2 border border-slate-300 rounded-xl text-xs sm:text-sm focus:outline-none focus:border-indigo-600 focus:ring-2 focus:ring-indigo-100 bg-white"
               placeholder="1"
             />
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-gray-700 mb-1 flex items-center space-x-1">
-              <Clock className="w-3.5 h-3.5 text-pastel-purpleDark" />
+            <label className="block text-xs font-semibold text-slate-700 mb-1 flex items-center space-x-1">
+              <Clock className="w-3.5 h-3.5 text-indigo-600" />
               <span>Thời gian làm bài riêng (phút)</span>
             </label>
             <input
@@ -144,39 +144,39 @@ export function EditAssignmentModal({ assignment, isOpen, onClose, onSaved }) {
               max={600}
               value={durationOverride}
               onChange={(e) => setDurationOverride(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-200 rounded-xl text-xs sm:text-sm focus:outline-none focus:border-pastel-purple bg-white"
+              className="w-full px-3 py-2 border border-slate-300 rounded-xl text-xs sm:text-sm focus:outline-none focus:border-indigo-600 focus:ring-2 focus:ring-indigo-100 bg-white"
               placeholder="Dùng thời gian gốc của đề"
             />
           </div>
         </div>
 
         <div className="pt-2">
-          <label className="flex items-center space-x-2 text-xs sm:text-sm text-gray-700 cursor-pointer">
+          <label className="flex items-center space-x-2 text-xs sm:text-sm text-slate-700 cursor-pointer">
             <input
               type="checkbox"
               checked={showAnswers}
               onChange={(e) => setShowAnswers(e.target.checked)}
-              className="w-4 h-4 text-pastel-purple rounded border-gray-300 focus:ring-pastel-purple"
+              className="w-4 h-4 text-indigo-600 rounded border-slate-300 focus:ring-indigo-500"
             />
             <span className="flex items-center space-x-1">
-              <Eye className="w-3.5 h-3.5 text-gray-500" />
+              <Eye className="w-3.5 h-3.5 text-slate-500" />
               <span>Cho phép học sinh xem đáp án và lời giải sau khi nộp bài</span>
             </span>
           </label>
         </div>
 
-        <div className="flex justify-end space-x-3 pt-3 border-t border-gray-100">
+        <div className="flex justify-end space-x-3 pt-3 border-t border-slate-100">
           <button
             type="button"
             onClick={onClose}
-            className="px-4 py-2 border border-gray-200 rounded-xl text-xs font-semibold text-gray-600 hover:bg-gray-50 transition"
+            className="px-4 py-2 border border-slate-300 rounded-xl text-xs font-semibold text-slate-700 hover:bg-slate-50 transition"
           >
             Hủy
           </button>
           <button
             type="submit"
             disabled={saving}
-            className="flex items-center space-x-1.5 px-5 py-2 bg-pastel-purple text-white rounded-xl text-xs font-bold hover:bg-pastel-purpleDark transition shadow-sm disabled:opacity-50"
+            className="flex items-center space-x-1.5 px-5 py-2 bg-indigo-600 text-white rounded-xl text-xs font-bold hover:bg-indigo-700 transition shadow-sm disabled:opacity-50"
           >
             <Save className="w-3.5 h-3.5" />
             <span>{saving ? 'Đang lưu...' : 'Lưu thay đổi'}</span>

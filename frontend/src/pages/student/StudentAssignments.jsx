@@ -86,7 +86,7 @@ export function StudentAssignments() {
   }).length;
 
   return (
-    <div className="min-h-screen bg-pastel-bg">
+    <div className="min-h-screen bg-slate-50 font-sans">
       <Navbar />
       <div className="flex">
         <Sidebar role="student" />
@@ -94,23 +94,23 @@ export function StudentAssignments() {
           {/* Header */}
           <div className="mb-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
             <div>
-              <h1 className="text-2xl font-black text-gray-800 tracking-tight flex items-center space-x-2.5">
-                <Send className="w-7 h-7 text-pastel-purpleDark" />
+              <h1 className="text-2xl font-extrabold text-slate-900 tracking-tight flex items-center space-x-2.5">
+                <Send className="w-7 h-7 text-indigo-600" />
                 <span>Bài tập về nhà &amp; Nhiệm vụ học tập</span>
               </h1>
-              <p className="text-xs text-gray-500 mt-1">
+              <p className="text-xs sm:text-sm text-slate-500 mt-1">
                 Theo dõi các bài tập được thầy cô giao cho lớp, thời hạn nộp và tiến độ hoàn thành.
               </p>
             </div>
 
             <div className="flex items-center space-x-2 shrink-0">
-              <span className="text-xs font-bold bg-white border border-gray-100 px-3 py-2 rounded-2xl shadow-xs">
+              <span className="text-xs font-bold bg-white border border-slate-200 px-3 py-2 rounded-xl shadow-xs text-slate-700 tabular-nums">
                 Tổng: {assignments.length} bài
               </span>
               <button
                 type="button"
                 onClick={loadAssignments}
-                className="p-2 bg-white hover:bg-gray-50 border border-gray-100 rounded-2xl shadow-xs text-gray-600 transition cursor-pointer"
+                className="p-2 bg-white hover:bg-slate-50 border border-slate-200 rounded-xl shadow-xs text-slate-600 transition cursor-pointer"
                 title="Tải lại danh sách"
               >
                 <RefreshCw className="w-4 h-4" />
@@ -119,16 +119,16 @@ export function StudentAssignments() {
           </div>
 
           {/* Filter Bar & Tabs */}
-          <div className="bg-white rounded-3xl border border-gray-100 p-4 shadow-sm space-y-3 mb-6">
+          <div className="bg-white rounded-2xl border border-slate-200/90 p-4 shadow-sm space-y-3 mb-6">
             {/* Tabs */}
-            <div className="flex flex-wrap items-center gap-2 pb-2 border-b border-gray-100">
+            <div className="flex flex-wrap items-center gap-2 pb-2 border-b border-slate-100">
               <button
                 type="button"
                 onClick={() => setActiveTab('all')}
                 className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer ${
                   activeTab === 'all'
-                    ? 'bg-pastel-purple text-white shadow-2xs'
-                    : 'bg-gray-50 text-gray-600 hover:bg-gray-100'
+                    ? 'bg-indigo-600 text-white shadow-xs'
+                    : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
                 }`}
               >
                 Tất cả ({assignments.length})
@@ -138,7 +138,7 @@ export function StudentAssignments() {
                 onClick={() => setActiveTab('urgent')}
                 className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer flex items-center space-x-1 ${
                   activeTab === 'urgent'
-                    ? 'bg-rose-600 text-white shadow-2xs'
+                    ? 'bg-rose-600 text-white shadow-xs'
                     : 'bg-rose-50 text-rose-700 hover:bg-rose-100'
                 }`}
               >
@@ -150,7 +150,7 @@ export function StudentAssignments() {
                 onClick={() => setActiveTab('pending')}
                 className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer ${
                   activeTab === 'pending'
-                    ? 'bg-amber-500 text-white shadow-2xs'
+                    ? 'bg-amber-600 text-white shadow-xs'
                     : 'bg-amber-50 text-amber-800 hover:bg-amber-100'
                 }`}
               >
@@ -161,7 +161,7 @@ export function StudentAssignments() {
                 onClick={() => setActiveTab('completed')}
                 className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer flex items-center space-x-1 ${
                   activeTab === 'completed'
-                    ? 'bg-emerald-600 text-white shadow-2xs'
+                    ? 'bg-emerald-600 text-white shadow-xs'
                     : 'bg-emerald-50 text-emerald-800 hover:bg-emerald-100'
                 }`}
               >
@@ -173,13 +173,13 @@ export function StudentAssignments() {
             {/* Inputs & Dropdowns */}
             <div className="flex flex-col sm:flex-row gap-3 items-stretch sm:items-center">
               <div className="relative flex-1">
-                <Search className="w-4 h-4 text-gray-400 absolute left-3 top-3" />
+                <Search className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
                 <input
                   type="text"
                   placeholder="Tìm theo tên bài tập, nội dung hoặc lớp học..."
                   value={search}
                   onChange={e => setSearch(e.target.value)}
-                  className="w-full pl-9 pr-4 py-2 bg-gray-50 border border-gray-200 rounded-2xl text-xs focus:outline-none focus:border-pastel-purple"
+                  className="w-full pl-9 pr-4 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs focus:outline-none focus:border-indigo-600 focus:ring-2 focus:ring-indigo-100"
                 />
               </div>
 
@@ -188,7 +188,7 @@ export function StudentAssignments() {
                   <select
                     value={classroomFilter}
                     onChange={e => setClassroomFilter(e.target.value)}
-                    className="p-2 bg-white border border-gray-200 rounded-xl text-xs font-bold text-gray-700 focus:outline-none focus:border-pastel-purple"
+                    className="p-2 bg-white border border-slate-300 rounded-xl text-xs font-bold text-slate-700 focus:outline-none focus:border-indigo-600"
                   >
                     <option value="">Tất cả lớp học</option>
                     {classrooms.map(c => <option key={c} value={c}>{c}</option>)}
@@ -199,7 +199,7 @@ export function StudentAssignments() {
                   <select
                     value={subjectFilter}
                     onChange={e => setSubjectFilter(e.target.value)}
-                    className="p-2 bg-white border border-gray-200 rounded-xl text-xs font-bold text-gray-700 focus:outline-none focus:border-pastel-purple"
+                    className="p-2 bg-white border border-slate-300 rounded-xl text-xs font-bold text-slate-700 focus:outline-none focus:border-indigo-600"
                   >
                     <option value="">Tất cả môn</option>
                     {subjects.map(s => <option key={s} value={s}>{s}</option>)}
@@ -210,7 +210,7 @@ export function StudentAssignments() {
                   <button
                     type="button"
                     onClick={() => { setSearch(''); setClassroomFilter(''); setSubjectFilter(''); }}
-                    className="px-3 py-1.5 text-xs font-bold text-gray-500 hover:text-gray-800"
+                    className="px-3 py-1.5 text-xs font-bold text-slate-500 hover:text-slate-800"
                   >
                     Xóa lọc
                   </button>
@@ -221,17 +221,17 @@ export function StudentAssignments() {
 
           {/* Assignments Grid */}
           {loading ? (
-            <div className="bg-white rounded-3xl p-16 text-center border border-gray-100 shadow-sm space-y-3">
-              <RefreshCw className="w-8 h-8 text-pastel-purple animate-spin mx-auto" />
-              <p className="text-sm font-semibold text-gray-600">Đang tải danh sách bài tập...</p>
+            <div className="bg-white rounded-2xl p-16 text-center border border-slate-200/90 shadow-sm space-y-3">
+              <RefreshCw className="w-8 h-8 text-indigo-600 animate-spin mx-auto" />
+              <p className="text-sm font-semibold text-slate-600">Đang tải danh sách bài tập...</p>
             </div>
           ) : filtered.length === 0 ? (
-            <div className="bg-white rounded-3xl p-16 text-center border border-gray-100 shadow-sm space-y-3">
-              <div className="w-14 h-14 bg-purple-50 text-pastel-purple rounded-3xl flex items-center justify-center mx-auto">
+            <div className="bg-white rounded-2xl p-16 text-center border border-slate-200/90 shadow-sm space-y-3">
+              <div className="w-14 h-14 bg-indigo-50 text-indigo-600 rounded-2xl flex items-center justify-center mx-auto">
                 <Send className="w-7 h-7" />
               </div>
-              <h3 className="text-base font-bold text-gray-800">Không có bài tập nào phù hợp</h3>
-              <p className="text-xs text-gray-400 max-w-md mx-auto">
+              <h3 className="text-base font-bold text-slate-800">Không có bài tập nào phù hợp</h3>
+              <p className="text-xs text-slate-400 max-w-md mx-auto">
                 {activeTab === 'urgent' 
                   ? 'Tuyệt vời! Bạn không có bài tập nào bị quá hạn hoặc cần nộp gấp.' 
                   : 'Chưa có bài tập nào được giao trong mục này. Hãy kiểm tra lại sau nhé!'}
@@ -252,23 +252,23 @@ export function StudentAssignments() {
 
                   if (isOverdue) {
                     dueBadge = (
-                      <span className="inline-flex items-center space-x-1 px-2.5 py-1 bg-rose-50 text-rose-700 border border-rose-200 rounded-xl text-[11px] font-bold">
-                        <AlertCircle className="w-3.5 h-3.5 text-rose-600" />
-                        <span>Đã quá hạn nộp</span>
+                      <span className="inline-flex items-center space-x-1 px-2.5 py-0.5 bg-rose-50 text-rose-700 border border-rose-200 rounded-lg text-[11px] font-bold">
+                        <AlertCircle className="w-3 h-3 text-rose-600" />
+                        <span>Quá hạn nộp</span>
                       </span>
                     );
                   } else if (diffHours < 24 && !isCompleted) {
                     dueBadge = (
-                      <span className="inline-flex items-center space-x-1 px-2.5 py-1 bg-amber-50 text-amber-800 border border-amber-200 rounded-xl text-[11px] font-bold animate-pulse">
-                        <Clock className="w-3.5 h-3.5 text-amber-600" />
-                        <span>Hạn nộp: Còn {Math.max(1, Math.round(diffHours))} giờ</span>
+                      <span className="inline-flex items-center space-x-1 px-2.5 py-0.5 bg-amber-50 text-amber-800 border border-amber-200 rounded-lg text-[11px] font-bold animate-pulse">
+                        <Clock className="w-3 h-3 text-amber-600" />
+                        <span>Còn {Math.max(1, Math.round(diffHours))}h</span>
                       </span>
                     );
                   } else {
                     dueBadge = (
-                      <span className="inline-flex items-center space-x-1 px-2.5 py-1 bg-gray-50 text-gray-600 border border-gray-200 rounded-xl text-[11px] font-medium">
-                        <Calendar className="w-3.5 h-3.5 text-gray-400" />
-                        <span>Hạn nộp: {dueDateObj.toLocaleDateString('vi-VN')}</span>
+                      <span className="inline-flex items-center space-x-1 px-2.5 py-0.5 bg-slate-50 text-slate-600 border border-slate-200 rounded-lg text-[11px] font-medium">
+                        <Calendar className="w-3 h-3 text-slate-400" />
+                        <span>Hạn: {dueDateObj.toLocaleDateString('vi-VN')}</span>
                       </span>
                     );
                   }
@@ -277,19 +277,19 @@ export function StudentAssignments() {
                 return (
                   <div
                     key={item.id}
-                    className="bg-white rounded-3xl border border-gray-100 hover:border-purple-200 p-5 shadow-sm hover:shadow-md transition-all flex flex-col justify-between space-y-4"
+                    className="bg-white rounded-2xl border border-slate-200/90 hover:border-indigo-300 p-5 shadow-xs hover:shadow-md transition flex flex-col justify-between space-y-4"
                   >
                     <div className="space-y-3">
                       {/* Top tags */}
                       <div className="flex flex-wrap justify-between items-center gap-1.5">
                         <div className="flex flex-wrap items-center gap-1.5">
                           {item.classroom_name && (
-                            <span className="px-2.5 py-0.5 bg-purple-50 text-pastel-purpleDark border border-purple-100 rounded-lg text-[10px] font-bold">
+                            <span className="px-2.5 py-0.5 bg-indigo-50 text-indigo-700 border border-indigo-200/60 rounded-md text-[10px] font-bold">
                               {item.classroom_name}
                             </span>
                           )}
                           {item.subject && (
-                            <span className="px-2 py-0.5 bg-gray-100 text-gray-700 rounded-lg text-[10px] font-bold">
+                            <span className="px-2 py-0.5 bg-slate-100 text-slate-700 rounded-md text-[10px] font-bold">
                               {item.subject} {item.grade_level ? `Lớp ${item.grade_level}` : ''}
                             </span>
                           )}
@@ -300,46 +300,46 @@ export function StudentAssignments() {
 
                       {/* Title & Description */}
                       <div>
-                        <h3 className="text-base font-extrabold text-gray-800 line-clamp-2 leading-snug">
+                        <h3 className="text-base font-bold text-slate-900 line-clamp-2 leading-snug">
                           {item.title}
                         </h3>
                         {item.description && (
-                          <p className="text-xs text-gray-400 mt-1 line-clamp-2 leading-relaxed">
+                          <p className="text-xs text-slate-500 mt-1 line-clamp-2 leading-relaxed">
                             {item.description}
                           </p>
                         )}
                       </div>
 
                       {/* Meta badges */}
-                      <div className="flex flex-wrap items-center gap-3 text-xs text-gray-500 pt-1">
-                        <span className="flex items-center space-x-1">
-                          <Clock className="w-3.5 h-3.5 text-gray-400" />
+                      <div className="flex flex-wrap items-center gap-3 text-xs text-slate-500 pt-1">
+                        <span className="flex items-center space-x-1 tabular-nums">
+                          <Clock className="w-3.5 h-3.5 text-slate-400" />
                           <span>{item.duration_minutes} phút</span>
                         </span>
-                        <span className="flex items-center space-x-1">
-                          <BookOpen className="w-3.5 h-3.5 text-gray-400" />
+                        <span className="flex items-center space-x-1 tabular-nums">
+                          <BookOpen className="w-3.5 h-3.5 text-slate-400" />
                           <span>{item.question_count} câu hỏi</span>
                         </span>
-                        <span>• Lần làm: {item.attempts_taken || 0}/{item.max_attempts || 1}</span>
+                        <span className="tabular-nums">• Lần làm: {item.attempts_taken || 0}/{item.max_attempts || 1}</span>
                       </div>
                     </div>
 
                     {/* Footer Actions */}
-                    <div className="pt-3 border-t border-gray-100 flex items-center justify-between gap-2">
+                    <div className="pt-3 border-t border-slate-100 flex items-center justify-between gap-2">
                       {isCompleted ? (
                         <div className="flex items-center space-x-2">
-                          <span className="px-2.5 py-1 bg-emerald-50 text-emerald-800 border border-emerald-200 rounded-xl text-xs font-bold flex items-center space-x-1">
+                          <span className="px-2.5 py-0.5 bg-emerald-50 text-emerald-800 border border-emerald-200/80 rounded-lg text-xs font-bold flex items-center space-x-1">
                             <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
-                            <span>Đã nộp: {item.highest_score !== null ? `${item.highest_score}đ` : 'Đã chấm'}</span>
+                            <span className="tabular-nums">Đã nộp: {item.highest_score !== null ? `${item.highest_score}đ` : 'Đã chấm'}</span>
                           </span>
                         </div>
                       ) : isInProgress ? (
-                        <span className="px-2.5 py-1 bg-amber-50 text-amber-800 border border-amber-200 rounded-xl text-xs font-bold flex items-center space-x-1">
+                        <span className="px-2.5 py-0.5 bg-amber-50 text-amber-800 border border-amber-200 rounded-lg text-xs font-bold flex items-center space-x-1">
                           <Clock className="w-3.5 h-3.5 text-amber-600 animate-pulse" />
                           <span>Đang làm dở</span>
                         </span>
                       ) : (
-                        <span className="text-xs font-semibold text-gray-400">
+                        <span className="text-xs font-semibold text-slate-400">
                           Chưa bắt đầu
                         </span>
                       )}
@@ -349,7 +349,7 @@ export function StudentAssignments() {
                           <button
                             type="button"
                             onClick={() => setReviewSubmissionId(item.latest_submission_id)}
-                            className="px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl text-xs font-bold transition cursor-pointer"
+                            className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition cursor-pointer"
                           >
                             Xem bài làm
                           </button>
@@ -360,8 +360,8 @@ export function StudentAssignments() {
                             to={`/take-exam/${item.id}`}
                             className={`flex items-center space-x-1.5 px-4 py-1.5 rounded-xl text-xs font-bold shadow-xs transition ${
                               isInProgress 
-                                ? 'bg-amber-500 hover:bg-amber-600 text-white' 
-                                : 'bg-pastel-purple hover:bg-pastel-purpleDark text-white'
+                                ? 'bg-amber-600 hover:bg-amber-700 text-white' 
+                                : 'bg-indigo-600 hover:bg-indigo-700 text-white active:scale-95'
                             }`}
                           >
                             <span>{isInProgress ? 'Làm tiếp' : isCompleted ? 'Làm lại' : 'Bắt đầu làm'}</span>

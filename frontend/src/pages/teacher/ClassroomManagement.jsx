@@ -309,7 +309,7 @@ export function ClassroomManagement() {
   });
 
   return (
-    <div className="min-h-screen bg-pastel-bg">
+    <div className="min-h-screen bg-slate-50">
       <Navbar />
       <div className="flex">
         <Sidebar role="teacher" />
@@ -317,21 +317,21 @@ export function ClassroomManagement() {
           {/* Header & Tabs */}
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
             <div>
-              <h1 className="text-2xl font-extrabold text-gray-800 tracking-tight">Lớp & Nhóm Dạy Kèm</h1>
-              <p className="text-xs sm:text-sm text-gray-500 mt-1">Quản lý các nhóm kèm 1-1, nhóm nhỏ và danh sách học sinh</p>
+              <h1 className="text-2xl font-extrabold text-slate-900 tracking-tight">Quản lý Lớp học & Học sinh</h1>
+              <p className="text-xs sm:text-sm text-slate-500 mt-1">Quản lý các lớp học, danh sách học sinh và phân bổ bài tập kiểm tra</p>
             </div>
 
             <div className="flex items-center space-x-3 w-full sm:w-auto justify-between sm:justify-end">
-              <div className="inline-flex bg-gray-100 p-1 rounded-2xl">
+              <div className="inline-flex bg-slate-200/70 p-1 rounded-xl">
                 <button
                   onClick={() => setActiveTab('classes')}
-                  className={`px-4 py-2 rounded-xl font-bold text-xs transition ${activeTab === 'classes' ? 'bg-white text-pastel-purpleDark shadow-sm' : 'text-gray-600 hover:text-gray-900'}`}
+                  className={`px-4 py-2 rounded-lg font-bold text-xs transition ${activeTab === 'classes' ? 'bg-white text-indigo-700 shadow-sm' : 'text-slate-600 hover:text-slate-900'}`}
                 >
-                  Nhóm dạy kèm ({classrooms.length})
+                  Lớp học phụ trách ({classrooms.length})
                 </button>
                 <button
                   onClick={() => setActiveTab('students')}
-                  className={`px-4 py-2 rounded-xl font-bold text-xs transition ${activeTab === 'students' ? 'bg-white text-pastel-purpleDark shadow-sm' : 'text-gray-600 hover:text-gray-900'}`}
+                  className={`px-4 py-2 rounded-lg font-bold text-xs transition ${activeTab === 'students' ? 'bg-white text-indigo-700 shadow-sm' : 'text-slate-600 hover:text-slate-900'}`}
                 >
                   Tất cả học sinh ({allStudents.length})
                 </button>
@@ -340,10 +340,10 @@ export function ClassroomManagement() {
               {activeTab === 'classes' ? (
                 <button
                   onClick={() => setIsClassModalOpen(true)}
-                  className="flex items-center space-x-1.5 px-4 py-2.5 bg-pastel-purple text-white rounded-2xl font-bold text-xs hover:bg-pastel-purpleDark transition shadow-sm"
+                  className="flex items-center space-x-1.5 px-4 py-2.5 bg-indigo-600 text-white rounded-xl font-bold text-xs hover:bg-indigo-700 active:scale-95 transition shadow-sm"
                 >
                   <Plus className="w-4 h-4" />
-                  <span>Tạo nhóm kèm</span>
+                  <span>Tạo lớp học mới</span>
                 </button>
               ) : (
                 <button
@@ -351,7 +351,7 @@ export function ClassroomManagement() {
                     setSystemStudentForm({ full_name: '', email: '', password: 'Password@123!' });
                     setIsSystemStudentModalOpen(true);
                   }}
-                  className="flex items-center space-x-1.5 px-4 py-2.5 bg-pastel-purple text-white rounded-2xl font-bold text-xs hover:bg-pastel-purpleDark transition shadow-sm"
+                  className="flex items-center space-x-1.5 px-4 py-2.5 bg-indigo-600 text-white rounded-xl font-bold text-xs hover:bg-indigo-700 active:scale-95 transition shadow-sm"
                 >
                   <UserPlus className="w-4 h-4" />
                   <span>+ Thêm học sinh</span>
@@ -364,16 +364,16 @@ export function ClassroomManagement() {
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
               {/* Group List (Left Column) */}
               <div className="lg:col-span-4 space-y-3">
-                <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider px-1">Danh sách nhóm ({classrooms.length})</h3>
+                <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider px-1">Danh sách lớp ({classrooms.length})</h3>
                 {classrooms.length === 0 ? (
-                  <div className="bg-white rounded-3xl p-8 text-center border border-dashed border-gray-200">
-                    <Users className="w-10 h-10 text-gray-300 mx-auto mb-2" />
-                    <p className="text-sm font-semibold text-gray-600">Chưa có nhóm kèm nào</p>
+                  <div className="bg-white rounded-2xl p-8 text-center border border-dashed border-slate-300 shadow-sm">
+                    <Users className="w-10 h-10 text-slate-400 mx-auto mb-2" />
+                    <p className="text-sm font-semibold text-slate-700">Chưa có lớp học nào</p>
                     <button
                       onClick={() => setIsClassModalOpen(true)}
-                      className="mt-3 text-xs font-bold text-pastel-purpleDark hover:underline"
+                      className="mt-3 text-xs font-bold text-indigo-600 hover:text-indigo-800 hover:underline"
                     >
-                      + Tạo nhóm đầu tiên
+                      + Tạo lớp học đầu tiên
                     </button>
                   </div>
                 ) : (
@@ -383,27 +383,27 @@ export function ClassroomManagement() {
                       <div 
                         key={c.id} 
                         onClick={() => setSelectedClass(c)}
-                        className={`bg-white rounded-3xl p-5 border cursor-pointer transition ${isSelected ? 'border-pastel-purple ring-2 ring-pastel-purpleLight shadow-md' : 'border-gray-100 hover:border-gray-200 hover:shadow-sm'} group`}
+                        className={`bg-white rounded-2xl p-5 border cursor-pointer transition ${isSelected ? 'border-indigo-600 ring-2 ring-indigo-100 shadow-md' : 'border-slate-200/90 hover:border-slate-300 hover:shadow-sm'} group`}
                       >
                         <div className="flex justify-between items-start mb-2">
                           <div>
-                            <h3 className="text-base font-bold text-gray-800 group-hover:text-pastel-purpleDark transition">{c.name}</h3>
-                            <span className="text-xs text-gray-400 mt-0.5 block">{c.description || 'Chưa có ghi chú'}</span>
+                            <h3 className="text-base font-bold text-slate-900 group-hover:text-indigo-600 transition">{c.name}</h3>
+                            <span className="text-xs text-slate-500 mt-0.5 block">{c.description || 'Chưa có ghi chú lịch học'}</span>
                           </div>
                           <button
                             onClick={(e) => handleDeleteClassroom(c.id, e)}
-                            className="text-gray-300 hover:text-red-500 p-1.5 rounded-xl transition"
-                            title="Xóa nhóm kèm này"
+                            className="text-slate-400 hover:text-rose-600 p-1.5 rounded-lg transition"
+                            title="Xóa lớp học này"
                           >
                             <Trash2 className="w-4 h-4" />
                           </button>
                         </div>
-                        <div className="flex items-center justify-between text-xs text-gray-500 pt-3 border-t border-gray-50 mt-3">
-                          <span className="inline-flex items-center space-x-1 font-medium text-emerald-600 bg-emerald-50 px-2.5 py-0.5 rounded-full">
-                            <Users className="w-3 h-3" />
-                            <span>{c.students?.length || 0} học sinh</span>
+                        <div className="flex items-center justify-between text-xs text-slate-500 pt-3 border-t border-slate-100 mt-3">
+                          <span className="inline-flex items-center space-x-1 font-semibold text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200/60">
+                            <Users className="w-3.5 h-3.5" />
+                            <span className="tabular-nums">{c.students?.length || 0} học sinh</span>
                           </span>
-                          <span className="font-mono bg-purple-50 text-pastel-purpleDark px-2 py-0.5 rounded-md font-bold">
+                          <span className="font-mono bg-indigo-50 border border-indigo-200/60 text-indigo-700 px-2.5 py-0.5 rounded-md font-bold">
                             Mã: {c.code}
                           </span>
                         </div>
@@ -416,32 +416,32 @@ export function ClassroomManagement() {
               {/* Group Detail (Right Column) */}
               <div className="lg:col-span-8">
                 {selectedClass ? (
-                  <div className="bg-white rounded-3xl p-6 sm:p-8 border border-gray-100 shadow-sm">
+                  <div className="bg-white rounded-2xl p-6 sm:p-8 border border-slate-200/90 shadow-sm">
                     {/* Class Information Header */}
-                    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 pb-6 border-b border-gray-100 mb-6">
+                    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 pb-6 border-b border-slate-100 mb-6">
                       <div>
                         <div className="flex items-center space-x-3">
-                          <h2 className="text-xl sm:text-2xl font-extrabold text-gray-800">{selectedClass.name}</h2>
-                          <span className="text-xs bg-emerald-50 text-emerald-700 px-3 py-1 rounded-full font-bold">
+                          <h2 className="text-xl sm:text-2xl font-extrabold text-slate-900">{selectedClass.name}</h2>
+                          <span className="text-xs bg-emerald-50 text-emerald-700 border border-emerald-200 px-3 py-1 rounded-full font-bold tabular-nums">
                             {studentsInClass.length} học sinh
                           </span>
                         </div>
                         {selectedClass.description && (
-                          <p className="text-sm text-gray-500 mt-1">{selectedClass.description}</p>
+                          <p className="text-sm text-slate-500 mt-1">{selectedClass.description}</p>
                         )}
                       </div>
 
                       {/* Prominent Invite Code with Copy */}
-                      <div className="bg-pastel-bg p-3.5 rounded-2xl border border-pastel-purple/20 flex items-center space-x-3">
+                      <div className="bg-slate-50 p-3.5 rounded-xl border border-slate-200 flex items-center space-x-3">
                         <div>
-                          <div className="text-[10px] font-bold text-gray-500 uppercase">Mã tham gia nhóm</div>
-                          <div className="text-base font-mono font-black text-pastel-purpleDark tracking-wider">
+                          <div className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Mã tham gia lớp</div>
+                          <div className="text-base font-mono font-extrabold text-indigo-700 tracking-wider">
                             {selectedClass.code}
                           </div>
                         </div>
                         <button
                           onClick={() => handleCopyCode(selectedClass.code)}
-                          className="p-2 bg-white text-pastel-purpleDark rounded-xl shadow-sm hover:bg-purple-50 transition border border-pastel-purple/10"
+                          className="p-2 bg-white text-indigo-600 rounded-lg shadow-sm hover:bg-indigo-50 transition border border-slate-200"
                           title="Sao chép mã vào lớp để gửi học sinh"
                         >
                           {copiedCode === selectedClass.code ? (
@@ -455,9 +455,9 @@ export function ClassroomManagement() {
 
                     {/* Students in this Group Section */}
                     <div className="flex justify-between items-center mb-4">
-                      <h3 className="font-bold text-gray-800 text-base flex items-center space-x-2">
-                        <Users className="w-4 h-4 text-pastel-purpleDark" />
-                        <span>Danh sách học sinh trong nhóm ({studentsInClass.length})</span>
+                      <h3 className="font-bold text-slate-900 text-base flex items-center space-x-2">
+                        <Users className="w-4 h-4 text-indigo-600" />
+                        <span>Danh sách học sinh trong lớp ({studentsInClass.length})</span>
                       </h3>
                       <div className="flex space-x-2">
                         <button
@@ -466,7 +466,7 @@ export function ClassroomManagement() {
                             setStudentModalMode('new');
                             setModalSearchQuery('');
                           }}
-                          className="flex items-center space-x-1.5 px-3.5 py-2 bg-pastel-purple text-white rounded-2xl font-bold text-xs hover:bg-pastel-purpleDark transition shadow-sm"
+                          className="flex items-center space-x-1.5 px-3.5 py-2 bg-indigo-600 text-white rounded-xl font-bold text-xs hover:bg-indigo-700 transition shadow-sm"
                         >
                           <UserPlus className="w-3.5 h-3.5" />
                           <span>+ Thêm học sinh</span>
@@ -475,29 +475,29 @@ export function ClassroomManagement() {
                     </div>
 
                     {/* Assigned Exams Section */}
-                    <div className="mt-6 pt-6 border-t border-gray-100">
-                      <h3 className="font-bold text-gray-800 text-base mb-4 flex items-center space-x-2">
-                        <CheckSquare className="w-4 h-4 text-pastel-purpleDark" />
-                        <span>Đề thi đã giao</span>
+                    <div className="mt-6 pt-6 border-t border-slate-100">
+                      <h3 className="font-bold text-slate-900 text-base mb-4 flex items-center space-x-2">
+                        <CheckSquare className="w-4 h-4 text-indigo-600" />
+                        <span>Đề thi đã giao cho lớp</span>
                       </h3>
                       {(!selectedClass.assignments || selectedClass.assignments.filter(a => a.is_active !== false).length === 0) ? (
-                        <p className="text-sm text-gray-400">Chưa có đề thi nào được giao cho nhóm này.</p>
+                        <p className="text-sm text-slate-400">Chưa có đề thi nào được giao cho lớp này.</p>
                       ) : (
                         <div className="space-y-2">
                           {selectedClass.assignments.filter(a => a.is_active !== false).map(a => (
-                            <div key={a.id} className="p-3 bg-gray-50 rounded-xl flex items-center justify-between">
-                              <span className="font-medium text-sm">{a.exam?.title}</span>
+                            <div key={a.id} className="p-3 bg-slate-50 border border-slate-200/70 rounded-xl flex items-center justify-between">
+                              <span className="font-semibold text-slate-800 text-sm">{a.exam?.title}</span>
                               <div className="flex items-center space-x-2">
                                 <button
                                   onClick={() => {
                                     setAssignmentToEdit({ ...a, classroom_id: selectedClass.id, classroom_name: selectedClass.name });
                                     setIsEditAssignmentModalOpen(true);
                                   }}
-                                  className="text-xs px-2.5 py-1 bg-purple-50 text-pastel-purpleDark hover:bg-purple-100 rounded-lg font-semibold transition flex items-center space-x-1"
+                                  className="text-xs px-2.5 py-1 bg-indigo-50 text-indigo-700 hover:bg-indigo-100 rounded-lg font-semibold transition flex items-center space-x-1"
                                   title="Chỉnh sửa hạn nộp, thời gian..."
                                 >
                                   <Edit3 className="w-3 h-3" />
-                                  <span>Sửa</span>
+                                  <span>Cài đặt</span>
                                 </button>
                                 <button
                                   onClick={() => {
@@ -511,7 +511,7 @@ export function ClassroomManagement() {
                                 </button>
                                 <button
                                   onClick={() => handleUnassignExam(a.exam_id, a.exam?.title)}
-                                  className="text-xs px-2.5 py-1 bg-red-50 text-red-600 hover:bg-red-100 rounded-lg font-semibold transition"
+                                  className="text-xs px-2.5 py-1 bg-rose-50 text-rose-700 hover:bg-rose-100 rounded-lg font-semibold transition"
                                 >
                                   Hủy cả lớp
                                 </button>
@@ -524,37 +524,37 @@ export function ClassroomManagement() {
 
                     {/* Student List */}
                     <div className="space-y-2.5 mt-6">
-                      <h3 className="font-bold text-gray-800 text-base mb-2">Chi tiết học sinh</h3>
+                      <h3 className="font-bold text-slate-900 text-base mb-2">Chi tiết học sinh trong lớp</h3>
                       {studentsInClass.length === 0 ? (
-                        <div className="text-center py-12 bg-gray-50 rounded-2xl border border-dashed border-gray-200">
-                          <Users className="w-8 h-8 text-gray-300 mx-auto mb-2" />
-                          <p className="text-sm font-medium text-gray-500">Chưa có học sinh nào trong nhóm này</p>
-                          <p className="text-xs text-gray-400 mt-1">Gửi mã <b>{selectedClass.code}</b> cho học sinh hoặc bấm "+ Thêm học sinh" để tạo nhanh</p>
+                        <div className="text-center py-12 bg-slate-50 rounded-2xl border border-dashed border-slate-200">
+                          <Users className="w-8 h-8 text-slate-300 mx-auto mb-2" />
+                          <p className="text-sm font-medium text-slate-600">Chưa có học sinh nào trong lớp này</p>
+                          <p className="text-xs text-slate-400 mt-1">Gửi mã <b>{selectedClass.code}</b> cho học sinh hoặc bấm "+ Thêm học sinh" để tạo nhanh</p>
                         </div>
                       ) : (
                         studentsInClass.map((s) => (
                           <div
                             key={s.id}
-                            className="p-4 bg-gray-50 hover:bg-white hover:shadow-sm border border-gray-100 rounded-2xl flex items-center justify-between transition"
+                            className="p-3.5 bg-slate-50 hover:bg-white hover:shadow-sm border border-slate-200/80 rounded-xl flex items-center justify-between transition"
                           >
                             <div className="flex items-center space-x-3.5">
-                              <div className="w-9 h-9 rounded-xl bg-purple-100 text-pastel-purpleDark font-extrabold flex items-center justify-center text-sm">
+                              <div className="w-9 h-9 rounded-xl bg-indigo-100 text-indigo-700 font-extrabold flex items-center justify-center text-sm shadow-xs">
                                 {(s.full_name || s.email || '?').charAt(0).toUpperCase()}
                               </div>
                               <div>
-                                <h4 className="font-bold text-sm text-gray-800">{s.full_name || 'Chưa đặt tên'}</h4>
-                                <p className="text-xs text-gray-400">{s.email}</p>
+                                <h4 className="font-bold text-sm text-slate-800">{s.full_name || 'Chưa đặt tên'}</h4>
+                                <p className="text-xs text-slate-400 font-mono">{s.email}</p>
                               </div>
                             </div>
 
                             <div className="flex items-center space-x-3">
-                              <span className="text-[11px] bg-emerald-50 text-emerald-600 font-bold px-2.5 py-1 rounded-full">
-                                Đang học
+                              <span className="text-[11px] bg-emerald-50 text-emerald-700 border border-emerald-200/60 font-bold px-2.5 py-0.5 rounded-full">
+                                Hoạt động
                               </span>
                               <button
                                 onClick={() => handleRemoveStudentFromClass(s.id, s.full_name || s.email)}
-                                className="text-gray-400 hover:text-red-500 p-1.5 rounded-xl transition"
-                                title="Xóa học sinh khỏi nhóm"
+                                className="text-slate-400 hover:text-rose-600 p-1.5 rounded-lg transition"
+                                title="Xóa học sinh khỏi lớp"
                               >
                                 <UserMinus className="w-4 h-4" />
                               </button>
@@ -565,57 +565,59 @@ export function ClassroomManagement() {
                     </div>
                   </div>
                 ) : (
-                  <div className="bg-white rounded-3xl p-12 text-center text-gray-400 border border-gray-100">
-                    Chọn một nhóm dạy kèm bên trái để xem chi tiết
+                  <div className="bg-white rounded-2xl p-12 text-center text-slate-400 border border-slate-200 shadow-sm">
+                    Chọn một lớp học bên trái để xem chi tiết
                   </div>
                 )}
               </div>
             </div>
           ) : (
             /* All Students Tab */
-            <div className="bg-white rounded-3xl p-6 border border-gray-100 shadow-sm">
+            <div className="bg-white rounded-2xl p-6 border border-slate-200/90 shadow-sm">
               <div className="flex justify-between items-center mb-6">
                 <div>
-                  <h3 className="text-lg font-bold text-gray-800">Tất cả học sinh kèm trong hệ thống</h3>
-                  <p className="text-xs text-gray-500 mt-0.5">Tổng số học sinh có tài khoản học tập</p>
+                  <h3 className="text-lg font-bold text-slate-900">Danh sách toàn bộ học sinh</h3>
+                  <p className="text-xs text-slate-500 mt-0.5">Tổng số học sinh có tài khoản học tập trên hệ thống</p>
                 </div>
               </div>
 
               <div className="overflow-x-auto">
                 <table className="w-full text-left border-collapse">
                   <thead>
-                    <tr className="bg-gray-50 text-[11px] font-bold text-gray-400 uppercase tracking-wider">
-                      <th className="p-4 rounded-l-2xl">Học sinh</th>
+                    <tr className="bg-slate-50 border-b border-slate-200 text-[11px] font-bold text-slate-500 uppercase tracking-wider">
+                      <th className="p-4 rounded-l-xl">Học sinh</th>
                       <th className="p-4">Email</th>
                       <th className="p-4">Vai trò</th>
                       <th className="p-4">Trạng thái</th>
-                      <th className="p-4 rounded-r-2xl text-right">Thao tác</th>
+                      <th className="p-4 rounded-r-xl text-right">Thao tác</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-gray-100 text-sm">
+                  <tbody className="divide-y divide-slate-100 text-sm">
                     {allStudents.map(s => (
-                      <tr key={s.id} className="hover:bg-gray-50 transition">
+                      <tr key={s.id} className="hover:bg-slate-50/80 transition">
                         <td className="p-4">
                           <div className="flex items-center space-x-3">
-                            <div className="w-8 h-8 rounded-xl bg-purple-100 text-pastel-purpleDark font-bold flex items-center justify-center text-xs">
+                            <div className="w-8 h-8 rounded-xl bg-indigo-100 text-indigo-700 font-bold flex items-center justify-center text-xs">
                               {(s.full_name || s.email || '?').charAt(0).toUpperCase()}
                             </div>
-                            <span className="font-bold text-gray-800">{s.full_name || 'Chưa cập nhật'}</span>
+                            <span className="font-bold text-slate-800">{s.full_name || 'Chưa cập nhật'}</span>
                           </div>
                         </td>
-                        <td className="p-4 text-gray-600 font-mono text-xs">{s.email}</td>
+                        <td className="p-4 text-slate-600 font-mono text-xs">{s.email}</td>
                         <td className="p-4">
-                          <span className="inline-flex items-center space-x-1 px-2.5 py-0.5 bg-blue-50 text-blue-600 rounded-full text-xs font-semibold">
+                          <span className="inline-flex items-center space-x-1 px-2.5 py-0.5 bg-indigo-50 border border-indigo-200/60 text-indigo-700 rounded-full text-xs font-semibold">
                             <span>Học sinh</span>
                           </span>
                         </td>
                         <td className="p-4">
-                          <span className="text-xs text-emerald-600 font-bold">Hoạt động</span>
+                          <span className="inline-flex items-center px-2.5 py-0.5 bg-emerald-50 text-emerald-700 border border-emerald-200/60 rounded-full text-xs font-bold">
+                            Hoạt động
+                          </span>
                         </td>
                         <td className="p-4 text-right">
                           <button
                             onClick={() => handleDeleteSystemStudent(s.id, s.full_name || s.email)}
-                            className="text-gray-400 hover:text-red-500 p-1.5 rounded-xl transition inline-flex items-center space-x-1"
+                            className="text-slate-400 hover:text-rose-600 p-1.5 rounded-lg transition inline-flex items-center space-x-1"
                             title="Xóa học sinh khỏi hệ thống"
                           >
                             <Trash2 className="w-4 h-4" />
@@ -635,54 +637,54 @@ export function ClassroomManagement() {
             onClose={() => setIsSystemStudentModalOpen(false)}
             title="Thêm Học Sinh Mới Vào Hệ Thống"
           >
-            <form onSubmit={handleCreateSystemStudent} className="space-y-3.5">
+            <form onSubmit={handleCreateSystemStudent} className="space-y-4">
               <div>
-                <label className="block text-xs font-bold text-gray-600 mb-1">Họ và tên học sinh *</label>
+                <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Họ và tên học sinh *</label>
                 <input
                   type="text"
                   required
                   placeholder="Ví dụ: Nguyễn Văn An"
                   value={systemStudentForm.full_name}
                   onChange={e => setSystemStudentForm({ ...systemStudentForm, full_name: e.target.value })}
-                  className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:border-pastel-purple"
+                  className="w-full px-4 py-2.5 rounded-xl border border-slate-300 text-sm focus:outline-none focus:border-indigo-600 focus:ring-2 focus:ring-indigo-100"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-gray-600 mb-1">Email đăng nhập *</label>
+                <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Email đăng nhập *</label>
                 <input
                   type="email"
                   required
                   placeholder="hocsinh@gmail.com"
                   value={systemStudentForm.email}
                   onChange={e => setSystemStudentForm({ ...systemStudentForm, email: e.target.value })}
-                  className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:border-pastel-purple"
+                  className="w-full px-4 py-2.5 rounded-xl border border-slate-300 text-sm focus:outline-none focus:border-indigo-600 focus:ring-2 focus:ring-indigo-100"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-gray-600 mb-1">Mật khẩu mặc định</label>
+                <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Mật khẩu mặc định</label>
                 <input
                   type="text"
                   value={systemStudentForm.password}
                   onChange={e => setSystemStudentForm({ ...systemStudentForm, password: e.target.value })}
-                  className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm font-mono focus:outline-none focus:border-pastel-purple"
+                  className="w-full px-4 py-2.5 rounded-xl border border-slate-300 text-sm font-mono focus:outline-none focus:border-indigo-600 focus:ring-2 focus:ring-indigo-100"
                 />
-                <p className="text-[11px] text-gray-400 mt-1">Học sinh có thể đổi mật khẩu sau khi đăng nhập</p>
+                <p className="text-[11px] text-slate-500 mt-1">Học sinh có thể đổi mật khẩu sau khi đăng nhập</p>
               </div>
 
               <div className="flex justify-end space-x-3 pt-3">
                 <button
                   type="button"
                   onClick={() => setIsSystemStudentModalOpen(false)}
-                  className="px-4 py-2.5 border rounded-xl text-xs font-bold text-gray-600 hover:bg-gray-50"
+                  className="px-4 py-2.5 border border-slate-300 rounded-xl text-xs font-bold text-slate-700 hover:bg-slate-50"
                 >
                   Hủy
                 </button>
                 <button
                   type="submit"
                   disabled={actionLoading}
-                  className="px-5 py-2.5 bg-pastel-purple text-white rounded-xl text-xs font-bold hover:bg-pastel-purpleDark transition shadow-sm disabled:opacity-50"
+                  className="px-5 py-2.5 bg-indigo-600 text-white rounded-xl text-xs font-bold hover:bg-indigo-700 transition shadow-sm disabled:opacity-50"
                 >
                   {actionLoading ? 'Đang xử lý...' : 'Thêm học sinh'}
                 </button>
@@ -691,28 +693,28 @@ export function ClassroomManagement() {
           </Modal>
 
           {/* Modal: Create Tutoring Group */}
-          <Modal isOpen={isClassModalOpen} onClose={() => setIsClassModalOpen(false)} title="Tạo Nhóm Dạy Kèm Mới">
+          <Modal isOpen={isClassModalOpen} onClose={() => setIsClassModalOpen(false)} title="Tạo Lớp Học Mới">
             <form onSubmit={handleCreateClass} className="space-y-4">
               <div>
-                <label className="block text-xs font-bold text-gray-600 uppercase mb-1.5">Tên nhóm / Lớp kèm</label>
+                <label className="block text-xs font-bold text-slate-700 uppercase mb-1.5">Tên lớp học</label>
                 <input
                   type="text"
                   required
-                  placeholder="Ví dụ: Toán 12 - Luyện thi ĐH, Nhóm Kèm 1-1 Nam..."
+                  placeholder="Ví dụ: Toán 12 - Luyện thi ĐH, Nhóm kèm 1-1 Nam..."
                   value={form.name}
                   onChange={(e) => setForm({ ...form, name: e.target.value })}
-                  className="w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:outline-none focus:border-pastel-purple text-sm"
+                  className="w-full px-4 py-2.5 rounded-xl border border-slate-300 focus:outline-none focus:border-indigo-600 focus:ring-2 focus:ring-indigo-100 text-sm"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-gray-600 uppercase mb-1.5">Mô tả / Lịch học (tùy chọn)</label>
+                <label className="block text-xs font-bold text-slate-700 uppercase mb-1.5">Mô tả / Lịch học (tùy chọn)</label>
                 <textarea
                   placeholder="Ví dụ: Tối thứ 3 & thứ 6 (19:30 - 21:00) tại phòng học online"
                   value={form.description}
                   onChange={(e) => setForm({ ...form, description: e.target.value })}
                   rows={3}
-                  className="w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:outline-none focus:border-pastel-purple text-sm resize-none"
+                  className="w-full px-4 py-2.5 rounded-xl border border-slate-300 focus:outline-none focus:border-indigo-600 focus:ring-2 focus:ring-indigo-100 text-sm resize-none"
                 />
               </div>
 
@@ -720,15 +722,15 @@ export function ClassroomManagement() {
                 <button
                   type="button"
                   onClick={() => setIsClassModalOpen(false)}
-                  className="px-4 py-2.5 border rounded-xl text-xs font-bold text-gray-600 hover:bg-gray-50"
+                  className="px-4 py-2.5 border border-slate-300 rounded-xl text-xs font-bold text-slate-700 hover:bg-slate-50"
                 >
                   Hủy
                 </button>
                 <button 
                   type="submit" 
-                  className="px-5 py-2.5 bg-pastel-purple text-white rounded-xl text-xs font-bold hover:bg-pastel-purpleDark transition shadow-sm"
+                  className="px-5 py-2.5 bg-indigo-600 text-white rounded-xl text-xs font-bold hover:bg-indigo-700 transition shadow-sm"
                 >
-                  Tạo nhóm kèm
+                  Tạo lớp học
                 </button>
               </div>
             </form>
@@ -738,22 +740,22 @@ export function ClassroomManagement() {
           <Modal 
             isOpen={isStudentModalOpen} 
             onClose={() => setIsStudentModalOpen(false)} 
-            title={`Thêm Học Sinh Vào Nhóm "${selectedClass?.name}"`}
+            title={`Thêm Học Sinh Vào Lớp "${selectedClass?.name}"`}
           >
             <div className="space-y-4">
               {/* Modal Tabs */}
-              <div className="flex border-b border-gray-100 pb-2">
+              <div className="flex border-b border-slate-200 pb-2">
                 <button
                   type="button"
                   onClick={() => setStudentModalMode('new')}
-                  className={`pb-2 px-3 text-xs font-bold border-b-2 transition ${studentModalMode === 'new' ? 'border-pastel-purple text-pastel-purpleDark' : 'border-transparent text-gray-400 hover:text-gray-600'}`}
+                  className={`pb-2 px-3 text-xs font-bold border-b-2 transition ${studentModalMode === 'new' ? 'border-indigo-600 text-indigo-700' : 'border-transparent text-slate-500 hover:text-slate-800'}`}
                 >
                   + Tạo nhanh học sinh mới
                 </button>
                 <button
                   type="button"
                   onClick={() => setStudentModalMode('existing')}
-                  className={`pb-2 px-3 text-xs font-bold border-b-2 transition ${studentModalMode === 'existing' ? 'border-pastel-purple text-pastel-purpleDark' : 'border-transparent text-gray-400 hover:text-gray-600'}`}
+                  className={`pb-2 px-3 text-xs font-bold border-b-2 transition ${studentModalMode === 'existing' ? 'border-indigo-600 text-indigo-700' : 'border-transparent text-slate-500 hover:text-slate-800'}`}
                 >
                   Chọn từ danh sách có sẵn
                 </button>
@@ -763,54 +765,54 @@ export function ClassroomManagement() {
                 /* Quick Add Form */
                 <form onSubmit={handleQuickCreateStudent} className="space-y-3.5 pt-1">
                   <div>
-                    <label className="block text-xs font-bold text-gray-600 mb-1">Họ và tên học sinh *</label>
+                    <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Họ và tên học sinh *</label>
                     <input
                       type="text"
                       required
                       placeholder="Ví dụ: Nguyễn Văn An"
                       value={newStudentForm.full_name}
                       onChange={e => setNewStudentForm({ ...newStudentForm, full_name: e.target.value })}
-                      className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:border-pastel-purple"
+                      className="w-full px-4 py-2.5 rounded-xl border border-slate-300 text-sm focus:outline-none focus:border-indigo-600 focus:ring-2 focus:ring-indigo-100"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-xs font-bold text-gray-600 mb-1">Email đăng nhập *</label>
+                    <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Email đăng nhập *</label>
                     <input
                       type="email"
                       required
                       placeholder="hocsinh@gmail.com"
                       value={newStudentForm.email}
                       onChange={e => setNewStudentForm({ ...newStudentForm, email: e.target.value })}
-                      className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:border-pastel-purple"
+                      className="w-full px-4 py-2.5 rounded-xl border border-slate-300 text-sm focus:outline-none focus:border-indigo-600 focus:ring-2 focus:ring-indigo-100"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-xs font-bold text-gray-600 mb-1">Mật khẩu mặc định</label>
+                    <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Mật khẩu mặc định</label>
                     <input
                       type="text"
                       value={newStudentForm.password}
                       onChange={e => setNewStudentForm({ ...newStudentForm, password: e.target.value })}
-                      className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm font-mono focus:outline-none focus:border-pastel-purple"
+                      className="w-full px-4 py-2.5 rounded-xl border border-slate-300 text-sm font-mono focus:outline-none focus:border-indigo-600 focus:ring-2 focus:ring-indigo-100"
                     />
-                    <p className="text-[11px] text-gray-400 mt-1">Học sinh có thể đổi mật khẩu sau khi đăng nhập</p>
+                    <p className="text-[11px] text-slate-500 mt-1">Học sinh có thể đổi mật khẩu sau khi đăng nhập</p>
                   </div>
 
                   <div className="flex justify-end space-x-3 pt-3">
                     <button
                       type="button"
                       onClick={() => setIsStudentModalOpen(false)}
-                      className="px-4 py-2.5 border rounded-xl text-xs font-bold text-gray-600 hover:bg-gray-50"
+                      className="px-4 py-2.5 border border-slate-300 rounded-xl text-xs font-bold text-slate-700 hover:bg-slate-50"
                     >
                       Hủy
                     </button>
                     <button
                       type="submit"
                       disabled={actionLoading}
-                      className="px-5 py-2.5 bg-pastel-purple text-white rounded-xl text-xs font-bold hover:bg-pastel-purpleDark transition shadow-sm disabled:opacity-50"
+                      className="px-5 py-2.5 bg-indigo-600 text-white rounded-xl text-xs font-bold hover:bg-indigo-700 transition shadow-sm disabled:opacity-50"
                     >
-                      {actionLoading ? 'Đang xử lý...' : 'Tạo & Thêm vào nhóm'}
+                      {actionLoading ? 'Đang xử lý...' : 'Tạo & Thêm vào lớp'}
                     </button>
                   </div>
                 </form>
@@ -818,19 +820,19 @@ export function ClassroomManagement() {
                 /* Select Existing Students */
                 <div className="space-y-4 pt-1">
                   <div className="relative">
-                    <Search className="w-4 h-4 text-gray-400 absolute left-3 top-3" />
+                    <Search className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
                     <input
                       type="text"
                       placeholder="Tìm theo tên hoặc email..."
                       value={modalSearchQuery}
                       onChange={e => setModalSearchQuery(e.target.value)}
-                      className="w-full pl-9 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-2xl text-sm focus:outline-none focus:border-pastel-purple"
+                      className="w-full pl-9 pr-4 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-sm focus:outline-none focus:border-indigo-600 focus:ring-2 focus:ring-indigo-100"
                     />
                   </div>
 
                   <div className="max-h-72 overflow-y-auto space-y-2 pr-2">
                     {filteredStudentsForModal.length === 0 ? (
-                      <div className="text-center py-8 text-gray-400 text-xs">Không tìm thấy học sinh phù hợp.</div>
+                      <div className="text-center py-8 text-slate-400 text-xs">Không tìm thấy học sinh phù hợp.</div>
                     ) : (
                       filteredStudentsForModal.map(s => {
                         const isChecked = selectedStudentIds.includes(s.id);
@@ -839,18 +841,18 @@ export function ClassroomManagement() {
                           <div 
                             key={s.id}
                             onClick={() => !alreadyInClass && handleToggleStudent(s.id)}
-                            className={`p-3 rounded-2xl border flex items-center justify-between transition ${alreadyInClass ? 'bg-gray-100 opacity-60 cursor-not-allowed' : `cursor-pointer hover:border-pastel-purple ${isChecked ? 'bg-purple-50 border-pastel-purple' : 'bg-white'}`}`}
+                            className={`p-3 rounded-xl border flex items-center justify-between transition ${alreadyInClass ? 'bg-slate-100 opacity-60 cursor-not-allowed' : `cursor-pointer hover:border-indigo-500 ${isChecked ? 'bg-indigo-50 border-indigo-500' : 'bg-white border-slate-200'}`}`}
                           >
                             <div className="flex items-center space-x-3">
                               {!alreadyInClass && (
-                                isChecked ? <CheckSquare className="w-4 h-4 text-pastel-purpleDark" /> : <Square className="w-4 h-4 text-gray-400" />
+                                isChecked ? <CheckSquare className="w-4 h-4 text-indigo-600" /> : <Square className="w-4 h-4 text-slate-400" />
                               )}
                               <div>
-                                <div className="font-bold text-xs sm:text-sm text-gray-800">{s.full_name || 'Chưa cập nhật'}</div>
-                                <div className="text-[11px] text-gray-500 font-mono">{s.email}</div>
+                                <div className="font-bold text-xs sm:text-sm text-slate-800">{s.full_name || 'Chưa cập nhật'}</div>
+                                <div className="text-[11px] text-slate-500 font-mono">{s.email}</div>
                               </div>
                             </div>
-                            {alreadyInClass && <span className="text-xs text-emerald-600 font-bold">Đã có trong nhóm</span>}
+                            {alreadyInClass && <span className="text-xs text-emerald-700 font-bold bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200/60">Đã có trong lớp</span>}
                           </div>
                         );
                       })
@@ -861,7 +863,7 @@ export function ClassroomManagement() {
                     <button 
                       type="button" 
                       onClick={() => setIsStudentModalOpen(false)} 
-                      className="px-4 py-2 border rounded-xl text-xs font-semibold"
+                      className="px-4 py-2 border border-slate-300 rounded-xl text-xs font-semibold text-slate-700 hover:bg-slate-50"
                     >
                       Hủy
                     </button>
@@ -869,7 +871,7 @@ export function ClassroomManagement() {
                       type="button"
                       disabled={actionLoading || selectedStudentIds.length === 0}
                       onClick={handleAddSelectedStudents}
-                      className="px-5 py-2 bg-pastel-purple text-white rounded-xl text-xs font-bold shadow-sm disabled:opacity-50"
+                      className="px-5 py-2 bg-indigo-600 text-white rounded-xl text-xs font-bold shadow-sm hover:bg-indigo-700 disabled:opacity-50"
                     >
                       {actionLoading ? 'Đang xử lý...' : `Thêm học sinh đã chọn (${selectedStudentIds.length})`}
                     </button>
@@ -890,13 +892,13 @@ export function ClassroomManagement() {
             title={`Hủy Giao Đề "${examToUnassign?.title}" Cho Học Sinh`}
           >
             <div className="space-y-4">
-              <p className="text-xs text-gray-500">
-                Chọn các học sinh bạn muốn hủy giao đề thi này trong nhóm. Lưu ý: Lịch sử nộp bài của các học sinh này cho đề thi sẽ bị xóa.
+              <p className="text-xs text-slate-500">
+                Chọn các học sinh bạn muốn hủy giao đề thi này trong lớp. Lưu ý: Lịch sử nộp bài của các học sinh này cho đề thi sẽ bị xóa.
               </p>
 
               <div className="max-h-60 overflow-y-auto space-y-2 pr-1">
                 {studentsInClass.length === 0 ? (
-                  <div className="text-center py-6 text-gray-400 text-xs">Nhóm chưa có học sinh nào.</div>
+                  <div className="text-center py-6 text-slate-400 text-xs">Lớp chưa có học sinh nào.</div>
                 ) : (
                   studentsInClass.map(s => {
                     const isChecked = selectedStudentIdsForUnassign.includes(s.id);
@@ -908,19 +910,19 @@ export function ClassroomManagement() {
                             prev.includes(s.id) ? prev.filter(id => id !== s.id) : [...prev, s.id]
                           );
                         }}
-                        className={`p-3 rounded-2xl border flex items-center justify-between cursor-pointer transition ${
-                          isChecked ? 'bg-purple-50 border-pastel-purple' : 'bg-white hover:border-gray-300'
+                        className={`p-3 rounded-xl border flex items-center justify-between cursor-pointer transition ${
+                          isChecked ? 'bg-indigo-50 border-indigo-500' : 'bg-white border-slate-200 hover:border-slate-300'
                         }`}
                       >
                         <div className="flex items-center space-x-3">
                           {isChecked ? (
-                            <CheckSquare className="w-4 h-4 text-pastel-purpleDark" />
+                            <CheckSquare className="w-4 h-4 text-indigo-600" />
                           ) : (
-                            <Square className="w-4 h-4 text-gray-400" />
+                            <Square className="w-4 h-4 text-slate-400" />
                           )}
                           <div>
-                            <div className="font-bold text-xs sm:text-sm text-gray-800">{s.full_name || 'Chưa cập nhật'}</div>
-                            <div className="text-[11px] text-gray-500 font-mono">{s.email}</div>
+                            <div className="font-bold text-xs sm:text-sm text-slate-800">{s.full_name || 'Chưa cập nhật'}</div>
+                            <div className="text-[11px] text-slate-500 font-mono">{s.email}</div>
                           </div>
                         </div>
                       </div>
@@ -929,7 +931,7 @@ export function ClassroomManagement() {
                 )}
               </div>
 
-              <div className="flex justify-between items-center pt-2 border-t border-gray-100">
+              <div className="flex justify-between items-center pt-2 border-t border-slate-100">
                 <button
                   type="button"
                   onClick={() => {
@@ -939,7 +941,7 @@ export function ClassroomManagement() {
                       setSelectedStudentIdsForUnassign(studentsInClass.map(s => s.id));
                     }
                   }}
-                  className="text-xs text-pastel-purple font-semibold hover:underline"
+                  className="text-xs text-indigo-600 font-semibold hover:underline"
                 >
                   {selectedStudentIdsForUnassign.length === studentsInClass.length ? 'Bỏ chọn tất cả' : 'Chọn tất cả'}
                 </button>
@@ -952,7 +954,7 @@ export function ClassroomManagement() {
                       setExamToUnassign(null);
                       setSelectedStudentIdsForUnassign([]);
                     }}
-                    className="px-4 py-2 border rounded-xl text-xs font-semibold text-gray-600 hover:bg-gray-50"
+                    className="px-4 py-2 border border-slate-300 rounded-xl text-xs font-semibold text-slate-700 hover:bg-slate-50"
                   >
                     Đóng
                   </button>
@@ -966,7 +968,7 @@ export function ClassroomManagement() {
                       setExamToUnassign(null);
                       setSelectedStudentIdsForUnassign([]);
                     }}
-                    className="px-5 py-2 bg-red-600 text-white rounded-xl text-xs font-bold shadow-sm hover:bg-red-700 disabled:opacity-50"
+                    className="px-5 py-2 bg-rose-600 text-white rounded-xl text-xs font-bold shadow-sm hover:bg-rose-700 disabled:opacity-50"
                   >
                     Hủy giao ({selectedStudentIdsForUnassign.length})
                   </button>

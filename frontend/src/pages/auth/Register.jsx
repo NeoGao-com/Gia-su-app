@@ -47,22 +47,22 @@ export function Register() {
   };
 
   return (
-    <div className="min-h-screen bg-[#f8f9fe] flex items-center justify-center p-4 font-sans relative overflow-hidden py-12">
+    <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4 font-sans relative overflow-hidden py-12">
       {/* Soft background glow */}
-      <div className="absolute -top-32 -left-32 w-96 h-96 bg-purple-200/40 rounded-full blur-3xl pointer-events-none" />
-      <div className="absolute -bottom-32 -right-32 w-96 h-96 bg-indigo-200/40 rounded-full blur-3xl pointer-events-none" />
+      <div className="absolute -top-32 -left-32 w-96 h-96 bg-indigo-100/50 rounded-full blur-3xl pointer-events-none" />
+      <div className="absolute -bottom-32 -right-32 w-96 h-96 bg-slate-200/50 rounded-full blur-3xl pointer-events-none" />
 
-      <div className="bg-white rounded-4xl p-8 sm:p-10 max-w-lg w-full shadow-card border border-gray-100 relative z-10">
+      <div className="bg-white rounded-3xl p-8 sm:p-10 max-w-lg w-full shadow-card border border-slate-200/90 relative z-10">
         <div className="text-center mb-6">
-          <div className="w-14 h-14 rounded-3xl bg-gradient-to-tr from-pastel-purple to-pastel-purpleDark flex items-center justify-center text-white mx-auto mb-4 shadow-md shadow-pastel-purple/20">
+          <div className="w-14 h-14 rounded-2xl bg-indigo-600 flex items-center justify-center text-white mx-auto mb-4 shadow-sm shadow-indigo-600/20">
             <BookOpen className="w-7 h-7" />
           </div>
-          <h2 className="text-2xl sm:text-3xl font-extrabold text-gray-900 tracking-tight">Tạo tài khoản mới</h2>
-          <p className="text-xs sm:text-sm text-gray-500 mt-1 font-medium">Bắt đầu dạy kèm và học tập thông minh trên TutorQuiz</p>
+          <h2 className="text-2xl sm:text-3xl font-bold text-slate-900 tracking-tight">Tạo tài khoản mới</h2>
+          <p className="text-xs sm:text-sm text-slate-500 mt-1 font-medium">Bắt đầu dạy kèm và học tập thông minh trên TutorQuiz</p>
         </div>
 
         {error && (
-          <div className="mb-5 bg-rose-50 border border-rose-200 text-rose-700 px-4 py-3 rounded-2xl text-xs sm:text-sm font-medium animate-fadeIn">
+          <div className="mb-5 bg-rose-50 border border-rose-200 text-rose-800 px-4 py-3 rounded-xl text-xs sm:text-sm font-medium animate-fadeIn">
             {error}
           </div>
         )}
@@ -70,54 +70,54 @@ export function Register() {
         <form onSubmit={handleSubmit} className="space-y-4">
           {/* Role Selection Cards */}
           <div>
-            <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-2">
+            <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">
               Bạn là ai?
             </label>
             <div className="grid grid-cols-2 gap-3">
               <button
                 type="button"
                 onClick={() => setFormData({ ...formData, role: 'student' })}
-                className={`p-3.5 rounded-2xl border-2 flex items-center space-x-3 transition text-left ${
+                className={`p-3.5 rounded-xl border-2 flex items-center space-x-3 transition text-left cursor-pointer ${
                   formData.role === 'student'
-                    ? 'border-pastel-purple bg-purple-50/50 text-gray-900 ring-1 ring-pastel-purple/20'
-                    : 'border-gray-200 hover:border-gray-300 text-gray-600'
+                    ? 'border-indigo-600 bg-indigo-50/60 text-slate-900 ring-1 ring-indigo-500/20'
+                    : 'border-slate-200 hover:border-slate-300 text-slate-600'
                 }`}
               >
-                <div className={`p-2 rounded-xl shrink-0 ${formData.role === 'student' ? 'bg-pastel-purple text-white' : 'bg-gray-100 text-gray-500'}`}>
+                <div className={`p-2 rounded-lg shrink-0 ${formData.role === 'student' ? 'bg-indigo-600 text-white' : 'bg-slate-100 text-slate-600'}`}>
                   <GraduationCap className="w-5 h-5" />
                 </div>
                 <div>
-                  <div className="font-bold text-xs sm:text-sm">Học sinh</div>
-                  <div className="text-[11px] text-gray-400">Làm bài & nhận điểm</div>
+                  <div className="font-bold text-xs sm:text-sm text-slate-900">Học sinh</div>
+                  <div className="text-[11px] text-slate-500">Làm bài & nhận điểm</div>
                 </div>
               </button>
 
               <button
                 type="button"
                 onClick={() => setFormData({ ...formData, role: 'teacher' })}
-                className={`p-3.5 rounded-2xl border-2 flex items-center space-x-3 transition text-left ${
+                className={`p-3.5 rounded-xl border-2 flex items-center space-x-3 transition text-left cursor-pointer ${
                   formData.role === 'teacher'
-                    ? 'border-pastel-purple bg-purple-50/50 text-gray-900 ring-1 ring-pastel-purple/20'
-                    : 'border-gray-200 hover:border-gray-300 text-gray-600'
+                    ? 'border-indigo-600 bg-indigo-50/60 text-slate-900 ring-1 ring-indigo-500/20'
+                    : 'border-slate-200 hover:border-slate-300 text-slate-600'
                 }`}
               >
-                <div className={`p-2 rounded-xl shrink-0 ${formData.role === 'teacher' ? 'bg-pastel-purple text-white' : 'bg-gray-100 text-gray-500'}`}>
+                <div className={`p-2 rounded-lg shrink-0 ${formData.role === 'teacher' ? 'bg-indigo-600 text-white' : 'bg-slate-100 text-slate-600'}`}>
                   <School className="w-5 h-5" />
                 </div>
                 <div>
-                  <div className="font-bold text-xs sm:text-sm">Giáo viên / Gia sư</div>
-                  <div className="text-[11px] text-gray-400">Tạo đề & quản lý lớp</div>
+                  <div className="font-bold text-xs sm:text-sm text-slate-900">Giáo viên / Gia sư</div>
+                  <div className="text-[11px] text-slate-500">Tạo đề & quản lý lớp</div>
                 </div>
               </button>
             </div>
           </div>
 
           <div>
-            <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1.5">
+            <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
               Họ và tên
             </label>
             <div className="relative">
-              <span className="absolute inset-y-0 left-0 pl-3.5 flex items-center text-gray-400">
+              <span className="absolute inset-y-0 left-0 pl-3.5 flex items-center text-slate-400">
                 <User className="w-5 h-5" />
               </span>
               <input
@@ -125,18 +125,18 @@ export function Register() {
                 required
                 value={formData.full_name}
                 onChange={(e) => setFormData({ ...formData, full_name: e.target.value })}
-                className="w-full pl-11 pr-4 py-2.5 sm:py-3 rounded-2xl border border-gray-200 bg-gray-50/50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-pastel-purple/40 focus:border-pastel-purple text-sm transition"
+                className="w-full pl-11 pr-4 py-2.5 sm:py-3 rounded-xl border border-slate-200 bg-slate-50/60 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-600 text-sm text-slate-900 transition"
                 placeholder="Nguyễn Văn A"
               />
             </div>
           </div>
 
           <div>
-            <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1.5">
+            <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
               Email đăng nhập
             </label>
             <div className="relative">
-              <span className="absolute inset-y-0 left-0 pl-3.5 flex items-center text-gray-400">
+              <span className="absolute inset-y-0 left-0 pl-3.5 flex items-center text-slate-400">
                 <Mail className="w-5 h-5" />
               </span>
               <input
@@ -144,18 +144,18 @@ export function Register() {
                 required
                 value={formData.email}
                 onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                className="w-full pl-11 pr-4 py-2.5 sm:py-3 rounded-2xl border border-gray-200 bg-gray-50/50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-pastel-purple/40 focus:border-pastel-purple text-sm transition"
+                className="w-full pl-11 pr-4 py-2.5 sm:py-3 rounded-xl border border-slate-200 bg-slate-50/60 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-600 text-sm text-slate-900 transition"
                 placeholder="name@example.com"
               />
             </div>
           </div>
 
           <div>
-            <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1.5">
+            <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
               Mật khẩu
             </label>
             <div className="relative">
-              <span className="absolute inset-y-0 left-0 pl-3.5 flex items-center text-gray-400">
+              <span className="absolute inset-y-0 left-0 pl-3.5 flex items-center text-slate-400">
                 <Lock className="w-5 h-5" />
               </span>
               <input
@@ -163,24 +163,24 @@ export function Register() {
                 required
                 value={formData.password}
                 onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                className="w-full pl-11 pr-11 py-2.5 sm:py-3 rounded-2xl border border-gray-200 bg-gray-50/50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-pastel-purple/40 focus:border-pastel-purple text-sm transition"
+                className="w-full pl-11 pr-11 py-2.5 sm:py-3 rounded-xl border border-slate-200 bg-slate-50/60 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-600 text-sm text-slate-900 transition"
                 placeholder="••••••••"
               />
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
-                className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-gray-400 hover:text-gray-600 focus:outline-none"
+                className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-slate-400 hover:text-slate-600 focus:outline-none cursor-pointer"
               >
                 {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
               </button>
             </div>
-            <p className="text-[11px] text-gray-400 mt-1">Gợi ý: Mật khẩu nên có tối thiểu 8 ký tự gồm chữ hoa, chữ thường và số.</p>
+            <p className="text-[11px] text-slate-500 mt-1">Gợi ý: Mật khẩu nên có tối thiểu 8 ký tự gồm chữ hoa, chữ thường và số.</p>
           </div>
 
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-gradient-to-r from-pastel-purple to-pastel-purpleDark text-white py-3.5 rounded-2xl font-bold text-sm hover:opacity-95 transition shadow-sm hover:shadow flex items-center justify-center space-x-2 disabled:opacity-50 mt-3"
+            className="w-full bg-indigo-600 hover:bg-indigo-700 text-white py-3.5 rounded-xl font-semibold text-sm transition shadow-xs flex items-center justify-center space-x-2 disabled:opacity-50 mt-3 cursor-pointer"
           >
             <span>{loading ? 'Đang khởi tạo tài khoản...' : 'Đăng ký ngay'}</span>
             {!loading && <ArrowRight className="w-4 h-4" />}
@@ -190,10 +190,10 @@ export function Register() {
         {/* Separator */}
         <div className="relative my-6">
           <div className="absolute inset-0 flex items-center">
-            <div className="w-full border-t border-gray-100"></div>
+            <div className="w-full border-t border-slate-100"></div>
           </div>
           <div className="relative flex justify-center text-xs uppercase">
-            <span className="bg-white px-3 text-gray-400 font-semibold tracking-wider text-[11px]">
+            <span className="bg-white px-3 text-slate-400 font-semibold tracking-wider text-[11px]">
               Hoặc đăng ký nhanh với
             </span>
           </div>
@@ -204,7 +204,7 @@ export function Register() {
           <button
             type="button"
             onClick={() => navigate('/login')}
-            className="w-full flex items-center justify-center space-x-3 py-3.5 px-4 rounded-2xl border-2 border-gray-200 hover:border-gray-300 bg-white hover:bg-gray-50/90 text-gray-800 font-bold text-sm transition shadow-sm hover:shadow active:scale-[0.99] cursor-pointer"
+            className="w-full flex items-center justify-center space-x-3 py-3 px-4 rounded-xl border border-slate-200 hover:border-slate-300 bg-white hover:bg-slate-50 text-slate-800 font-semibold text-sm transition shadow-2xs active:scale-[0.99] cursor-pointer"
           >
             <svg className="w-5 h-5 shrink-0" viewBox="0 0 24 24">
               <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
@@ -218,19 +218,19 @@ export function Register() {
           <button
             type="button"
             onClick={() => navigate('/login')}
-            className="w-full flex items-center justify-center space-x-3 py-3.5 px-4 rounded-2xl bg-[#0068FF] hover:bg-[#0057d9] text-white font-bold text-sm transition shadow-sm hover:shadow active:scale-[0.99] cursor-pointer"
+            className="w-full flex items-center justify-center space-x-3 py-3 px-4 rounded-xl bg-[#0068FF] hover:bg-[#0057d9] text-white font-semibold text-sm transition shadow-2xs active:scale-[0.99] cursor-pointer"
           >
-            <div className="w-6 h-6 rounded-lg bg-white flex items-center justify-center font-black text-[#0068FF] text-[13px] tracking-tighter leading-none shrink-0 shadow-xs">
+            <div className="w-5 h-5 rounded-md bg-white flex items-center justify-center font-black text-[#0068FF] text-[11px] tracking-tighter leading-none shrink-0 shadow-2xs">
               Z
             </div>
             <span>Đăng ký nhanh bằng tài khoản Zalo</span>
           </button>
         </div>
 
-        <div className="mt-8 pt-6 border-t border-gray-100 text-center">
-          <p className="text-xs sm:text-sm text-gray-600">
+        <div className="mt-8 pt-6 border-t border-slate-100 text-center">
+          <p className="text-xs sm:text-sm text-slate-600">
             Đã có tài khoản?{' '}
-            <Link to="/login" className="text-pastel-purpleDark font-bold hover:underline">
+            <Link to="/login" className="text-indigo-600 font-bold hover:underline">
               Đăng nhập tại đây
             </Link>
           </p>

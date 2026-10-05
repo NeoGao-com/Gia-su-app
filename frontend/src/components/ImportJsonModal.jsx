@@ -618,29 +618,29 @@ export function ImportJsonModal({
     >
       <div className="space-y-4">
         {/* Step Indicator Header */}
-        <div className="flex items-center justify-between p-3 bg-gray-50 border border-gray-100 rounded-2xl">
+        <div className="flex items-center justify-between p-3 bg-slate-50 border border-slate-200/80 rounded-2xl">
           <div className="flex items-center space-x-3 text-xs font-semibold">
             <button
               type="button"
               onClick={() => setStep('input')}
-              className={`flex items-center space-x-1.5 px-3.5 py-1.5 rounded-xl transition ${
+              className={`flex items-center space-x-1.5 px-3.5 py-1.5 rounded-xl transition cursor-pointer ${
                 step === 'input' 
-                  ? 'bg-pastel-purple text-white shadow-xs font-bold' 
-                  : 'bg-white text-gray-600 hover:bg-gray-100 border border-gray-200'
+                  ? 'bg-indigo-600 text-white shadow-xs font-bold' 
+                  : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'
               }`}
             >
               <FileCode2 className="w-3.5 h-3.5" />
               <span>Bước 1: Chọn Môn / Khối &amp; Lấy Prompt</span>
             </button>
-            <ArrowRight className="w-3.5 h-3.5 text-gray-400" />
+            <ArrowRight className="w-3.5 h-3.5 text-slate-400" />
             <button
               type="button"
               disabled={!parsedQuestions.length && step !== 'preview'}
               onClick={() => parsedQuestions.length && setStep('preview')}
-              className={`flex items-center space-x-1.5 px-3.5 py-1.5 rounded-xl transition ${
+              className={`flex items-center space-x-1.5 px-3.5 py-1.5 rounded-xl transition cursor-pointer ${
                 step === 'preview' 
-                  ? 'bg-pastel-purple text-white shadow-xs font-bold' 
-                  : 'bg-white text-gray-400 hover:text-gray-600 disabled:opacity-50 border border-gray-200'
+                  ? 'bg-indigo-600 text-white shadow-xs font-bold' 
+                  : 'bg-white text-slate-400 hover:text-slate-600 disabled:opacity-50 border border-slate-200'
               }`}
             >
               <Eye className="w-3.5 h-3.5" />
@@ -648,7 +648,7 @@ export function ImportJsonModal({
             </button>
           </div>
 
-          <div className="hidden sm:flex items-center space-x-1.5 text-xs text-pastel-purpleDark bg-purple-50 px-3 py-1 rounded-xl border border-purple-100 font-bold">
+          <div className="hidden sm:flex items-center space-x-1.5 text-xs text-indigo-700 bg-indigo-50 px-3 py-1 rounded-xl border border-indigo-100 font-bold">
             <BookOpen className="w-3.5 h-3.5" />
             <span>{selectedSubject === 'AUTO' ? 'Tự nhận diện' : selectedSubject} • {selectedGrade === 'AUTO' ? 'Mọi khối' : `Khối ${selectedGrade}`}</span>
           </div>
@@ -660,15 +660,15 @@ export function ImportJsonModal({
         {step === 'input' && (
           <div className="space-y-4">
             {/* MASTER FILE AI PROMPT BANNER */}
-            <div className="p-4 sm:p-5 bg-gradient-to-br from-purple-50/95 via-indigo-50/60 to-white border border-purple-200/90 rounded-3xl space-y-3.5 shadow-xs">
+            <div className="p-4 sm:p-5 bg-gradient-to-br from-indigo-50/90 via-slate-50/50 to-white border border-indigo-200/80 rounded-2xl space-y-3.5 shadow-xs">
               <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
                 <div className="space-y-1">
-                  <div className="text-xs sm:text-sm font-extrabold text-pastel-purpleDark flex items-center space-x-2">
-                    <Sparkles className="w-4 h-4 text-pastel-purple" />
-                    <span>Prompt AI Master: Dùng khi tải file đề lên ChatGPT / Claude / Gemini / DeepSeek</span>
+                  <div className="text-xs sm:text-sm font-extrabold text-indigo-950 flex items-center space-x-2">
+                    <Sparkles className="w-4 h-4 text-indigo-600" />
+                    <span>Prompt AI Chuẩn: Dùng khi tải tệp đề lên ChatGPT / Claude / Gemini / DeepSeek</span>
                   </div>
-                  <p className="text-xs text-gray-600 leading-relaxed">
-                    AI sẽ đọc file tài liệu, giải bài và trích xuất thành mảng JSON đúng chuẩn môn học và khối lớp bạn chỉ định.
+                  <p className="text-xs text-slate-600 leading-relaxed">
+                    AI sẽ đọc tệp tài liệu, giải bài và trích xuất thành mảng JSON đúng chuẩn môn học và khối lớp bạn chỉ định.
                   </p>
                 </div>
 
@@ -676,9 +676,9 @@ export function ImportJsonModal({
                   <button
                     type="button"
                     onClick={() => setShowPromptDetails(!showPromptDetails)}
-                    className="flex-1 sm:flex-none flex items-center justify-center space-x-1 px-3 py-2 bg-white hover:bg-gray-50 text-gray-700 border border-gray-200 rounded-xl text-xs font-semibold transition"
+                    className="flex-1 sm:flex-none flex items-center justify-center space-x-1 px-3 py-2 bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 rounded-xl text-xs font-semibold transition cursor-pointer"
                   >
-                    <Eye className="w-3.5 h-3.5 text-gray-500" />
+                    <Eye className="w-3.5 h-3.5 text-slate-500" />
                     <span>{showPromptDetails ? 'Thu gọn' : 'Xem nội dung'}</span>
                     {showPromptDetails ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
                   </button>
@@ -686,7 +686,7 @@ export function ImportJsonModal({
                   <button
                     type="button"
                     onClick={handleCopyPrompt}
-                    className="flex-1 sm:flex-none flex items-center justify-center space-x-1.5 px-4 py-2 bg-gradient-to-r from-pastel-purple to-pastel-purpleDark hover:opacity-95 text-white rounded-xl text-xs font-bold shadow-sm transition"
+                    className="flex-1 sm:flex-none flex items-center justify-center space-x-1.5 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold shadow-xs transition cursor-pointer"
                     title="Bấm để sao chép Prompt dán cùng file lên AI"
                   >
                     {copiedPrompt ? <Check className="w-4 h-4 text-emerald-300" /> : <Copy className="w-4 h-4" />}
@@ -696,19 +696,19 @@ export function ImportJsonModal({
               </div>
 
               {/* DYNAMIC SELECTORS: MÔN HỌC & KHỐI LỚP (Theo ngân hàng câu hỏi) */}
-              <div className="p-3 bg-white/90 rounded-2xl border border-purple-100 flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
-                <div className="flex items-center space-x-2 shrink-0 text-xs font-extrabold text-gray-700">
-                  <Layers className="w-4 h-4 text-pastel-purpleDark" />
+              <div className="p-3 bg-white/90 rounded-xl border border-indigo-100 flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+                <div className="flex items-center space-x-2 shrink-0 text-xs font-extrabold text-slate-700">
+                  <Layers className="w-4 h-4 text-indigo-600" />
                   <span>Chọn Môn &amp; Khối:</span>
                 </div>
 
                 {/* Subject Selector */}
                 <div className="flex-1 flex items-center space-x-2">
-                  <span className="text-xs text-gray-500 font-medium shrink-0">Môn học:</span>
+                  <span className="text-xs text-slate-500 font-medium shrink-0">Môn học:</span>
                   <select
                     value={selectedSubject}
                     onChange={(e) => setSelectedSubject(e.target.value)}
-                    className="w-full px-3 py-1.5 bg-gray-50 border border-gray-200 rounded-xl text-xs font-bold text-gray-800 focus:outline-none focus:border-pastel-purple"
+                    className="w-full px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 focus:outline-none focus:border-indigo-600"
                   >
                     <option value="AUTO">-- Tự nhận diện từ tệp đề --</option>
                     {availableSubjects.map((s) => (
@@ -719,11 +719,11 @@ export function ImportJsonModal({
 
                 {/* Grade Level Selector */}
                 <div className="flex-1 flex items-center space-x-2">
-                  <span className="text-xs text-gray-500 font-medium shrink-0">Khối lớp:</span>
+                  <span className="text-xs text-slate-500 font-medium shrink-0">Khối lớp:</span>
                   <select
                     value={selectedGrade}
                     onChange={(e) => setSelectedGrade(e.target.value === 'AUTO' ? 'AUTO' : Number(e.target.value))}
-                    className="w-full px-3 py-1.5 bg-gray-50 border border-gray-200 rounded-xl text-xs font-bold text-gray-800 focus:outline-none focus:border-pastel-purple"
+                    className="w-full px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 focus:outline-none focus:border-indigo-600"
                   >
                     <option value="AUTO">-- Tự nhận diện từ tệp đề --</option>
                     {availableGrades.map((g) => (
@@ -734,17 +734,17 @@ export function ImportJsonModal({
               </div>
 
               {/* 3-Step Guide */}
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 pt-1 border-t border-purple-100 text-xs text-gray-700 font-medium">
-                <div className="flex items-center space-x-2 bg-white/80 p-2.5 rounded-xl border border-purple-100">
-                  <span className="w-5 h-5 rounded-full bg-pastel-purple text-white text-[11px] font-bold flex items-center justify-center shrink-0">1</span>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 pt-1 border-t border-indigo-100 text-xs text-slate-700 font-medium">
+                <div className="flex items-center space-x-2 bg-white/80 p-2.5 rounded-xl border border-indigo-100">
+                  <span className="w-5 h-5 rounded-full bg-indigo-600 text-white text-[11px] font-bold flex items-center justify-center shrink-0">1</span>
                   <span>Chọn môn/khối rồi bấm <strong>Sao chép Prompt</strong></span>
                 </div>
-                <div className="flex items-center space-x-2 bg-white/80 p-2.5 rounded-xl border border-purple-100">
-                  <span className="w-5 h-5 rounded-full bg-pastel-purple text-white text-[11px] font-bold flex items-center justify-center shrink-0">2</span>
+                <div className="flex items-center space-x-2 bg-white/80 p-2.5 rounded-xl border border-indigo-100">
+                  <span className="w-5 h-5 rounded-full bg-indigo-600 text-white text-[11px] font-bold flex items-center justify-center shrink-0">2</span>
                   <span>Tải file lên AI &amp; dán Prompt gửi đi</span>
                 </div>
-                <div className="flex items-center space-x-2 bg-white/80 p-2.5 rounded-xl border border-purple-100">
-                  <span className="w-5 h-5 rounded-full bg-pastel-purple text-white text-[11px] font-bold flex items-center justify-center shrink-0">3</span>
+                <div className="flex items-center space-x-2 bg-white/80 p-2.5 rounded-xl border border-indigo-100">
+                  <span className="w-5 h-5 rounded-full bg-indigo-600 text-white text-[11px] font-bold flex items-center justify-center shrink-0">3</span>
                   <span>Copy JSON dán vào ô dưới &amp; bấm Nhập</span>
                 </div>
               </div>
@@ -752,18 +752,18 @@ export function ImportJsonModal({
               {/* Collapsible Prompt Preview */}
               {showPromptDetails && (
                 <div className="pt-2">
-                  <div className="text-[11px] font-bold text-gray-600 mb-1 flex items-center justify-between">
+                  <div className="text-[11px] font-bold text-slate-600 mb-1 flex items-center justify-between">
                     <span>Nội dung Prompt gửi cho AI (Đã gắn Môn: {selectedSubject}, Khối: {selectedGrade}):</span>
                     <button 
                       type="button" 
                       onClick={handleCopyPrompt} 
-                      className="text-pastel-purpleDark hover:underline flex items-center space-x-1"
+                      className="text-indigo-600 hover:underline flex items-center space-x-1 cursor-pointer font-semibold"
                     >
                       <Copy className="w-3 h-3" />
                       <span>Sao chép</span>
                     </button>
                   </div>
-                  <pre className="p-3.5 bg-gray-900 text-gray-100 rounded-2xl text-[11px] font-mono overflow-x-auto max-h-56 leading-relaxed whitespace-pre-wrap select-all">
+                  <pre className="p-3.5 bg-slate-900 text-slate-100 rounded-xl text-[11px] font-mono overflow-x-auto max-h-56 leading-relaxed whitespace-pre-wrap select-all">
                     {currentMasterPrompt}
                   </pre>
                 </div>
@@ -842,10 +842,10 @@ export function ImportJsonModal({
                   value={jsonInput}
                   onChange={(e) => { setJsonInput(e.target.value); setParseErrorAlert(null); }}
                   placeholder='[\n  {\n    "content": "Cho hàm số $y = x^2 - 4x + 3$...",\n    "question_type": "MULTIPLE_CHOICE",\n    "options": ["$(2; -1)$", "$(-2; -1)$", "$(2; 1)$", "$(1; 0)$"],\n    "correct_option": 0,\n    "subject": "Toán",\n    "grade_level": 10\n  }\n]'
-                  className="w-full p-3 font-mono text-xs text-gray-800 bg-gray-50/80 border border-gray-200 rounded-2xl focus:outline-none focus:border-pastel-purple focus:bg-white transition"
+                  className="w-full p-3 font-mono text-xs text-slate-800 bg-slate-50/80 border border-slate-200 rounded-2xl focus:outline-none focus:border-indigo-600 focus:ring-2 focus:ring-indigo-500/20 focus:bg-white transition"
                 />
                 {jsonInput && (
-                  <div className="absolute right-3 bottom-3 text-[10px] text-gray-400 bg-white/90 px-2 py-0.5 rounded-md border border-gray-200">
+                  <div className="absolute right-3 bottom-3 text-[10px] text-slate-500 bg-white/90 px-2 py-0.5 rounded-md border border-slate-200 tabular-nums">
                     {jsonInput.length} ký tự
                   </div>
                 )}
@@ -856,7 +856,7 @@ export function ImportJsonModal({
                 <button
                   type="button"
                   onClick={onClose}
-                  className="px-4 py-2 text-xs font-semibold text-gray-500 hover:text-gray-800 transition"
+                  className="px-4 py-2 text-xs font-semibold text-slate-500 hover:text-slate-800 transition cursor-pointer"
                 >
                   Hủy bỏ
                 </button>
@@ -866,7 +866,7 @@ export function ImportJsonModal({
                     type="button"
                     onClick={handleProceedToPreview}
                     disabled={!jsonInput.trim()}
-                    className="flex-1 sm:flex-none flex items-center justify-center space-x-1.5 px-4 py-2.5 bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 rounded-xl text-xs font-bold transition disabled:opacity-50"
+                    className="flex-1 sm:flex-none flex items-center justify-center space-x-1.5 px-4 py-2.5 bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 rounded-xl text-xs font-bold transition disabled:opacity-50 cursor-pointer"
                   >
                     <Eye className="w-3.5 h-3.5" />
                     <span>Xem trước &amp; Kiểm tra</span>
@@ -876,7 +876,7 @@ export function ImportJsonModal({
                     type="button"
                     onClick={handleFastDirectImport}
                     disabled={!jsonInput.trim() || isSubmitting}
-                    className="flex-1 sm:flex-none flex items-center justify-center space-x-1.5 px-6 py-2.5 bg-gradient-to-r from-emerald-600 to-teal-600 hover:opacity-95 disabled:opacity-50 text-white rounded-xl text-xs font-extrabold shadow-sm transition"
+                    className="flex-1 sm:flex-none flex items-center justify-center space-x-1.5 px-6 py-2.5 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white rounded-xl text-xs font-extrabold shadow-xs transition cursor-pointer"
                   >
                     {isSubmitting ? (
                       <>
@@ -885,7 +885,7 @@ export function ImportJsonModal({
                       </>
                     ) : (
                       <>
-                        <Zap className="w-4 h-4 text-yellow-300" />
+                        <Zap className="w-4 h-4 text-amber-200" />
                         <span>Nhập hàng loạt ngay</span>
                       </>
                     )}
@@ -925,12 +925,12 @@ export function ImportJsonModal({
                 return (
                   <div 
                     key={qIndex} 
-                    className="p-4 bg-white border border-gray-200 hover:border-purple-200 rounded-2xl space-y-3 transition shadow-2xs"
+                    className="p-4 bg-white border border-slate-200 hover:border-indigo-300 rounded-2xl space-y-3 transition shadow-2xs"
                   >
                     {/* Header info */}
                     <div className="flex flex-wrap justify-between items-center gap-2">
                       <div className="flex items-center space-x-2">
-                        <span className="w-6 h-6 rounded-lg bg-pastel-purple/10 text-pastel-purpleDark text-xs font-bold flex items-center justify-center">
+                        <span className="w-6 h-6 rounded-lg bg-indigo-50 text-indigo-700 text-xs font-bold flex items-center justify-center tabular-nums">
                           {qIndex + 1}
                         </span>
                         <span className={`px-2 py-0.5 rounded-lg text-[10px] font-bold border ${typeInfo.bg}`}>
@@ -940,12 +940,12 @@ export function ImportJsonModal({
                           {diffInfo.label}
                         </span>
                         {q.subject && (
-                          <span className="text-[11px] text-gray-500 font-medium bg-gray-50 px-2 py-0.5 rounded-md border border-gray-100">
+                          <span className="text-[11px] text-slate-600 font-medium bg-slate-50 px-2 py-0.5 rounded-md border border-slate-200">
                             {q.subject} {q.grade_level ? `- Lớp ${q.grade_level}` : ''}
                           </span>
                         )}
                         {q.chapter && (
-                          <span className="text-[11px] text-gray-400">
+                          <span className="text-[11px] text-slate-400">
                             • {q.chapter}
                           </span>
                         )}
@@ -954,7 +954,7 @@ export function ImportJsonModal({
                       <button
                         type="button"
                         onClick={() => handleRemoveQuestionFromPreview(qIndex)}
-                        className="text-gray-400 hover:text-rose-600 p-1 rounded-lg hover:bg-rose-50 transition"
+                        className="text-slate-400 hover:text-rose-600 p-1 rounded-lg hover:bg-rose-50 transition cursor-pointer"
                         title="Bỏ qua câu này"
                       >
                         <Trash2 className="w-4 h-4" />
@@ -962,7 +962,7 @@ export function ImportJsonModal({
                     </div>
 
                     {/* Question Content */}
-                    <div className="text-xs text-gray-800 leading-relaxed font-medium">
+                    <div className="text-xs text-slate-800 leading-relaxed font-medium">
                       <MathRenderer content={q.content} />
                     </div>
 
@@ -980,11 +980,11 @@ export function ImportJsonModal({
                               className={`flex items-start space-x-2 p-2.5 rounded-xl border text-left text-xs transition cursor-pointer ${
                                 isCorrect 
                                   ? 'bg-emerald-50 border-emerald-300 text-emerald-900 font-semibold' 
-                                  : 'bg-gray-50/70 border-gray-200 text-gray-700 hover:bg-gray-100'
+                                  : 'bg-slate-50/70 border-slate-200 text-slate-700 hover:bg-slate-100'
                               }`}
                             >
                               <span className={`w-5 h-5 rounded-md flex items-center justify-center text-[10px] font-bold shrink-0 ${
-                                isCorrect ? 'bg-emerald-600 text-white' : 'bg-gray-200 text-gray-600'
+                                isCorrect ? 'bg-emerald-600 text-white' : 'bg-slate-200 text-slate-600'
                               }`}>
                                 {letter}
                               </span>
@@ -1008,11 +1008,11 @@ export function ImportJsonModal({
                           return (
                             <div 
                               key={sIdx} 
-                              className="flex items-center justify-between p-2 rounded-xl bg-gray-50 border border-gray-100 text-xs"
+                              className="flex items-center justify-between p-2 rounded-xl bg-slate-50 border border-slate-200/70 text-xs"
                             >
                               <div className="flex items-start space-x-2 flex-1 pr-2">
-                                <span className="font-bold text-gray-500 shrink-0">{letter})</span>
-                                <div className="text-gray-800">
+                                <span className="font-bold text-slate-500 shrink-0">{letter})</span>
+                                <div className="text-slate-800">
                                   <MathRenderer content={sub.statement} />
                                 </div>
                               </div>
@@ -1041,8 +1041,8 @@ export function ImportJsonModal({
 
                     {/* Explanation */}
                     {q.explanation && (
-                      <div className="p-2.5 bg-purple-50/50 border border-purple-100 rounded-xl text-[11px] text-gray-600">
-                        <span className="font-semibold text-pastel-purpleDark mr-1">Lời giải:</span>
+                      <div className="p-2.5 bg-indigo-50/40 border border-indigo-100 rounded-xl text-[11px] text-slate-600">
+                        <span className="font-semibold text-indigo-700 mr-1">Lời giải:</span>
                         <MathRenderer content={q.explanation} />
                       </div>
                     )}

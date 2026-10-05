@@ -73,23 +73,23 @@ export function TeacherDashboard() {
   };
 
   return (
-    <div className="min-h-screen bg-pastel-bg">
+    <div className="min-h-screen bg-slate-50">
       <Navbar />
       <div className="flex">
         <Sidebar role="teacher" />
-        <main className="flex-1 p-6 lg:p-8 max-w-7xl mx-auto w-full">
+        <main className="flex-1 p-5 sm:p-6 lg:p-8 max-w-7xl mx-auto w-full">
           {/* Welcome Banner */}
-          <div className="bg-gradient-to-r from-pastel-purple via-pastel-purpleDark to-indigo-600 text-white p-6 sm:p-8 rounded-3xl shadow-sm mb-8 relative overflow-hidden">
+          <div className="bg-gradient-to-r from-indigo-700 via-indigo-600 to-blue-600 text-white p-6 sm:p-7 rounded-2xl shadow-xs mb-6 relative overflow-hidden">
             <div className="relative z-10 max-w-2xl">
-              <div className="inline-flex items-center space-x-2 bg-white/20 backdrop-blur-md px-3.5 py-1 rounded-full text-xs font-bold mb-3 border border-white/20">
-                <Sparkles className="w-3.5 h-3.5" />
-                <span>Không gian Giảng dạy Thông minh TutorQuiz</span>
+              <div className="inline-flex items-center space-x-2 bg-white/15 backdrop-blur-md px-3 py-1 rounded-full text-xs font-semibold mb-3 border border-white/20">
+                <Sparkles className="w-3.5 h-3.5 text-indigo-200" />
+                <span>Không gian Giảng dạy TutorQuiz</span>
               </div>
               <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight">
                 {getGreeting()}, {teacherName}!
               </h1>
-              <p className="mt-2 text-white/90 text-xs sm:text-sm leading-relaxed">
-                Quản lý các nhóm dạy kèm, giao bài tập tự động theo bài học và theo dõi tiến độ học sinh một cách trực quan, chính xác nhất.
+              <p className="mt-2 text-indigo-100 text-xs sm:text-sm leading-relaxed">
+                Hệ thống hỗ trợ quản lý lớp học, phân phối bài tập và theo dõi kết quả làm bài của học sinh một cách trực quan, chính xác.
               </p>
             </div>
             <div className="absolute right-0 bottom-0 opacity-10 pointer-events-none transform translate-x-8 translate-y-8">
@@ -98,144 +98,144 @@ export function TeacherDashboard() {
           </div>
 
           {/* Quick Stats Grid */}
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-8">
-            <div className="bg-white p-5 rounded-3xl border border-gray-100/90 shadow-card hover:shadow-card-hover transition-all interactive-card">
-              <div className="flex items-center space-x-3 mb-3">
-                <div className="bg-blue-50 text-blue-600 p-2.5 rounded-2xl">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5 mb-6">
+            <div className="bg-white p-5 rounded-2xl border border-slate-200/90 shadow-xs hover:border-blue-300 transition-all interactive-card">
+              <div className="flex items-center space-x-3 mb-2.5">
+                <div className="bg-blue-50 text-blue-600 p-2.5 rounded-xl">
                   <UserCheck className="w-5 h-5" />
                 </div>
-                <span className="text-xs sm:text-sm text-gray-500 font-semibold">Học sinh kèm</span>
+                <span className="text-xs sm:text-sm text-slate-500 font-medium">Học sinh</span>
               </div>
-              <h3 className="text-2xl sm:text-3xl font-black text-gray-800">{stats.students}</h3>
-              <p className="text-[11px] text-gray-400 mt-1">Đang theo học các lớp</p>
+              <h3 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tabular-nums">{stats.students}</h3>
+              <p className="text-[11px] text-slate-400 mt-1">Đang theo học các lớp</p>
             </div>
 
-            <div className="bg-white p-5 rounded-3xl border border-gray-100/90 shadow-card hover:shadow-card-hover transition-all interactive-card">
-              <div className="flex items-center space-x-3 mb-3">
-                <div className="bg-emerald-50 text-emerald-600 p-2.5 rounded-2xl">
+            <div className="bg-white p-5 rounded-2xl border border-slate-200/90 shadow-xs hover:border-emerald-300 transition-all interactive-card">
+              <div className="flex items-center space-x-3 mb-2.5">
+                <div className="bg-emerald-50 text-emerald-600 p-2.5 rounded-xl">
                   <Users className="w-5 h-5" />
                 </div>
-                <span className="text-xs sm:text-sm text-gray-500 font-semibold">Lớp & Nhóm kèm</span>
+                <span className="text-xs sm:text-sm text-slate-500 font-medium">Lớp học phụ trách</span>
               </div>
-              <h3 className="text-2xl sm:text-3xl font-black text-gray-800">{stats.classrooms}</h3>
-              <p className="text-[11px] text-gray-400 mt-1">Đang hoạt động</p>
+              <h3 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tabular-nums">{stats.classrooms}</h3>
+              <p className="text-[11px] text-slate-400 mt-1">Đang hoạt động</p>
             </div>
 
-            <div className="bg-white p-5 rounded-3xl border border-gray-100/90 shadow-card hover:shadow-card-hover transition-all interactive-card">
-              <div className="flex items-center space-x-3 mb-3">
-                <div className="bg-purple-50 text-pastel-purpleDark p-2.5 rounded-2xl">
+            <div className="bg-white p-5 rounded-2xl border border-slate-200/90 shadow-xs hover:border-indigo-300 transition-all interactive-card">
+              <div className="flex items-center space-x-3 mb-2.5">
+                <div className="bg-indigo-50 text-indigo-600 p-2.5 rounded-xl">
                   <CheckSquare className="w-5 h-5" />
                 </div>
-                <span className="text-xs sm:text-sm text-gray-500 font-semibold">Ngân hàng câu hỏi</span>
+                <span className="text-xs sm:text-sm text-slate-500 font-medium">Ngân hàng câu hỏi</span>
               </div>
-              <h3 className="text-2xl sm:text-3xl font-black text-gray-800">{stats.questions}</h3>
-              <p className="text-[11px] text-gray-400 mt-1">Hỗ trợ công thức KaTeX</p>
+              <h3 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tabular-nums">{stats.questions}</h3>
+              <p className="text-[11px] text-slate-400 mt-1">Hỗ trợ định dạng KaTeX</p>
             </div>
 
-            <div className="bg-white p-5 rounded-3xl border border-gray-100/90 shadow-card hover:shadow-card-hover transition-all interactive-card">
-              <div className="flex items-center space-x-3 mb-3">
-                <div className="bg-amber-50 text-amber-600 p-2.5 rounded-2xl">
+            <div className="bg-white p-5 rounded-2xl border border-slate-200/90 shadow-xs hover:border-amber-300 transition-all interactive-card">
+              <div className="flex items-center space-x-3 mb-2.5">
+                <div className="bg-amber-50 text-amber-600 p-2.5 rounded-xl">
                   <BookOpen className="w-5 h-5" />
                 </div>
-                <span className="text-xs sm:text-sm text-gray-500 font-semibold">Đề thi đã tạo</span>
+                <span className="text-xs sm:text-sm text-slate-500 font-medium">Đề thi đã soạn</span>
               </div>
-              <h3 className="text-2xl sm:text-3xl font-black text-gray-800">{stats.exams}</h3>
-              <p className="text-[11px] text-gray-400 mt-1">Sẵn sàng giao cho học sinh</p>
+              <h3 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tabular-nums">{stats.exams}</h3>
+              <p className="text-[11px] text-slate-400 mt-1">Sẵn sàng giao cho lớp</p>
             </div>
           </div>
 
           {/* Quick Actions Bar */}
-          <div className="bg-white p-6 rounded-3xl border border-gray-100 shadow-card mb-8">
-            <h3 className="font-extrabold text-gray-800 text-sm sm:text-base mb-4 flex items-center space-x-2">
-              <PlusCircle className="w-5 h-5 text-pastel-purpleDark" />
-              <span>Thao tác nhanh trong ngày</span>
+          <div className="bg-white p-5 sm:p-6 rounded-2xl border border-slate-200/90 shadow-xs mb-6">
+            <h3 className="font-bold text-slate-900 text-sm sm:text-base mb-4 flex items-center space-x-2">
+              <PlusCircle className="w-5 h-5 text-indigo-600" />
+              <span>Lối tắt tác vụ chính</span>
             </h3>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
               <Link 
                 to="/teacher/assignments" 
-                className="p-4 rounded-2xl bg-gradient-to-br from-purple-50/70 to-indigo-50/50 hover:bg-white border border-purple-100 hover:border-pastel-purple/40 shadow-xs hover:shadow-card transition-all interactive-btn group flex items-start space-x-3"
+                className="p-4 rounded-xl bg-slate-50 hover:bg-white border border-slate-200/80 hover:border-indigo-300 shadow-2xs hover:shadow-xs transition-all interactive-btn group flex items-start space-x-3"
               >
-                <div className="p-2.5 rounded-xl bg-purple-100 text-pastel-purpleDark group-hover:scale-110 transition-transform">
-                  <Send className="w-5 h-5" />
+                <div className="p-2.5 rounded-lg bg-indigo-50 text-indigo-600 group-hover:bg-indigo-600 group-hover:text-white transition-colors">
+                  <Send className="w-4 h-4" />
                 </div>
                 <div>
-                  <div className="font-bold text-xs sm:text-sm text-gray-800">Giao bài theo bài học</div>
-                  <div className="text-[11px] text-gray-500 mt-0.5">Chọn bài học & câu hỏi giao cho lớp</div>
+                  <div className="font-semibold text-xs sm:text-sm text-slate-800">Giao bài tập mới</div>
+                  <div className="text-[11px] text-slate-500 mt-0.5">Phân phối bài tập đến lớp học</div>
                 </div>
               </Link>
 
               <Link 
                 to="/teacher/classrooms" 
-                className="p-4 rounded-2xl bg-gray-50 hover:bg-white border border-gray-100 hover:border-emerald-200 shadow-xs hover:shadow-card transition-all interactive-btn group flex items-start space-x-3"
+                className="p-4 rounded-xl bg-slate-50 hover:bg-white border border-slate-200/80 hover:border-emerald-300 shadow-2xs hover:shadow-xs transition-all interactive-btn group flex items-start space-x-3"
               >
-                <div className="p-2.5 rounded-xl bg-emerald-50 text-emerald-600 group-hover:scale-110 transition-transform">
-                  <Users className="w-5 h-5" />
+                <div className="p-2.5 rounded-lg bg-emerald-50 text-emerald-600 group-hover:bg-emerald-600 group-hover:text-white transition-colors">
+                  <Users className="w-4 h-4" />
                 </div>
                 <div>
-                  <div className="font-bold text-xs sm:text-sm text-gray-800">Tạo nhóm kèm mới</div>
-                  <div className="text-[11px] text-gray-500 mt-0.5">Tạo nhóm & cấp mã cho học sinh</div>
+                  <div className="font-semibold text-xs sm:text-sm text-slate-800">Quản lý lớp học</div>
+                  <div className="text-[11px] text-slate-500 mt-0.5">Tạo lớp và chia sẻ mã tham gia</div>
                 </div>
               </Link>
 
               <Link 
                 to="/teacher/questions" 
-                className="p-4 rounded-2xl bg-gray-50 hover:bg-white border border-gray-100 hover:border-blue-200 shadow-xs hover:shadow-card transition-all interactive-btn group flex items-start space-x-3"
+                className="p-4 rounded-xl bg-slate-50 hover:bg-white border border-slate-200/80 hover:border-blue-300 shadow-2xs hover:shadow-xs transition-all interactive-btn group flex items-start space-x-3"
               >
-                <div className="p-2.5 rounded-xl bg-blue-50 text-blue-600 group-hover:scale-110 transition-transform">
-                  <PlusCircle className="w-5 h-5" />
+                <div className="p-2.5 rounded-lg bg-blue-50 text-blue-600 group-hover:bg-blue-600 group-hover:text-white transition-colors">
+                  <PlusCircle className="w-4 h-4" />
                 </div>
                 <div>
-                  <div className="font-bold text-xs sm:text-sm text-gray-800">Thêm câu hỏi mới</div>
-                  <div className="text-[11px] text-gray-500 mt-0.5">Nhập tay hoặc nhập nhanh JSON</div>
+                  <div className="font-semibold text-xs sm:text-sm text-slate-800">Soạn câu hỏi mới</div>
+                  <div className="text-[11px] text-slate-500 mt-0.5">Nhập tay hoặc nhập file JSON/Word</div>
                 </div>
               </Link>
 
               <Link 
                 to="/teacher/exams" 
-                className="p-4 rounded-2xl bg-gray-50 hover:bg-white border border-gray-100 hover:border-amber-200 shadow-xs hover:shadow-card transition-all interactive-btn group flex items-start space-x-3"
+                className="p-4 rounded-xl bg-slate-50 hover:bg-white border border-slate-200/80 hover:border-amber-300 shadow-2xs hover:shadow-xs transition-all interactive-btn group flex items-start space-x-3"
               >
-                <div className="p-2.5 rounded-xl bg-amber-50 text-amber-600 group-hover:scale-110 transition-transform">
-                  <BookOpen className="w-5 h-5" />
+                <div className="p-2.5 rounded-lg bg-amber-50 text-amber-600 group-hover:bg-amber-600 group-hover:text-white transition-colors">
+                  <BookOpen className="w-4 h-4" />
                 </div>
                 <div>
-                  <div className="font-bold text-xs sm:text-sm text-gray-800">Thiết kế đề thi</div>
-                  <div className="text-[11px] text-gray-500 mt-0.5">Ma trận tự động & tạo đề chuẩn</div>
+                  <div className="font-semibold text-xs sm:text-sm text-slate-800">Tạo đề thi mới</div>
+                  <div className="text-[11px] text-slate-500 mt-0.5">Tạo ma trận và xuất bản đề thi</div>
                 </div>
               </Link>
             </div>
           </div>
 
           {/* 2-Column Grid: Recent Classrooms & Recent Exams */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Left: Classrooms */}
-            <div className="bg-white p-6 rounded-3xl border border-gray-100 shadow-card">
-              <div className="flex items-center justify-between mb-4 pb-2 border-b border-gray-100">
-                <h3 className="font-extrabold text-gray-800 text-sm sm:text-base flex items-center space-x-2">
-                  <Users className="w-4 h-4 text-pastel-purpleDark" />
-                  <span>Nhóm kèm đang dạy ({classrooms.length})</span>
+            <div className="bg-white p-5 sm:p-6 rounded-2xl border border-slate-200/90 shadow-xs">
+              <div className="flex items-center justify-between mb-4 pb-2.5 border-b border-slate-100">
+                <h3 className="font-bold text-slate-900 text-sm sm:text-base flex items-center space-x-2">
+                  <Users className="w-4 h-4 text-indigo-600" />
+                  <span>Lớp học phụ trách ({classrooms.length})</span>
                 </h3>
-                <Link to="/teacher/classrooms" className="text-xs font-bold text-pastel-purpleDark hover:underline flex items-center space-x-1">
-                  <span>Tất cả</span>
+                <Link to="/teacher/classrooms" className="text-xs font-semibold text-indigo-600 hover:text-indigo-800 flex items-center space-x-1">
+                  <span>Xem tất cả</span>
                   <ArrowRight className="w-3.5 h-3.5" />
                 </Link>
               </div>
 
               {classrooms.length === 0 ? (
-                <div className="text-center py-10 bg-gray-50 rounded-2xl border border-dashed border-gray-200">
-                  <Users className="w-8 h-8 text-gray-300 mx-auto mb-2" />
-                  <p className="text-xs sm:text-sm text-gray-500 font-medium">Chưa có nhóm dạy kèm nào</p>
-                  <Link to="/teacher/classrooms" className="mt-2 inline-block text-xs font-bold text-pastel-purpleDark hover:underline">
-                    + Tạo nhóm kèm đầu tiên
+                <div className="text-center py-10 bg-slate-50 rounded-xl border border-dashed border-slate-200">
+                  <Users className="w-8 h-8 text-slate-300 mx-auto mb-2" />
+                  <p className="text-xs sm:text-sm text-slate-600 font-medium">Chưa có lớp học nào được tạo</p>
+                  <Link to="/teacher/classrooms" className="mt-2 inline-block text-xs font-semibold text-indigo-600 hover:underline">
+                    + Tạo lớp học đầu tiên
                   </Link>
                 </div>
               ) : (
-                <div className="space-y-3">
+                <div className="space-y-2.5">
                   {classrooms.slice(0, 5).map((cls) => (
-                    <div key={cls.id} className="p-3.5 rounded-2xl bg-gray-50 hover:bg-purple-50/40 border border-gray-100 transition flex items-center justify-between">
+                    <div key={cls.id} className="p-3.5 rounded-xl bg-slate-50 hover:bg-slate-100/70 border border-slate-200/70 transition flex items-center justify-between">
                       <div className="min-w-0 flex-1 pr-3">
-                        <h4 className="font-bold text-xs sm:text-sm text-gray-800 truncate">{cls.name}</h4>
-                        <div className="flex items-center space-x-2 text-[11px] text-gray-400 mt-0.5">
+                        <h4 className="font-semibold text-xs sm:text-sm text-slate-800 truncate">{cls.name}</h4>
+                        <div className="flex items-center space-x-2 text-[11px] text-slate-500 mt-0.5">
                           <span>{cls.students?.length || 0} học sinh</span>
                           {cls.description && <span className="truncate">• {cls.description}</span>}
                         </div>
@@ -245,8 +245,8 @@ export function TeacherDashboard() {
                         {cls.code && (
                           <button 
                             onClick={() => handleCopyCode(cls.code)} 
-                            title="Sao chép mã vào nhóm" 
-                            className="flex items-center space-x-1 text-xs bg-white text-pastel-purpleDark px-2.5 py-1.5 rounded-xl border border-purple-100 font-mono font-bold hover:bg-purple-50 transition shadow-2xs interactive-btn"
+                            title="Sao chép mã tham gia lớp" 
+                            className="flex items-center space-x-1 text-xs bg-white text-indigo-700 px-2.5 py-1.5 rounded-lg border border-slate-200 font-mono font-bold hover:bg-indigo-50 transition shadow-2xs interactive-btn"
                           >
                             {copiedCode === cls.code ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
                             <span>{cls.code}</span>
@@ -254,9 +254,9 @@ export function TeacherDashboard() {
                         )}
                         <Link 
                           to="/teacher/classrooms" 
-                          className="text-xs bg-pastel-purple text-white px-3 py-1.5 rounded-xl font-semibold hover:bg-pastel-purpleDark transition shadow-2xs"
+                          className="text-xs bg-indigo-600 text-white px-3 py-1.5 rounded-lg font-medium hover:bg-indigo-700 transition shadow-2xs"
                         >
-                          Vào nhóm
+                          Vào lớp
                         </Link>
                       </div>
                     </div>
@@ -266,40 +266,40 @@ export function TeacherDashboard() {
             </div>
 
             {/* Right: Recent Exams */}
-            <div className="bg-white p-6 rounded-3xl border border-gray-100 shadow-card">
-              <div className="flex items-center justify-between mb-4 pb-2 border-b border-gray-100">
-                <h3 className="font-extrabold text-gray-800 text-sm sm:text-base flex items-center space-x-2">
-                  <BookOpen className="w-4 h-4 text-pastel-purpleDark" />
-                  <span>Đề thi & Bài tập gần đây ({recentExams.length})</span>
+            <div className="bg-white p-5 sm:p-6 rounded-2xl border border-slate-200/90 shadow-xs">
+              <div className="flex items-center justify-between mb-4 pb-2.5 border-b border-slate-100">
+                <h3 className="font-bold text-slate-900 text-sm sm:text-base flex items-center space-x-2">
+                  <BookOpen className="w-4 h-4 text-indigo-600" />
+                  <span>Đề thi gần đây ({recentExams.length})</span>
                 </h3>
-                <Link to="/teacher/exams" className="text-xs font-bold text-pastel-purpleDark hover:underline flex items-center space-x-1">
+                <Link to="/teacher/exams" className="text-xs font-semibold text-indigo-600 hover:text-indigo-800 flex items-center space-x-1">
                   <span>Kho đề</span>
                   <ArrowRight className="w-3.5 h-3.5" />
                 </Link>
               </div>
 
               {recentExams.length === 0 ? (
-                <div className="text-center py-10 bg-gray-50 rounded-2xl border border-dashed border-gray-200">
-                  <BookOpen className="w-8 h-8 text-gray-300 mx-auto mb-2" />
-                  <p className="text-xs sm:text-sm text-gray-500 font-medium">Chưa có đề thi nào</p>
-                  <Link to="/teacher/exams" className="mt-2 inline-block text-xs font-bold text-pastel-purpleDark hover:underline">
-                    + Tạo đề thi mới
+                <div className="text-center py-10 bg-slate-50 rounded-xl border border-dashed border-slate-200">
+                  <BookOpen className="w-8 h-8 text-slate-300 mx-auto mb-2" />
+                  <p className="text-xs sm:text-sm text-slate-600 font-medium">Chưa có đề thi nào</p>
+                  <Link to="/teacher/exams" className="mt-2 inline-block text-xs font-semibold text-indigo-600 hover:underline">
+                    + Soạn đề thi mới
                   </Link>
                 </div>
               ) : (
-                <div className="space-y-3">
+                <div className="space-y-2.5">
                   {recentExams.slice(0, 5).map((exam) => (
-                    <div key={exam.id} className="p-3.5 rounded-2xl bg-gray-50 hover:bg-purple-50/40 border border-gray-100 transition flex items-center justify-between">
+                    <div key={exam.id} className="p-3.5 rounded-xl bg-slate-50 hover:bg-slate-100/70 border border-slate-200/70 transition flex items-center justify-between">
                       <div className="min-w-0 flex-1 pr-3">
                         <div className="flex items-center space-x-2">
-                          <h4 className="font-bold text-xs sm:text-sm text-gray-800 truncate">{exam.title}</h4>
-                          <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${
-                            exam.is_published ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700'
+                          <h4 className="font-semibold text-xs sm:text-sm text-slate-800 truncate">{exam.title}</h4>
+                          <span className={`text-[10px] px-2 py-0.5 rounded-md font-semibold ${
+                            exam.is_published ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-amber-50 text-amber-700 border border-amber-200'
                           }`}>
                             {exam.is_published ? 'Đã xuất bản' : 'Bản nháp'}
                           </span>
                         </div>
-                        <div className="flex items-center space-x-3 text-[11px] text-gray-400 mt-0.5">
+                        <div className="flex items-center space-x-3 text-[11px] text-slate-500 mt-0.5">
                           <span className="flex items-center space-x-1">
                             <Clock className="w-3 h-3" />
                             <span>{exam.duration_minutes} phút</span>
@@ -310,7 +310,7 @@ export function TeacherDashboard() {
 
                       <Link 
                         to="/teacher/assignments" 
-                        className="text-xs bg-white text-pastel-purpleDark px-3 py-1.5 rounded-xl border border-purple-200 font-bold hover:bg-purple-50 transition shadow-2xs whitespace-nowrap flex items-center space-x-1"
+                        className="text-xs bg-white text-indigo-700 px-3 py-1.5 rounded-lg border border-slate-200 font-semibold hover:bg-indigo-50 transition shadow-2xs whitespace-nowrap flex items-center space-x-1"
                       >
                         <Send className="w-3 h-3" />
                         <span>Giao bài</span>

@@ -143,7 +143,7 @@ export function StudentPractice() {
   const answeredTotal = Object.keys(answers).filter(k => answers[k] !== undefined && answers[k] !== '').length;
 
   return (
-    <div className="min-h-screen bg-pastel-bg">
+    <div className="min-h-screen bg-slate-50">
       <Navbar />
       <div className="flex">
         <Sidebar role="student" />
@@ -151,11 +151,13 @@ export function StudentPractice() {
           {/* Header */}
           <div className="mb-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
             <div>
-              <h1 className="text-2xl font-extrabold text-gray-800 tracking-tight flex items-center space-x-2">
-                <Sparkles className="w-7 h-7 text-pastel-purpleDark" />
-                <span>Góc Tự luyện & Ôn tập thông minh</span>
+              <h1 className="text-2xl font-bold text-slate-900 tracking-tight flex items-center space-x-2.5">
+                <div className="w-9 h-9 rounded-xl bg-indigo-50 border border-indigo-100 flex items-center justify-center text-indigo-600">
+                  <Sparkles className="w-5 h-5" />
+                </div>
+                <span>Tự luyện & Ôn tập thông minh</span>
               </h1>
-              <p className="text-xs text-gray-500 mt-1">Tự tạo đề ôn tập theo năng lực, kiểm tra tức thì và xem lời giải chi tiết từng bước</p>
+              <p className="text-xs text-slate-500 mt-1">Tự tạo đề ôn tập theo từng chuyên đề, chấm điểm tức thì và xem lời giải chi tiết từng bước</p>
             </div>
 
             {mode !== 'CONFIG' && (
@@ -171,7 +173,7 @@ export function StudentPractice() {
                     setMode('CONFIG');
                   }
                 }}
-                className="text-xs font-bold bg-white border border-gray-200 px-4 py-2 rounded-2xl text-gray-700 hover:bg-gray-50 transition shadow-sm flex items-center space-x-1.5"
+                className="text-xs font-semibold bg-white border border-slate-200 px-4 py-2 rounded-xl text-slate-700 hover:bg-slate-50 transition shadow-2xs flex items-center space-x-1.5 cursor-pointer"
               >
                 <RotateCcw className="w-3.5 h-3.5" />
                 <span>Tạo đề mới</span>
@@ -185,16 +187,16 @@ export function StudentPractice() {
           {mode === 'CONFIG' && (
             <div className="space-y-6">
               {/* Introduction Card */}
-              <div className="bg-gradient-to-r from-pastel-purple to-pastel-purpleDark text-white p-6 sm:p-8 rounded-3xl shadow-sm relative overflow-hidden">
+              <div className="bg-gradient-to-r from-indigo-700 via-indigo-600 to-indigo-800 text-white p-6 sm:p-8 rounded-3xl shadow-sm relative overflow-hidden border border-indigo-700/30">
                 <div className="relative z-10 max-w-2xl">
-                  <div className="inline-flex items-center space-x-2 bg-white/20 backdrop-blur-md px-3 py-1 rounded-full text-xs font-semibold mb-3">
+                  <div className="inline-flex items-center space-x-2 bg-white/15 backdrop-blur-md px-3 py-1 rounded-full text-xs font-medium text-white mb-3">
                     <Sparkles className="w-3.5 h-3.5" />
                     <span>Luyện tập tự do không giới hạn</span>
                   </div>
                   <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight">
                     Chủ động bứt phá điểm số
                   </h2>
-                  <p className="mt-2 text-white/90 text-sm sm:text-base leading-relaxed">
+                  <p className="mt-2 text-indigo-100 text-sm sm:text-base leading-relaxed">
                     Hệ thống sẽ tự động tổng hợp câu hỏi từ ngân hàng đề chuẩn, hỗ trợ công thức Toán LaTeX và hiển thị đáp án, lời giải giải thích ngay sau khi nộp.
                   </p>
                 </div>
@@ -204,22 +206,22 @@ export function StudentPractice() {
               </div>
 
               {/* Practice Configuration Form */}
-              <div className="bg-white rounded-3xl p-6 sm:p-8 border border-gray-100 shadow-sm max-w-3xl mx-auto space-y-6">
-                <div className="flex items-center space-x-2.5 pb-4 border-b border-gray-100">
-                  <Filter className="w-5 h-5 text-pastel-purpleDark" />
-                  <h3 className="text-base font-bold text-gray-800">Cấu hình đề ôn luyện của bạn</h3>
+              <div className="bg-white rounded-2xl p-6 sm:p-8 border border-slate-200/90 shadow-xs max-w-3xl mx-auto space-y-6">
+                <div className="flex items-center space-x-2.5 pb-4 border-b border-slate-100">
+                  <Filter className="w-5 h-5 text-indigo-600" />
+                  <h3 className="text-base font-bold text-slate-900">Cấu hình đề ôn luyện của bạn</h3>
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                   {/* Subject */}
                   <div>
-                    <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-2">
+                    <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">
                       Môn học
                     </label>
                     <select
                       value={subject}
                       onChange={(e) => setSubject(e.target.value)}
-                      className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-2xl text-sm font-semibold text-gray-800 focus:outline-none focus:border-pastel-purple"
+                      className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-semibold text-slate-800 focus:outline-none focus:border-indigo-500 focus:bg-white transition"
                     >
                       {SUBJECT_OPTIONS.map((sub) => (
                         <option key={sub} value={sub}>{sub}</option>
@@ -229,13 +231,13 @@ export function StudentPractice() {
 
                   {/* Grade */}
                   <div>
-                    <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-2">
+                    <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">
                       Khối lớp
                     </label>
                     <select
                       value={gradeLevel}
                       onChange={(e) => setGradeLevel(Number(e.target.value))}
-                      className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-2xl text-sm font-semibold text-gray-800 focus:outline-none focus:border-pastel-purple"
+                      className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-semibold text-slate-800 focus:outline-none focus:border-indigo-500 focus:bg-white transition"
                     >
                       {GRADE_OPTIONS.map((g) => (
                         <option key={g} value={g}>Khối {g}</option>
@@ -245,7 +247,7 @@ export function StudentPractice() {
 
                   {/* Chapter / Topic */}
                   <div>
-                    <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-2">
+                    <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">
                       Chuyên đề / Chủ đề (Tùy chọn)
                     </label>
                     <input
@@ -253,19 +255,19 @@ export function StudentPractice() {
                       placeholder="VD: Hàm số, Hình không gian, Este..."
                       value={chapter}
                       onChange={(e) => setChapter(e.target.value)}
-                      className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-2xl text-sm font-medium focus:outline-none focus:border-pastel-purple"
+                      className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium focus:outline-none focus:border-indigo-500 focus:bg-white transition text-slate-800"
                     />
                   </div>
 
                   {/* Difficulty */}
                   <div>
-                    <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-2">
+                    <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">
                       Độ khó mong muốn
                     </label>
                     <select
                       value={difficulty}
                       onChange={(e) => setDifficulty(e.target.value)}
-                      className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-2xl text-sm font-semibold text-gray-800 focus:outline-none focus:border-pastel-purple"
+                      className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-semibold text-slate-800 focus:outline-none focus:border-indigo-500 focus:bg-white transition"
                     >
                       {DIFFICULTY_OPTIONS.map((opt) => (
                         <option key={opt.value} value={opt.value}>{opt.label}</option>
@@ -276,7 +278,7 @@ export function StudentPractice() {
 
                 {/* Number of questions */}
                 <div>
-                  <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-2">
+                  <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">
                     Số lượng câu hỏi trong đề
                   </label>
                   <div className="grid grid-cols-4 gap-3">
@@ -285,10 +287,10 @@ export function StudentPractice() {
                         key={cnt}
                         type="button"
                         onClick={() => setQuestionCount(cnt)}
-                        className={`py-3 rounded-2xl font-bold text-sm transition-all border ${
+                        className={`py-2.5 rounded-xl font-bold text-sm transition-all border cursor-pointer tabular-nums ${
                           questionCount === cnt
-                            ? 'bg-pastel-purple text-white border-pastel-purple shadow-xs'
-                            : 'bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100'
+                            ? 'bg-indigo-600 text-white border-indigo-600 shadow-xs'
+                            : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100'
                         }`}
                       >
                         {cnt} câu
@@ -298,12 +300,12 @@ export function StudentPractice() {
                 </div>
 
                 {/* Submit button */}
-                <div className="pt-4 border-t border-gray-100">
+                <div className="pt-4 border-t border-slate-100">
                   <button
                     type="button"
                     onClick={handleStartPractice}
                     disabled={loading}
-                    className="w-full py-3.5 bg-gradient-to-r from-pastel-purple to-pastel-purpleDark text-white font-extrabold text-sm rounded-2xl hover:opacity-95 transition shadow-sm flex items-center justify-center space-x-2 disabled:opacity-50"
+                    className="w-full py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-sm rounded-xl transition shadow-xs flex items-center justify-center space-x-2 disabled:opacity-50 cursor-pointer"
                   >
                     <Sparkles className="w-4 h-4" />
                     <span>{loading ? 'Đang soạn đề tự luyện...' : 'Tạo đề & Bắt đầu làm bài'}</span>
@@ -320,31 +322,31 @@ export function StudentPractice() {
             <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
               {/* Question Workspace */}
               <div className="lg:col-span-3 space-y-6">
-                <div className="bg-white rounded-3xl p-6 sm:p-8 border border-gray-100 shadow-sm">
+                <div className="bg-white rounded-2xl p-6 sm:p-8 border border-slate-200/90 shadow-xs">
                   {/* Question Info Bar */}
-                  <div className="flex justify-between items-center mb-6 pb-4 border-b border-gray-100">
+                  <div className="flex justify-between items-center mb-6 pb-4 border-b border-slate-100">
                     <div className="flex items-center space-x-2">
-                      <span className="text-xs font-bold px-3 py-1 bg-pastel-purple/10 text-pastel-purpleDark rounded-xl">
+                      <span className="text-xs font-bold px-3 py-1 bg-indigo-50 text-indigo-700 border border-indigo-100 rounded-xl tabular-nums">
                         Câu {currentIndex + 1} / {practiceQuestions.length}
                       </span>
                       {currentQ.chapter && (
-                        <span className="text-xs font-semibold px-2.5 py-1 bg-gray-100 text-gray-600 rounded-xl">
+                        <span className="text-xs font-semibold px-2.5 py-1 bg-slate-100 text-slate-700 rounded-xl">
                           {currentQ.chapter}
                         </span>
                       )}
-                      <span className="text-xs font-semibold px-2.5 py-1 bg-purple-50 text-pastel-purpleDark rounded-xl">
+                      <span className="text-xs font-semibold px-2.5 py-1 bg-slate-100 text-slate-700 rounded-xl">
                         {currentQ.difficulty === 'easy' ? 'Dễ' : currentQ.difficulty === 'hard' ? 'Khó' : 'Trung bình'}
                       </span>
                     </div>
 
-                    <div className="flex items-center space-x-2 font-mono font-bold text-xs bg-gray-50 border border-gray-200 px-3 py-1.5 rounded-xl text-gray-700">
-                      <Clock className="w-3.5 h-3.5 text-pastel-purpleDark" />
+                    <div className="flex items-center space-x-2 font-mono tabular-nums font-bold text-xs bg-slate-50 border border-slate-200 px-3 py-1.5 rounded-xl text-slate-800">
+                      <Clock className="w-3.5 h-3.5 text-indigo-600" />
                       <span>{formatTimer(timeElapsed)}</span>
                     </div>
                   </div>
 
                   {/* Question Text */}
-                  <div className="text-base sm:text-lg font-medium text-gray-900 mb-6 leading-relaxed">
+                  <div className="text-base sm:text-lg font-medium text-slate-900 mb-6 leading-relaxed">
                     <MathRenderer content={currentQ.content} />
                   </div>
 
@@ -354,7 +356,7 @@ export function StudentPractice() {
                       <img 
                         src={resolveImageUrl(currentQ.image_url)} 
                         alt="Hình minh họa" 
-                        className="max-h-72 rounded-2xl border border-gray-200 shadow-xs object-contain" 
+                        className="max-h-72 rounded-2xl border border-slate-200 shadow-2xs object-contain" 
                         onError={(e) => { e.currentTarget.style.display = 'none'; }} 
                       />
                     </div>
@@ -371,16 +373,16 @@ export function StudentPractice() {
                       return (
                         <label
                           key={idx}
-                          className={`flex items-start space-x-3.5 p-4 rounded-2xl border-2 cursor-pointer transition-all ${
+                          className={`flex items-start space-x-3.5 p-4 rounded-xl border-2 cursor-pointer transition-all ${
                             isSelected
-                              ? 'border-pastel-purple bg-purple-50/50 text-gray-900 shadow-xs ring-1 ring-pastel-purple/20'
-                              : 'border-gray-200/90 hover:border-purple-200 hover:bg-gray-50/60 text-gray-700'
+                              ? 'border-indigo-600 bg-indigo-50/60 text-slate-900 shadow-2xs ring-1 ring-indigo-500/20'
+                              : 'border-slate-200/90 hover:border-indigo-300 hover:bg-slate-50/70 text-slate-700'
                           }`}
                         >
-                          <div className={`w-8 h-8 rounded-xl font-bold flex items-center justify-center text-sm shrink-0 transition ${
+                          <div className={`w-8 h-8 rounded-lg font-bold flex items-center justify-center text-sm shrink-0 transition ${
                             isSelected 
-                              ? 'bg-pastel-purple text-white shadow-xs' 
-                              : 'bg-gray-100 text-gray-600'
+                              ? 'bg-indigo-600 text-white shadow-xs' 
+                              : 'bg-slate-100 text-slate-600'
                           }`}>
                             {letter}
                           </div>
@@ -391,7 +393,7 @@ export function StudentPractice() {
                             onChange={() => handleAnswerChange(currentQ.id, optValue)}
                             className="sr-only"
                           />
-                          <div className="flex-1 pt-1 text-sm sm:text-base leading-relaxed">
+                          <div className="flex-1 pt-1 text-sm sm:text-base leading-relaxed text-slate-800">
                             <MathRenderer content={optContent} />
                           </div>
                         </label>
@@ -400,12 +402,12 @@ export function StudentPractice() {
                   </div>
 
                   {/* Navigation Buttons */}
-                  <div className="flex justify-between items-center pt-6 mt-8 border-t border-gray-100">
+                  <div className="flex justify-between items-center pt-6 mt-8 border-t border-slate-100">
                     <button
                       type="button"
                       onClick={() => setCurrentIndex(prev => Math.max(0, prev - 1))}
                       disabled={currentIndex === 0}
-                      className="flex items-center space-x-1.5 px-5 py-2.5 rounded-2xl border border-gray-200 text-xs font-bold text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-40 transition shadow-xs"
+                      className="flex items-center space-x-1.5 px-5 py-2.5 rounded-xl border border-slate-200 text-xs font-semibold text-slate-700 bg-white hover:bg-slate-50 disabled:opacity-40 transition shadow-2xs cursor-pointer"
                     >
                       <ChevronLeft className="w-4 h-4" />
                       <span>Câu trước</span>
@@ -414,7 +416,7 @@ export function StudentPractice() {
                       type="button"
                       onClick={() => setCurrentIndex(prev => Math.min(practiceQuestions.length - 1, prev + 1))}
                       disabled={currentIndex === practiceQuestions.length - 1}
-                      className="flex items-center space-x-1.5 px-5 py-2.5 rounded-2xl bg-pastel-purple text-xs font-bold text-white hover:bg-pastel-purpleDark disabled:opacity-40 transition shadow-sm"
+                      className="flex items-center space-x-1.5 px-5 py-2.5 rounded-xl bg-indigo-600 text-xs font-semibold text-white hover:bg-indigo-700 disabled:opacity-40 transition shadow-xs cursor-pointer"
                     >
                       <span>Câu sau</span>
                       <ChevronRight className="w-4 h-4" />
@@ -425,10 +427,10 @@ export function StudentPractice() {
 
               {/* Sidebar Question Palette */}
               <div className="space-y-4">
-                <div className="bg-white rounded-3xl p-6 border border-gray-100 shadow-sm space-y-4">
-                  <div className="flex items-center justify-between pb-3 border-b border-gray-100">
-                    <h3 className="font-bold text-gray-900 text-xs uppercase tracking-wider">Tiến trình</h3>
-                    <span className="text-xs font-bold text-pastel-purpleDark bg-purple-50 px-2.5 py-0.5 rounded-full">
+                <div className="bg-white rounded-2xl p-5 border border-slate-200/90 shadow-xs space-y-4">
+                  <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+                    <h3 className="font-bold text-slate-900 text-xs uppercase tracking-wider">Tiến trình làm bài</h3>
+                    <span className="text-xs font-bold text-indigo-700 bg-indigo-50 border border-indigo-100 px-2.5 py-0.5 rounded-full tabular-nums">
                       {answeredTotal}/{practiceQuestions.length} câu
                     </span>
                   </div>
@@ -442,12 +444,12 @@ export function StudentPractice() {
                         <button
                           key={q.id || idx}
                           onClick={() => setCurrentIndex(idx)}
-                          className={`h-10 rounded-2xl font-bold text-xs transition flex items-center justify-center shadow-xs ${
+                          className={`h-10 rounded-xl font-bold text-xs transition flex items-center justify-center cursor-pointer tabular-nums shadow-2xs ${
                             isCurrent
-                              ? 'ring-2 ring-pastel-purple bg-pastel-purple text-white shadow-md'
+                              ? 'ring-2 ring-indigo-500 bg-indigo-600 text-white shadow-xs'
                               : isAnswered
                               ? 'bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100'
-                              : 'bg-gray-50 text-gray-600 border border-gray-200 hover:bg-gray-100'
+                              : 'bg-slate-50 text-slate-700 border border-slate-200 hover:bg-slate-100'
                           }`}
                         >
                           {idx + 1}
@@ -460,7 +462,7 @@ export function StudentPractice() {
                     type="button"
                     onClick={handleSubmitPractice}
                     disabled={loading}
-                    className="w-full py-3 bg-gradient-to-r from-pastel-purple to-pastel-purpleDark text-white font-extrabold text-xs rounded-2xl hover:opacity-95 transition shadow-sm flex items-center justify-center space-x-1.5"
+                    className="w-full py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-xs rounded-xl transition shadow-xs flex items-center justify-center space-x-1.5 cursor-pointer"
                   >
                     <Send className="w-3.5 h-3.5" />
                     <span>Nộp bài & Xem giải thích</span>
@@ -476,26 +478,26 @@ export function StudentPractice() {
           {mode === 'RESULT' && resultData && (
             <div className="space-y-6">
               {/* Score Summary Card */}
-              <div className="bg-white rounded-3xl p-6 sm:p-8 border border-gray-100 shadow-sm">
-                <div className="flex flex-col md:flex-row items-center justify-between gap-6 pb-6 border-b border-gray-100">
+              <div className="bg-white rounded-2xl p-6 sm:p-8 border border-slate-200/90 shadow-xs">
+                <div className="flex flex-col md:flex-row items-center justify-between gap-6 pb-6 border-b border-slate-100">
                   <div className="flex items-center space-x-4">
-                    <div className="w-16 h-16 rounded-3xl bg-gradient-to-br from-pastel-purple to-pastel-purpleDark text-white flex items-center justify-center font-black text-2xl shadow-sm">
+                    <div className="w-16 h-16 rounded-2xl bg-indigo-600 text-white flex items-center justify-center font-black text-2xl shadow-sm tabular-nums">
                       {resultData.score}
                     </div>
                     <div>
                       <div className="flex items-center space-x-2">
-                        <h2 className="text-xl font-bold text-gray-900">Kết quả bài tự luyện</h2>
+                        <h2 className="text-xl font-bold text-slate-900">Kết quả bài tự luyện</h2>
                         <span className={`text-xs font-bold px-2.5 py-0.5 rounded-full ${
                           resultData.score >= 8.0 
-                            ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' 
+                            ? 'bg-emerald-50 text-emerald-800 border border-emerald-200' 
                             : resultData.score >= 5.0 
-                            ? 'bg-blue-50 text-blue-700 border border-blue-200'
-                            : 'bg-rose-50 text-rose-700 border border-rose-200'
+                            ? 'bg-blue-50 text-blue-800 border border-blue-200'
+                            : 'bg-rose-50 text-rose-800 border border-rose-200'
                         }`}>
                           {resultData.score >= 8.0 ? 'Xuất sắc! 🔥' : resultData.score >= 5.0 ? 'Khá tốt! 👍' : 'Cần cố gắng thêm 💪'}
                         </span>
                       </div>
-                      <p className="text-xs text-gray-500 mt-1">
+                      <p className="text-xs text-slate-500 mt-1 tabular-nums">
                         Đúng {resultData.correct_count} / {resultData.total_questions} câu • Thời gian hoàn thành: {formatTimer(timeElapsed)}
                       </p>
                     </div>
@@ -505,7 +507,7 @@ export function StudentPractice() {
                     <button
                       type="button"
                       onClick={handleStartPractice}
-                      className="px-4 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold text-xs rounded-2xl transition flex items-center space-x-1.5"
+                      className="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-xs rounded-xl transition flex items-center space-x-1.5 cursor-pointer"
                     >
                       <RotateCcw className="w-3.5 h-3.5" />
                       <span>Làm lại đề này</span>
@@ -514,7 +516,7 @@ export function StudentPractice() {
                     <button
                       type="button"
                       onClick={() => setMode('CONFIG')}
-                      className="px-5 py-2.5 bg-pastel-purple hover:bg-pastel-purpleDark text-white font-bold text-xs rounded-2xl transition shadow-sm flex items-center space-x-1.5"
+                      className="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-xs rounded-xl transition shadow-xs flex items-center space-x-1.5 cursor-pointer"
                     >
                       <Sparkles className="w-3.5 h-3.5" />
                       <span>Tạo đề mới</span>
@@ -524,14 +526,14 @@ export function StudentPractice() {
 
                 {/* Filter Tabs for questions */}
                 <div className="flex items-center space-x-2 pt-4">
-                  <span className="text-xs font-bold text-gray-400 uppercase tracking-wider mr-2">Bộ lọc câu:</span>
+                  <span className="text-xs font-bold text-slate-400 uppercase tracking-wider mr-2">Bộ lọc câu:</span>
                   <button
                     type="button"
                     onClick={() => setFilterResultTab('ALL')}
-                    className={`px-3 py-1.5 rounded-xl text-xs font-bold transition ${
+                    className={`px-3 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer tabular-nums ${
                       filterResultTab === 'ALL' 
-                        ? 'bg-purple-100 text-pastel-purpleDark' 
-                        : 'bg-gray-50 text-gray-600 hover:bg-gray-100'
+                        ? 'bg-indigo-600 text-white shadow-2xs' 
+                        : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
                     }`}
                   >
                     Tất cả ({resultData.graded_questions?.length || 0})
@@ -539,10 +541,10 @@ export function StudentPractice() {
                   <button
                     type="button"
                     onClick={() => setFilterResultTab('INCORRECT')}
-                    className={`px-3 py-1.5 rounded-xl text-xs font-bold transition ${
+                    className={`px-3 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer tabular-nums ${
                       filterResultTab === 'INCORRECT' 
-                        ? 'bg-rose-100 text-rose-700' 
-                        : 'bg-gray-50 text-gray-600 hover:bg-gray-100'
+                        ? 'bg-rose-600 text-white shadow-2xs' 
+                        : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
                     }`}
                   >
                     Câu làm sai ({resultData.total_questions - resultData.correct_count})
@@ -550,10 +552,10 @@ export function StudentPractice() {
                   <button
                     type="button"
                     onClick={() => setFilterResultTab('CORRECT')}
-                    className={`px-3 py-1.5 rounded-xl text-xs font-bold transition ${
+                    className={`px-3 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer tabular-nums ${
                       filterResultTab === 'CORRECT' 
-                        ? 'bg-emerald-100 text-emerald-700' 
-                        : 'bg-gray-50 text-gray-600 hover:bg-gray-100'
+                        ? 'bg-emerald-600 text-white shadow-2xs' 
+                        : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
                     }`}
                   >
                     Câu làm đúng ({resultData.correct_count})
@@ -581,33 +583,33 @@ export function StudentPractice() {
                     return (
                       <div
                         key={item.id || idx}
-                        className={`bg-white rounded-3xl p-6 sm:p-7 border shadow-sm transition ${
-                          item.is_correct ? 'border-emerald-100' : 'border-rose-100'
+                        className={`bg-white rounded-2xl p-6 sm:p-7 border shadow-xs transition ${
+                          item.is_correct ? 'border-emerald-200' : 'border-rose-200'
                         }`}
                       >
                         {/* Question Status */}
-                        <div className="flex items-center justify-between pb-3 border-b border-gray-100 mb-4">
+                        <div className="flex items-center justify-between pb-3 border-b border-slate-100 mb-4">
                           <div className="flex items-center space-x-2">
-                            <span className="text-xs font-bold px-2.5 py-1 bg-gray-100 text-gray-700 rounded-xl">
+                            <span className="text-xs font-bold px-2.5 py-1 bg-slate-100 text-slate-800 rounded-lg tabular-nums">
                               Câu {idx + 1}
                             </span>
                             <span className={`text-xs font-bold px-3 py-1 rounded-full flex items-center space-x-1 ${
                               item.is_correct 
-                                ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' 
-                                : 'bg-rose-50 text-rose-700 border border-rose-200'
+                                ? 'bg-emerald-50 text-emerald-800 border border-emerald-200' 
+                                : 'bg-rose-50 text-rose-800 border border-rose-200'
                             }`}>
-                              {item.is_correct ? <CheckCircle2 className="w-3.5 h-3.5" /> : <XCircle className="w-3.5 h-3.5" />}
+                              {item.is_correct ? <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" /> : <XCircle className="w-3.5 h-3.5 text-rose-600" />}
                               <span>{item.is_correct ? 'Chính xác (+1 đ)' : 'Chưa đúng (0 đ)'}</span>
                             </span>
                           </div>
 
-                          <div className="text-xs text-gray-500 font-medium">
+                          <div className="text-xs text-slate-500 font-medium">
                             Bạn chọn: <strong className={item.is_correct ? 'text-emerald-700' : 'text-rose-700'}>{studentAnsLetter}</strong> • Đáp án đúng: <strong className="text-emerald-700">{correctAnsLetter}</strong>
                           </div>
                         </div>
 
                         {/* Question Content */}
-                        <div className="text-base text-gray-900 font-medium mb-4 leading-relaxed">
+                        <div className="text-base text-slate-900 font-medium mb-4 leading-relaxed">
                           <MathRenderer content={item.content} />
                         </div>
 
@@ -623,24 +625,24 @@ export function StudentPractice() {
                               return (
                                 <div
                                   key={oIdx}
-                                  className={`p-3 rounded-2xl border text-xs sm:text-sm flex items-start space-x-2.5 ${
+                                  className={`p-3 rounded-xl border text-xs sm:text-sm flex items-start space-x-2.5 ${
                                     isCorrectOpt 
-                                      ? 'bg-emerald-50/70 border-emerald-300 text-emerald-900 font-semibold'
+                                      ? 'bg-emerald-50/70 border-emerald-300 text-emerald-950 font-semibold'
                                       : isStudentPick 
-                                      ? 'bg-rose-50/70 border-rose-300 text-rose-900'
-                                      : 'bg-gray-50/60 border-gray-100 text-gray-700'
+                                      ? 'bg-rose-50/70 border-rose-300 text-rose-950 font-medium'
+                                      : 'bg-slate-50 border-slate-200/80 text-slate-700'
                                   }`}
                                 >
-                                  <span className={`w-6 h-6 rounded-lg text-xs font-bold flex items-center justify-center shrink-0 ${
+                                  <span className={`w-6 h-6 rounded-md text-xs font-bold flex items-center justify-center shrink-0 ${
                                     isCorrectOpt 
                                       ? 'bg-emerald-600 text-white' 
                                       : isStudentPick 
                                       ? 'bg-rose-600 text-white' 
-                                      : 'bg-white text-gray-600 border'
+                                      : 'bg-white text-slate-700 border border-slate-200'
                                   }`}>
                                     {letter}
                                   </span>
-                                  <div className="flex-1 pt-0.5">
+                                  <div className="flex-1 pt-0.5 leading-relaxed">
                                     <MathRenderer content={optContent} />
                                   </div>
                                 </div>
@@ -651,12 +653,12 @@ export function StudentPractice() {
 
                         {/* Detailed Step-by-Step Explanation */}
                         {item.explanation && (
-                          <div className="mt-4 pt-4 border-t border-gray-100 bg-purple-50/40 p-4 rounded-2xl border border-purple-100">
-                            <div className="flex items-center space-x-1.5 text-xs font-bold text-pastel-purpleDark uppercase tracking-wider mb-2">
+                          <div className="mt-4 pt-4 border-t border-slate-100 bg-indigo-50/40 p-4 rounded-xl border border-indigo-100">
+                            <div className="flex items-center space-x-1.5 text-xs font-bold text-indigo-700 uppercase tracking-wider mb-2">
                               <Sparkles className="w-3.5 h-3.5" />
                               <span>Lời giải chi tiết & Phương pháp:</span>
                             </div>
-                            <div className="text-xs sm:text-sm text-gray-800 leading-relaxed">
+                            <div className="text-xs sm:text-sm text-slate-800 leading-relaxed">
                               <MathRenderer content={item.explanation} />
                             </div>
                           </div>

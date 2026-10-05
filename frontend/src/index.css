@@ -8,7 +8,7 @@
     -webkit-tap-highlight-color: transparent;
   }
   body {
-    @apply bg-pastel-bg text-gray-700 antialiased font-sans;
+    @apply bg-slate-50 text-slate-800 antialiased font-sans;
   }
 }
 
@@ -31,34 +31,34 @@
   background: #94a3b8;
 }
 
-/* Glassmorphism card styles */
+/* Polished Card & Nav styles */
 .glass-card {
-  background: rgba(255, 255, 255, 0.85);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.6);
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 1px 3px 0 rgba(15, 23, 42, 0.05);
 }
 
 .glass-nav {
-  background: rgba(255, 255, 255, 0.92);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border-bottom: 1px solid rgba(241, 245, 249, 0.9);
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-bottom: 1px solid #e2e8f0;
 }
 
 /* Micro-interaction helpers */
 .interactive-card {
-  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: transform 0.18s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.18s ease;
 }
 .interactive-card:hover {
   transform: translateY(-2px);
+  box-shadow: 0 8px 20px -4px rgba(15, 23, 42, 0.08);
 }
 
 .interactive-btn {
-  transition: all 0.15s ease;
+  transition: transform 0.12s ease, background-color 0.15s ease, border-color 0.15s ease;
 }
 .interactive-btn:active {
-  transform: scale(0.97);
+  transform: scale(0.98);
 }
 
 /* KaTeX formula display improvements */

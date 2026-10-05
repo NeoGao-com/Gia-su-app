@@ -183,27 +183,27 @@ export function AssignmentManagement() {
   };
 
   return (
-    <div className="min-h-screen bg-pastel-bg flex flex-col font-sans">
+    <div className="min-h-screen bg-slate-50 flex flex-col font-sans">
       <Navbar />
       <div className="flex flex-1">
         <Sidebar role="teacher" />
-        <main className="flex-1 p-6 lg:p-8 max-w-7xl mx-auto w-full">
+        <main className="flex-1 p-5 sm:p-6 lg:p-8 max-w-7xl mx-auto w-full">
           {/* Top Title & Action Buttons */}
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
             <div>
-              <h1 className="text-2xl font-extrabold text-gray-800 tracking-tight flex items-center space-x-2">
-                <Send className="w-6 h-6 text-pastel-purpleDark" />
-                <span>Quản lý Giao bài tập & Về nhà</span>
+              <h1 className="text-2xl font-extrabold text-slate-900 tracking-tight flex items-center space-x-2">
+                <Send className="w-6 h-6 text-indigo-600" />
+                <span>Quản lý Bài tập & Nhiệm vụ</span>
               </h1>
-              <p className="text-xs sm:text-sm text-gray-500 mt-1">
-                Theo dõi, chỉnh sửa bài tập đã giao và giao bài tập linh hoạt theo từng bài học trên lớp.
+              <p className="text-xs sm:text-sm text-slate-500 mt-1">
+                Theo dõi tình trạng bài tập của từng lớp học và giao bài tập linh hoạt theo từng bài giảng.
               </p>
             </div>
 
             <div className="flex flex-wrap items-center gap-2.5">
               <button
                 onClick={() => setLessonModalOpen(true)}
-                className="flex items-center space-x-1.5 px-4 py-2.5 bg-gradient-to-r from-pastel-purple to-pastel-purpleDark text-white rounded-2xl font-bold text-xs sm:text-sm shadow-sm hover:opacity-95 transition"
+                className="flex items-center space-x-1.5 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-semibold text-xs sm:text-sm shadow-xs transition"
               >
                 <Sparkles className="w-4 h-4" />
                 <span>Giao bài theo bài học</span>
@@ -214,9 +214,9 @@ export function AssignmentManagement() {
                   setSelectedExamForAssign(null);
                   setAssignmentModalOpen(true);
                 }}
-                className="flex items-center space-x-1.5 px-4 py-2.5 bg-white border border-gray-200 text-gray-700 rounded-2xl font-semibold text-xs sm:text-sm shadow-xs hover:bg-gray-50 transition"
+                className="flex items-center space-x-1.5 px-4 py-2 bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 rounded-xl font-semibold text-xs sm:text-sm shadow-2xs transition"
               >
-                <Plus className="w-4 h-4 text-pastel-purpleDark" />
+                <Plus className="w-4 h-4 text-indigo-600" />
                 <span>Giao từ kho bài tập</span>
               </button>
             </div>
@@ -226,10 +226,10 @@ export function AssignmentManagement() {
           <div className="flex items-center space-x-2 mb-6">
             <button
               onClick={() => setActiveTab('assigned')}
-              className={`flex items-center space-x-2 px-5 py-2.5 rounded-2xl font-bold text-xs sm:text-sm transition ${
+              className={`flex items-center space-x-2 px-4 py-2 rounded-xl font-semibold text-xs sm:text-sm transition ${
                 activeTab === 'assigned'
-                  ? 'bg-pastel-purple text-white shadow-sm'
-                  : 'bg-white text-gray-600 border border-gray-100 hover:bg-gray-50'
+                  ? 'bg-indigo-600 text-white shadow-xs'
+                  : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'
               }`}
             >
               <Send className="w-4 h-4" />
@@ -238,10 +238,10 @@ export function AssignmentManagement() {
 
             <button
               onClick={() => setActiveTab('exams')}
-              className={`flex items-center space-x-2 px-5 py-2.5 rounded-2xl font-bold text-xs sm:text-sm transition ${
+              className={`flex items-center space-x-2 px-4 py-2 rounded-xl font-semibold text-xs sm:text-sm transition ${
                 activeTab === 'exams'
-                  ? 'bg-pastel-purple text-white shadow-sm'
-                  : 'bg-white text-gray-600 border border-gray-100 hover:bg-gray-50'
+                  ? 'bg-indigo-600 text-white shadow-xs'
+                  : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'
               }`}
             >
               <BookOpen className="w-4 h-4" />
@@ -253,14 +253,14 @@ export function AssignmentManagement() {
           {activeTab === 'assigned' && (
             <div className="space-y-4">
               {/* Filter & Search Bar */}
-              <div className="bg-white rounded-3xl border border-gray-100 p-4 shadow-xs flex flex-col sm:flex-row gap-3 items-center justify-between">
+              <div className="bg-white rounded-2xl border border-slate-200/90 p-3.5 sm:p-4 shadow-xs flex flex-col sm:flex-row gap-3 items-center justify-between">
                 <div className="flex items-center space-x-2 w-full sm:w-auto">
-                  <School className="w-4 h-4 text-gray-400 shrink-0 ml-1" />
-                  <span className="text-xs font-bold text-gray-500 whitespace-nowrap">Lọc theo lớp:</span>
+                  <School className="w-4 h-4 text-slate-400 shrink-0 ml-1" />
+                  <span className="text-xs font-semibold text-slate-600 whitespace-nowrap">Lọc theo lớp:</span>
                   <select
                     value={selectedClassFilter}
                     onChange={(e) => setSelectedClassFilter(e.target.value)}
-                    className="px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs sm:text-sm font-semibold text-gray-700 focus:outline-none focus:border-pastel-purple"
+                    className="px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs sm:text-sm font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500"
                   >
                     <option value="all">Tất cả các lớp ({classrooms.length})</option>
                     {classrooms.map((c) => (
@@ -272,23 +272,23 @@ export function AssignmentManagement() {
                 </div>
 
                 <div className="relative w-full sm:w-72">
-                  <Search className="w-4 h-4 text-gray-400 absolute left-3 top-2.5" />
+                  <Search className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
                   <input
                     type="text"
                     placeholder="Tìm theo tên bài hoặc lớp..."
                     value={assignmentSearch}
                     onChange={(e) => setAssignmentSearch(e.target.value)}
-                    className="w-full pl-9 pr-4 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs sm:text-sm focus:outline-none focus:border-pastel-purple"
+                    className="w-full pl-9 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
                   />
                 </div>
               </div>
 
               {/* Assignments Table Card */}
-              <div className="bg-white rounded-3xl border border-gray-100 shadow-xs overflow-hidden">
+              <div className="bg-white rounded-2xl border border-slate-200/90 shadow-xs overflow-hidden">
                 <div className="overflow-x-auto">
                   <table className="w-full text-left border-collapse">
                     <thead>
-                      <tr className="bg-gray-50 text-[11px] font-bold text-gray-500 uppercase tracking-wider border-b border-gray-100">
+                      <tr className="bg-slate-50 text-[11px] font-bold text-slate-500 uppercase tracking-wider border-b border-slate-200">
                         <th className="p-4">Bài tập / Đề thi</th>
                         <th className="p-4">Lớp nhận bài</th>
                         <th className="p-4">Thời gian</th>
@@ -297,22 +297,22 @@ export function AssignmentManagement() {
                         <th className="p-4 text-right">Thao tác</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-gray-100 text-xs sm:text-sm">
+                    <tbody className="divide-y divide-slate-100 text-xs sm:text-sm">
                       {loadingAssignments ? (
                         <tr>
-                          <td colSpan="6" className="py-16 text-center text-gray-400">
+                          <td colSpan="6" className="py-16 text-center text-slate-400">
                             Đang tải danh sách bài tập đã giao...
                           </td>
                         </tr>
                       ) : filteredAssignments.length === 0 ? (
                         <tr>
-                          <td colSpan="6" className="py-16 text-center text-gray-400">
+                          <td colSpan="6" className="py-16 text-center text-slate-400">
                             <div className="flex flex-col items-center justify-center space-y-2">
-                              <BookOpen className="w-8 h-8 text-gray-300" />
+                              <BookOpen className="w-8 h-8 text-slate-300" />
                               <span className="font-medium">Chưa có bài tập nào được giao.</span>
                               <button
                                 onClick={() => setLessonModalOpen(true)}
-                                className="text-xs font-bold text-pastel-purpleDark hover:underline mt-1"
+                                className="text-xs font-semibold text-indigo-600 hover:underline mt-1"
                               >
                                 + Giao bài tập theo bài học ngay
                               </button>
@@ -326,10 +326,10 @@ export function AssignmentManagement() {
                           const questionCount = a.exam?.question_count ?? a.exam?.questions?.length ?? 0;
 
                           return (
-                            <tr key={`${a.classroom_id}-${a.exam_id}-${a.id}`} className="hover:bg-gray-50/60 transition">
+                            <tr key={`${a.classroom_id}-${a.exam_id}-${a.id}`} className="hover:bg-slate-50/70 transition">
                               <td className="p-4">
-                                <div className="font-bold text-gray-800 text-sm">{examTitle}</div>
-                                <div className="text-[11px] text-gray-400 mt-0.5 flex items-center space-x-2">
+                                <div className="font-semibold text-slate-900 text-sm">{examTitle}</div>
+                                <div className="text-[11px] text-slate-500 mt-0.5 flex items-center space-x-2">
                                   <span>{questionCount} câu hỏi</span>
                                   {a.exam?.subject && <span>• {a.exam.subject}</span>}
                                   {a.exam?.pass_score && <span>• Điểm đạt: {a.exam.pass_score}</span>}
@@ -337,34 +337,34 @@ export function AssignmentManagement() {
                               </td>
 
                               <td className="p-4">
-                                <span className="inline-flex items-center space-x-1.5 px-3 py-1 rounded-xl bg-purple-50 text-pastel-purpleDark font-bold text-xs border border-purple-100">
+                                <span className="inline-flex items-center space-x-1.5 px-2.5 py-1 rounded-lg bg-indigo-50 text-indigo-700 font-semibold text-xs border border-indigo-100">
                                   <School className="w-3.5 h-3.5" />
                                   <span>{a.classroom_name || `Lớp #${a.classroom_id}`}</span>
                                 </span>
                               </td>
 
                               <td className="p-4 space-y-1">
-                                <div className="flex items-center space-x-1.5 text-xs text-gray-600">
-                                  <Clock className="w-3.5 h-3.5 text-gray-400 shrink-0" />
+                                <div className="flex items-center space-x-1.5 text-xs text-slate-600">
+                                  <Clock className="w-3.5 h-3.5 text-slate-400 shrink-0" />
                                   <span>Hạn: {a.due_date ? new Date(a.due_date).toLocaleString('vi-VN') : 'Không giới hạn'}</span>
                                 </div>
                                 {a.open_date && (
-                                  <div className="flex items-center space-x-1.5 text-[11px] text-gray-400">
-                                    <Calendar className="w-3 h-3 text-gray-400 shrink-0" />
+                                  <div className="flex items-center space-x-1.5 text-[11px] text-slate-400">
+                                    <Calendar className="w-3 h-3 text-slate-400 shrink-0" />
                                     <span>Mở: {new Date(a.open_date).toLocaleString('vi-VN')}</span>
                                   </div>
                                 )}
                               </td>
 
-                              <td className="p-4 space-y-1 text-xs text-gray-600">
+                              <td className="p-4 space-y-1 text-xs text-slate-600">
                                 <div>Thời gian: <strong>{duration} phút</strong></div>
-                                <div className="text-[11px] text-gray-400">
+                                <div className="text-[11px] text-slate-400">
                                   Số lần làm: <strong>{a.max_attempts || 1}</strong> lượt
                                 </div>
                                 {a.show_answers_after_submit && (
                                   <div className="text-[10px] text-emerald-600 font-semibold flex items-center space-x-1">
                                     <Eye className="w-3 h-3" />
-                                    <span>Xem đáp án sau thi</span>
+                                    <span>Xem đáp án sau khi nộp</span>
                                   </div>
                                 )}
                               </td>
@@ -377,16 +377,16 @@ export function AssignmentManagement() {
                                 <div className="flex items-center justify-end space-x-1.5">
                                   <button
                                     onClick={() => handleOpenEdit(a)}
-                                    className="p-2 text-pastel-purpleDark hover:bg-purple-50 rounded-xl transition"
-                                    title="Chỉnh sửa bài tập đã giao (Hạn nộp, số lần làm...)"
+                                    className="p-1.5 text-indigo-600 hover:bg-indigo-50 rounded-lg transition"
+                                    title="Chỉnh sửa bài tập đã giao"
                                   >
                                     <Edit3 className="w-4 h-4" />
                                   </button>
 
                                   <button
                                     onClick={() => handleDeleteAssignment(a)}
-                                    className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition"
-                                    title="Xóa / Hủy bài tập này khỏi lớp"
+                                    className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition"
+                                    title="Hủy bài tập khỏi lớp"
                                   >
                                     <Trash2 className="w-4 h-4" />
                                   </button>
@@ -406,13 +406,13 @@ export function AssignmentManagement() {
           {/* TAB 2: KHO BÀI TẬP */}
           {activeTab === 'exams' && (
             <div className="space-y-4">
-              <div className="bg-white rounded-3xl border border-gray-100 p-4 shadow-xs flex flex-col sm:flex-row gap-3 items-center justify-between">
-                <div className="font-bold text-sm text-gray-700">
+              <div className="bg-white rounded-2xl border border-slate-200/90 p-3.5 sm:p-4 shadow-xs flex flex-col sm:flex-row gap-3 items-center justify-between">
+                <div className="font-semibold text-sm text-slate-700">
                   Chọn bài tập để giao cho các lớp học ({totalExams} bài tập)
                 </div>
 
                 <div className="relative w-full sm:w-72">
-                  <Search className="w-4 h-4 text-gray-400 absolute left-3 top-2.5" />
+                  <Search className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
                   <input
                     type="text"
                     placeholder="Tìm kiếm bài tập..."
@@ -421,15 +421,15 @@ export function AssignmentManagement() {
                       setExamSearch(e.target.value);
                       setExamPage(1);
                     }}
-                    className="w-full pl-9 pr-4 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs sm:text-sm focus:outline-none focus:border-pastel-purple"
+                    className="w-full pl-9 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
                   />
                 </div>
               </div>
 
-              <div className="bg-white rounded-3xl border border-gray-100 shadow-xs overflow-hidden">
+              <div className="bg-white rounded-2xl border border-slate-200/90 shadow-xs overflow-hidden">
                 <table className="w-full text-left border-collapse">
                   <thead>
-                    <tr className="bg-gray-50 text-[11px] font-bold text-gray-500 uppercase tracking-wider border-b border-gray-100">
+                    <tr className="bg-slate-50 text-[11px] font-bold text-slate-500 uppercase tracking-wider border-b border-slate-200">
                       <th className="p-4">Tiêu đề bài tập</th>
                       <th className="p-4">Thời gian</th>
                       <th className="p-4">Số lượng câu</th>
@@ -437,39 +437,39 @@ export function AssignmentManagement() {
                       <th className="p-4 text-right">Thao tác</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-gray-100 text-sm">
+                  <tbody className="divide-y divide-slate-100 text-sm">
                     {loadingExams ? (
                       <tr>
-                        <td colSpan="5" className="py-12 text-center text-gray-400">
+                        <td colSpan="5" className="py-12 text-center text-slate-400">
                           Đang tải kho bài tập...
                         </td>
                       </tr>
                     ) : exams.length === 0 ? (
                       <tr>
-                        <td colSpan="5" className="py-12 text-center text-gray-400">
+                        <td colSpan="5" className="py-12 text-center text-slate-400">
                           Không tìm thấy bài tập nào.
                         </td>
                       </tr>
                     ) : (
                       exams.map((exam) => (
-                        <tr key={exam.id} className="hover:bg-gray-50/60 transition">
-                          <td className="p-4 font-bold text-gray-800">
+                        <tr key={exam.id} className="hover:bg-slate-50/70 transition">
+                          <td className="p-4 font-semibold text-slate-900">
                             <div>{exam.title}</div>
                             {exam.description && (
-                              <div className="text-xs text-gray-400 font-normal mt-0.5 line-clamp-1">
+                              <div className="text-xs text-slate-400 font-normal mt-0.5 line-clamp-1">
                                 {exam.description}
                               </div>
                             )}
                           </td>
-                          <td className="p-4 text-xs text-gray-600 font-medium">
+                          <td className="p-4 text-xs text-slate-600 font-medium">
                             {exam.duration_minutes} phút
                           </td>
-                          <td className="p-4 text-xs font-semibold text-pastel-purpleDark">
+                          <td className="p-4 text-xs font-semibold text-indigo-600">
                             {exam.question_count ?? exam.questions?.length ?? 0} câu
                           </td>
                           <td className="p-4">
-                            <span className={`px-2.5 py-0.5 rounded-full text-xs font-bold ${
-                              exam.is_published ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700'
+                            <span className={`px-2.5 py-0.5 rounded-md text-xs font-semibold ${
+                              exam.is_published ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-amber-50 text-amber-700 border border-amber-200'
                             }`}>
                               {exam.is_published ? 'Đã xuất bản' : 'Bản nháp'}
                             </span>
@@ -478,7 +478,7 @@ export function AssignmentManagement() {
                             <div className="flex items-center justify-end space-x-1.5">
                               <button
                                 onClick={() => openAssignExamModal(exam)}
-                                className="inline-flex items-center space-x-1.5 px-4 py-2 bg-pastel-purple text-white rounded-xl text-xs font-bold hover:bg-pastel-purpleDark transition shadow-xs"
+                                className="inline-flex items-center space-x-1.5 px-3.5 py-1.5 bg-indigo-600 text-white rounded-lg text-xs font-semibold hover:bg-indigo-700 transition shadow-2xs"
                               >
                                 <Send className="w-3.5 h-3.5" />
                                 <span>Giao bài</span>
@@ -500,7 +500,7 @@ export function AssignmentManagement() {
                                     toast.error(err.response?.data?.detail || 'Không thể xóa bài tập');
                                   }
                                 }}
-                                className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition"
+                                className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition"
                                 title="Xóa bài tập khỏi kho"
                               >
                                 <Trash2 className="w-4 h-4" />

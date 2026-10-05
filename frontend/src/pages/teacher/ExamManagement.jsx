@@ -135,80 +135,80 @@ export function ExamManagement() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col font-sans">
+    <div className="min-h-screen bg-slate-50 flex flex-col font-sans">
       <Navbar />
       <div className="flex flex-1">
         <Sidebar role="teacher" />
-        <main className="flex-1 p-8 max-w-7xl mx-auto">
-          <div className="flex justify-between items-center mb-6">
+        <main className="flex-1 p-6 lg:p-8 max-w-7xl mx-auto">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
             <div>
-              <h1 className="text-2xl font-bold text-gray-900">Quản lý Đề thi & Giao bài</h1>
-              <p className="text-sm text-gray-500 mt-1">Quản lý danh sách đề thi đã tạo, chỉnh sửa và giao bài cho học sinh.</p>
+              <h1 className="text-2xl font-extrabold text-slate-900 tracking-tight">Quản lý Đề thi & Giao bài</h1>
+              <p className="text-xs sm:text-sm text-slate-500 mt-1">Quản lý danh sách đề thi đã tạo, chỉnh sửa cấu hình và phân bổ cho các lớp học.</p>
             </div>
             <button
               onClick={() => navigate('/teacher/exams')}
-              className="flex items-center space-x-2 bg-pastel-purple text-white px-4 py-2.5 rounded-2xl font-medium shadow-sm hover:opacity-90 transition"
+              className="flex items-center space-x-2 bg-indigo-600 text-white px-4 py-2.5 rounded-xl font-bold text-sm shadow-sm hover:bg-indigo-700 active:scale-95 transition"
             >
-              <Plus className="w-5 h-5" />
-              <span>Tạo đề thi mới</span>
+              <Plus className="w-4 h-4" />
+              <span>+ Tạo đề thi mới</span>
             </button>
           </div>
 
-          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 mb-6">
+          <div className="bg-white rounded-2xl shadow-sm border border-slate-200/90 p-5 mb-6">
             <div className="flex items-center space-x-4">
               <div className="relative flex-1">
-                <Search className="w-5 h-5 text-gray-400 absolute left-4 top-3.5" />
+                <Search className="w-5 h-5 text-slate-400 absolute left-4 top-3" />
                 <input
                   type="text"
                   placeholder="Tìm kiếm theo tiêu đề đề thi..."
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
-                  className="w-full pl-12 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-pastel-purple"
+                  className="w-full pl-11 pr-4 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-sm focus:outline-none focus:border-indigo-600 focus:ring-2 focus:ring-indigo-100"
                 />
               </div>
             </div>
           </div>
 
-          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+          <div className="bg-white rounded-2xl shadow-sm border border-slate-200/90 overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full text-left border-collapse">
                 <thead>
-                  <tr className="bg-gray-50 border-b border-gray-100 text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                    <th className="py-4 px-6">ID / Tiêu đề</th>
-                    <th className="py-4 px-6">Thời gian</th>
+                  <tr className="bg-slate-50 border-b border-slate-200 text-xs font-bold text-slate-500 uppercase tracking-wider">
+                    <th className="py-4 px-6">ID / Tiêu đề đề thi</th>
+                    <th className="py-4 px-6">Thời gian làm</th>
                     <th className="py-4 px-6">Số câu / Điểm đạt</th>
                     <th className="py-4 px-6">Trạng thái</th>
                     <th className="py-4 px-6 text-right">Thao tác</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-100 text-sm">
+                <tbody className="divide-y divide-slate-100 text-sm">
                   {loading ? (
                     <tr>
-                      <td colSpan="5" className="py-8 text-center text-gray-400">Đang tải danh sách đề thi...</td>
+                      <td colSpan="5" className="py-12 text-center text-slate-400">Đang tải danh sách đề thi...</td>
                     </tr>
                   ) : exams.length === 0 ? (
                     <tr>
-                      <td colSpan="5" className="py-8 text-center text-gray-400">Không tìm thấy đề thi nào.</td>
+                      <td colSpan="5" className="py-12 text-center text-slate-400">Không tìm thấy đề thi nào phù hợp.</td>
                     </tr>
                   ) : (
                     exams.map((exam) => (
-                      <tr key={exam.id} className="hover:bg-gray-50 transition">
+                      <tr key={exam.id} className="hover:bg-slate-50/80 transition">
                         <td className="py-4 px-6">
-                          <div className="font-semibold text-gray-900">{exam.title}</div>
-                          <div className="text-xs text-gray-400 mt-0.5">ID: #{exam.id} | Tạo ngày: {exam.created_at ? new Date(exam.created_at).toLocaleDateString('vi-VN') : 'N/A'}</div>
+                          <div className="font-bold text-slate-900">{exam.title}</div>
+                          <div className="text-xs text-slate-400 mt-0.5">ID: #{exam.id} | Ngày tạo: {exam.created_at ? new Date(exam.created_at).toLocaleDateString('vi-VN') : 'N/A'}</div>
                         </td>
-                        <td className="py-4 px-6 text-gray-600 font-medium">{exam.duration_minutes} phút</td>
-                        <td className="py-4 px-6 text-gray-600">
-                          <div>{exam.question_count || '-'} câu hỏi</div>
-                          <div className="text-xs text-gray-400">Đạt: {exam.pass_score ?? 5.0} điểm</div>
+                        <td className="py-4 px-6 text-slate-700 font-semibold tabular-nums">{exam.duration_minutes} phút</td>
+                        <td className="py-4 px-6 text-slate-700">
+                          <div className="font-semibold tabular-nums">{exam.question_count || '-'} câu hỏi</div>
+                          <div className="text-xs text-slate-400">Điểm đạt: <span className="tabular-nums font-semibold text-slate-600">{exam.pass_score ?? 5.0}</span></div>
                         </td>
                         <td className="py-4 px-6">
                           <button
                             onClick={() => handleTogglePublish(exam)}
-                            className={`inline-flex items-center space-x-1 px-3 py-1 rounded-full text-xs font-semibold ${
+                            className={`inline-flex items-center space-x-1 px-3 py-1 rounded-full text-xs font-bold border ${
                               exam.is_published
-                                ? 'bg-green-100 text-green-700 hover:bg-green-200'
-                                : 'bg-amber-100 text-amber-700 hover:bg-amber-200'
+                                ? 'bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100'
+                                : 'bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-100'
                             }`}
                           >
                             {exam.is_published ? <CheckCircle2 className="w-3.5 h-3.5" /> : <XCircle className="w-3.5 h-3.5" />}
@@ -218,23 +218,23 @@ export function ExamManagement() {
                         <td className="py-4 px-6 text-right space-x-2">
                           <button
                             onClick={() => openAssignModal(exam)}
-                            className="inline-flex items-center space-x-1 px-3 py-1.5 bg-indigo-50 text-indigo-600 rounded-xl text-xs font-medium hover:bg-indigo-100 transition"
-                            title="Giao bài cho lớp"
+                            className="inline-flex items-center space-x-1 px-3 py-1.5 bg-indigo-50 border border-indigo-200/70 text-indigo-700 rounded-lg text-xs font-bold hover:bg-indigo-100 transition"
+                            title="Giao đề cho lớp học"
                           >
                             <Send className="w-3.5 h-3.5" />
                             <span>Giao bài</span>
                           </button>
                           <button
                             onClick={() => openEditModal(exam)}
-                            className="inline-flex items-center space-x-1 px-3 py-1.5 bg-gray-100 text-gray-700 rounded-xl text-xs font-medium hover:bg-gray-200 transition"
-                            title="Chỉnh sửa đề thi"
+                            className="inline-flex items-center space-x-1 px-3 py-1.5 bg-slate-100 border border-slate-200 text-slate-700 rounded-lg text-xs font-bold hover:bg-slate-200 transition"
+                            title="Chỉnh sửa thông số đề thi"
                           >
                             <Edit3 className="w-3.5 h-3.5" />
                             <span>Sửa</span>
                           </button>
                           <button
                             onClick={() => handleDeleteExam(exam.id)}
-                            className="inline-flex items-center space-x-1 px-3 py-1.5 bg-red-50 text-red-600 rounded-xl text-xs font-medium hover:bg-red-100 transition"
+                            className="inline-flex items-center space-x-1 px-3 py-1.5 bg-rose-50 border border-rose-200 text-rose-700 rounded-lg text-xs font-bold hover:bg-rose-100 transition"
                             title="Xóa đề thi"
                           >
                             <Trash2 className="w-3.5 h-3.5" />
@@ -249,20 +249,20 @@ export function ExamManagement() {
             </div>
 
             {totalPages > 1 && (
-              <div className="flex justify-between items-center p-4 border-t border-gray-100 text-sm text-gray-500">
-                <span>Trang {page} / {totalPages} (Tổng {total} đề thi)</span>
+              <div className="flex justify-between items-center p-4 border-t border-slate-100 text-xs text-slate-500">
+                <span>Trang <strong className="text-slate-800">{page}</strong> / {totalPages} (Tổng cộng {total} đề thi)</span>
                 <div className="space-x-2">
                   <button
                     disabled={page === 1}
                     onClick={() => setPage(p => Math.max(p - 1, 1))}
-                    className="px-3 py-1 border rounded-lg disabled:opacity-50 hover:bg-gray-50"
+                    className="px-3 py-1.5 border border-slate-300 rounded-lg disabled:opacity-40 hover:bg-slate-50 font-semibold"
                   >
                     Trước
                   </button>
                   <button
                     disabled={page === totalPages}
                     onClick={() => setPage(p => Math.min(p + 1, totalPages))}
-                    className="px-3 py-1 border rounded-lg disabled:opacity-50 hover:bg-gray-50"
+                    className="px-3 py-1.5 border border-slate-300 rounded-lg disabled:opacity-40 hover:bg-slate-50 font-semibold"
                   >
                     Sau
                   </button>
@@ -275,39 +275,39 @@ export function ExamManagement() {
             exam={selectedExamForAssign}
             isOpen={assignmentModalOpen}
             onClose={() => setAssignmentModalOpen(false)}
-            onAssigned={() => toast.success('Giao bài thi cho các lớp thành công!')}
+            onAssigned={() => toast.success('Giao đề thi cho các lớp thành công!')}
           />
 
           {/* Edit Modal */}
           {editModalOpen && currentExam && (
-            <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-              <div className="bg-white rounded-3xl max-w-lg w-full p-6 shadow-xl">
-                <h3 className="text-xl font-bold text-gray-900 mb-4">Chỉnh sửa đề thi</h3>
+            <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-xs flex items-center justify-center z-50 p-4">
+              <div className="bg-white rounded-2xl max-w-lg w-full p-6 shadow-xl border border-slate-200">
+                <h3 className="text-lg font-bold text-slate-900 mb-4">Chỉnh sửa thông số đề thi</h3>
                 <form onSubmit={handleEditSubmit} className="space-y-4">
                   <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-1">Tiêu đề đề thi</label>
+                    <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Tiêu đề đề thi</label>
                     <input
                       type="text"
                       required
                       value={editTitle}
                       onChange={(e) => setEditTitle(e.target.value)}
-                      className="w-full p-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm"
+                      className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-sm focus:outline-none focus:border-indigo-600 focus:ring-2 focus:ring-indigo-100"
                     />
                   </div>
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-sm font-semibold text-gray-700 mb-1">Thời gian (phút)</label>
+                      <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Thời gian (phút)</label>
                       <input
                         type="number"
                         min="1"
                         required
                         value={editDuration}
                         onChange={(e) => setEditDuration(e.target.value)}
-                        className="w-full p-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm"
+                        className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-sm focus:outline-none focus:border-indigo-600 focus:ring-2 focus:ring-indigo-100"
                       />
                     </div>
                     <div>
-                      <label className="block text-sm font-semibold text-gray-700 mb-1">Điểm đạt (0-10)</label>
+                      <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Điểm đạt (thang 10)</label>
                       <input
                         type="number"
                         step="0.1"
@@ -316,20 +316,20 @@ export function ExamManagement() {
                         required
                         value={editPassScore}
                         onChange={(e) => setEditPassScore(e.target.value)}
-                        className="w-full p-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm"
+                        className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-sm focus:outline-none focus:border-indigo-600 focus:ring-2 focus:ring-indigo-100"
                       />
                     </div>
                   </div>
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-sm font-semibold text-gray-700 mb-1">Số lần làm tối đa</label>
+                      <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Số lần làm tối đa</label>
                       <input
                         type="number"
                         min="1"
                         required
                         value={editMaxAttempts}
                         onChange={(e) => setEditMaxAttempts(e.target.value)}
-                        className="w-full p-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm"
+                        className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-sm focus:outline-none focus:border-indigo-600 focus:ring-2 focus:ring-indigo-100"
                       />
                     </div>
                     <div className="flex items-center pt-6">
@@ -338,9 +338,9 @@ export function ExamManagement() {
                           type="checkbox"
                           checked={editPublished}
                           onChange={(e) => setEditPublished(e.target.checked)}
-                          className="rounded border-gray-300 text-pastel-purple focus:ring-pastel-purple"
+                          className="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 w-4 h-4"
                         />
-                        <span className="text-sm font-medium text-gray-700">Đã xuất bản</span>
+                        <span className="text-sm font-semibold text-slate-700">Đã xuất bản</span>
                       </label>
                     </div>
                   </div>
@@ -350,24 +350,24 @@ export function ExamManagement() {
                       id="editShowAnswers"
                       checked={editShowAnswers}
                       onChange={(e) => setEditShowAnswers(e.target.checked)}
-                      className="rounded border-gray-300 text-pastel-purple focus:ring-pastel-purple"
+                      className="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 w-4 h-4"
                     />
-                    <label htmlFor="editShowAnswers" className="text-sm font-medium text-gray-700 cursor-pointer">
-                      Hiển thị đáp án sau khi nộp bài
+                    <label htmlFor="editShowAnswers" className="text-xs sm:text-sm font-medium text-slate-700 cursor-pointer">
+                      Cho phép học sinh xem đáp án sau khi nộp bài
                     </label>
                   </div>
-                  <div className="flex justify-end space-x-3 pt-4 border-t border-gray-100">
+                  <div className="flex justify-end space-x-3 pt-4 border-t border-slate-100">
                     <button
                       type="button"
                       onClick={() => setEditModalOpen(false)}
-                      className="px-4 py-2 border rounded-xl text-sm font-medium text-gray-600 hover:bg-gray-50"
+                      className="px-4 py-2 border border-slate-300 rounded-xl text-xs font-semibold text-slate-700 hover:bg-slate-50 transition"
                     >
                       Hủy
                     </button>
                     <button
                       type="submit"
                       disabled={savingEdit}
-                      className="px-4 py-2 bg-pastel-purple text-white rounded-xl text-sm font-medium shadow-sm hover:opacity-90 disabled:opacity-50"
+                      className="px-5 py-2 bg-indigo-600 text-white rounded-xl text-xs font-bold shadow-sm hover:bg-indigo-700 disabled:opacity-50 transition"
                     >
                       {savingEdit ? 'Đang lưu...' : 'Lưu thay đổi'}
                     </button>
