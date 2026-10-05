@@ -1,6 +1,13 @@
 import React, { useState } from 'react';
 import { Folder, FolderOpen, ChevronRight, ChevronDown, FileText, Layers, Plus, Trash2 } from 'lucide-react';
 
+const formatTitle = (name, fallback) => {
+  if (!name || name === 'null' || name === 'undefined' || name === 'None') {
+    return fallback;
+  }
+  return name;
+};
+
 export function FolderTree({ treeData, onSelectNode, selectedNodePath, onDropQuestion, onCreateSubFolder, onDeleteFolder }) {
   const [expanded, setExpanded] = useState({});
   const [dragOverPath, setDragOverPath] = useState(null);
@@ -138,17 +145,18 @@ export function FolderTree({ treeData, onSelectNode, selectedNodePath, onDropQue
   };
 
   const renderChap = (subjName, gradeNum, gradeName, chapName, lessons) => {
-    const chapPath = `subj:${subjName}|grade:${gradeName}|chap:${chapName}`;
+    const cleanChapName = formatTitle(chapName, 'Chương chung');
+    const chapPath = `subj:${subjName}|grade:${gradeName}|chap:${cleanChapName}`;
     const isOpen = expanded[chapPath];
     const isTarget = dragOverPath === chapPath;
 
     return (
       <div key={chapPath}>
         <div
-          onClick={() => { toggle(chapPath); onSelectNode({ subject: subjName, grade_level: gradeNum, chapter: chapName }); }}
+          onClick={() => { toggle(chapPath); onSelectNode({ subject: subjName, grade_level: gradeNum, chapter: cleanChapName }); }}
           onDragOver={(e) => handleDragOver(e, chapPath)}
           onDragLeave={handleDragLeave}
-          onDrop={(e) => handleDrop(e, { subject: subjName, grade_level: gradeNum, chapter: chapName }, chapPath)}
+          onDrop={(e) => handleDrop(e, { subject: subjName, grade_level: gradeNum, chapter: cleanChapName }, chapPath)}
           className={`group flex items-center justify-between px-2.5 py-1.5 rounded-lg cursor-pointer transition select-none ${
             isTarget ? 'bg-emerald-100 border-2 border-dashed border-emerald-500' :
             selectedNodePath === chapPath ? 'bg-pastel-purpleLight text-pastel-purpleDark font-bold' : 'hover:bg-gray-100 text-gray-600'
@@ -157,12 +165,12 @@ export function FolderTree({ treeData, onSelectNode, selectedNodePath, onDropQue
           <div className="flex items-center space-x-2 truncate">
             {isOpen ? <ChevronDown className="w-3.5 h-3.5 text-gray-400" /> : <ChevronRight className="w-3.5 h-3.5 text-gray-400" />}
             {isOpen ? <FolderOpen className="w-3.5 h-3.5 text-emerald-500" /> : <Folder className="w-3.5 h-3.5 text-emerald-400" />}
-            <span className="truncate max-w-[120px]">{chapName}</span>
+            <span className="truncate max-w-[120px]">{cleanChapName}</span>
           </div>
           <div className="flex items-center space-x-1 opacity-0 group-hover:opacity-100 transition-opacity">
             {onCreateSubFolder && (
               <button
-                onClick={(e) => { e.stopPropagation(); onCreateSubFolder({ subject: subjName, grade_level: gradeNum, chapter: chapName }, 'lesson'); }}
+                onClick={(e) => { e.stopPropagation(); onCreateSubFolder({ subject: subjName, grade_level: gradeNum, chapter: cleanChapName }, 'lesson'); }}
                 title="Thêm Bài"
                 className="p-1.5 bg-white hover:bg-pastel-purple hover:text-white rounded-lg text-gray-600 shadow-xs border border-gray-100 transition"
               >
@@ -171,7 +179,7 @@ export function FolderTree({ treeData, onSelectNode, selectedNodePath, onDropQue
             )}
             {onDeleteFolder && (
               <button
-                onClick={(e) => { e.stopPropagation(); onDeleteFolder({ subject: subjName, grade_level: gradeNum, chapter: chapName }, chapName, lessons._id); }}
+                onClick={(e) => { e.stopPropagation(); onDeleteFolder({ subject: subjName, grade_level: gradeNum, chapter: cleanChapName }, cleanChapName, lessons._id); }}
                 title="Xóa Thư mục"
                 className="p-1.5 bg-white text-red-500 hover:bg-red-100 rounded-lg shadow-xs border border-gray-100 transition"
               >
@@ -183,7 +191,7 @@ export function FolderTree({ treeData, onSelectNode, selectedNodePath, onDropQue
 
         {isOpen && (
           <div className="pl-4 border-l border-gray-100 ml-3 space-y-0.5 mt-0.5">
-            {Object.entries(lessons).filter(([k]) => k !== '_id').map(([lessName, topics]) => renderLesson(subjName, gradeNum, gradeName, chapName, lessName, topics))}
+            {Object.entries(lessons).filter(([k]) => k !== '_id').map(([lessName, topics]) => renderLesson(subjName, gradeNum, gradeName, cleanChapName, lessName, topics))}
           </div>
         )}
       </div>
@@ -191,17 +199,18 @@ export function FolderTree({ treeData, onSelectNode, selectedNodePath, onDropQue
   };
 
   const renderLesson = (subjName, gradeNum, gradeName, chapName, lessName, topics) => {
-    const lessPath = `subj:${subjName}|grade:${gradeName}|chap:${chapName}|less:${lessName}`;
+    const cleanLessName = formatTitle(lessName, 'Bài chung');
+    const lessPath = `subj:${subjName}|grade:${gradeName}|chap:${chapName}|less:${cleanLessName}`;
     const isOpen = expanded[lessPath];
     const isTarget = dragOverPath === lessPath;
 
     return (
       <div key={lessPath}>
         <div
-          onClick={() => { toggle(lessPath); onSelectNode({ subject: subjName, grade_level: gradeNum, chapter: chapName, lesson: lessName }); }}
+          onClick={() => { toggle(lessPath); onSelectNode({ subject: subjName, grade_level: gradeNum, chapter: chapName, lesson: cleanLessName }); }}
           onDragOver={(e) => handleDragOver(e, lessPath)}
           onDragLeave={handleDragLeave}
-          onDrop={(e) => handleDrop(e, { subject: subjName, grade_level: gradeNum, chapter: chapName, lesson: lessName }, lessPath)}
+          onDrop={(e) => handleDrop(e, { subject: subjName, grade_level: gradeNum, chapter: chapName, lesson: cleanLessName }, lessPath)}
           className={`group flex items-center justify-between px-2.5 py-1.5 rounded-lg cursor-pointer transition select-none ${
             isTarget ? 'bg-purple-100 border-2 border-dashed border-purple-500' :
             selectedNodePath === lessPath ? 'bg-pastel-purpleLight text-pastel-purpleDark font-bold' : 'hover:bg-gray-100 text-gray-600'
@@ -210,12 +219,12 @@ export function FolderTree({ treeData, onSelectNode, selectedNodePath, onDropQue
           <div className="flex items-center space-x-2 truncate">
             {isOpen ? <ChevronDown className="w-3.5 h-3.5 text-gray-400" /> : <ChevronRight className="w-3.5 h-3.5 text-gray-400" />}
             <Layers className="w-3.5 h-3.5 text-purple-400" />
-            <span className="truncate max-w-[110px]">{lessName}</span>
+            <span className="truncate max-w-[110px]">{cleanLessName}</span>
           </div>
           <div className="flex items-center space-x-1 opacity-0 group-hover:opacity-100 transition-opacity">
             {onCreateSubFolder && (
               <button
-                onClick={(e) => { e.stopPropagation(); onCreateSubFolder({ subject: subjName, grade_level: gradeNum, chapter: chapName, lesson: lessName }, 'topic'); }}
+                onClick={(e) => { e.stopPropagation(); onCreateSubFolder({ subject: subjName, grade_level: gradeNum, chapter: chapName, lesson: cleanLessName }, 'topic'); }}
                 title="Thêm Dạng"
                 className="p-1.5 bg-white hover:bg-pastel-purple hover:text-white rounded-lg text-gray-600 shadow-xs border border-gray-100 transition"
               >
@@ -224,7 +233,7 @@ export function FolderTree({ treeData, onSelectNode, selectedNodePath, onDropQue
             )}
             {onDeleteFolder && (
               <button
-                onClick={(e) => { e.stopPropagation(); onDeleteFolder({ subject: subjName, grade_level: gradeNum, chapter: chapName, lesson: lessName }, lessName, topics._id); }}
+                onClick={(e) => { e.stopPropagation(); onDeleteFolder({ subject: subjName, grade_level: gradeNum, chapter: chapName, lesson: cleanLessName }, cleanLessName, topics._id); }}
                 title="Xóa Thư mục"
                 className="p-1.5 bg-white text-red-500 hover:bg-red-100 rounded-lg shadow-xs border border-gray-100 transition"
               >
@@ -237,7 +246,8 @@ export function FolderTree({ treeData, onSelectNode, selectedNodePath, onDropQue
         {isOpen && (
           <div className="pl-4 border-l border-gray-100 ml-3 space-y-0.5 mt-0.5">
             {Object.entries(topics).filter(([k]) => k !== '_id').map(([topName, item]) => {
-              const topPath = `subj:${subjName}|grade:${gradeName}|chap:${chapName}|less:${lessName}|top:${topName}`;
+              const cleanTopName = formatTitle(topName, 'Dạng chung');
+              const topPath = `subj:${subjName}|grade:${gradeName}|chap:${chapName}|less:${cleanLessName}|top:${cleanTopName}`;
               const isTopTarget = dragOverPath === topPath;
               const count = typeof item === 'object' ? item.count : item;
               const topId = typeof item === 'object' ? item._id : null;
@@ -245,10 +255,10 @@ export function FolderTree({ treeData, onSelectNode, selectedNodePath, onDropQue
               return (
                 <div
                   key={topPath}
-                  onClick={() => onSelectNode({ subject: subjName, grade_level: gradeNum, chapter: chapName, lesson: lessName, topic: topName })}
+                  onClick={() => onSelectNode({ subject: subjName, grade_level: gradeNum, chapter: chapName, lesson: cleanLessName, topic: cleanTopName })}
                   onDragOver={(e) => handleDragOver(e, topPath)}
                   onDragLeave={handleDragLeave}
-                  onDrop={(e) => handleDrop(e, { subject: subjName, grade_level: gradeNum, chapter: chapName, lesson: lessName, topic: topName }, topPath)}
+                  onDrop={(e) => handleDrop(e, { subject: subjName, grade_level: gradeNum, chapter: chapName, lesson: cleanLessName, topic: cleanTopName }, topPath)}
                   className={`group flex items-center justify-between px-2.5 py-1 rounded-lg cursor-pointer transition select-none ${
                     isTopTarget ? 'bg-indigo-100 border-2 border-dashed border-indigo-500' :
                     selectedNodePath === topPath ? 'bg-pastel-purpleLight text-pastel-purpleDark font-bold' : 'hover:bg-gray-100 text-gray-500'
@@ -256,13 +266,13 @@ export function FolderTree({ treeData, onSelectNode, selectedNodePath, onDropQue
                 >
                   <div className="flex items-center space-x-2 truncate">
                     <FileText className="w-3 h-3 text-gray-400" />
-                    <span className="truncate max-w-[120px] text-xs">{topName}</span>
+                    <span className="truncate max-w-[120px] text-xs">{cleanTopName}</span>
                   </div>
                   <div className="flex items-center space-x-1">
                     <span className="text-[10px] bg-gray-100 px-1.5 py-0.5 rounded-full text-gray-500">{count}</span>
                     {onDeleteFolder && (
                       <button
-                        onClick={(e) => { e.stopPropagation(); onDeleteFolder({ subject: subjName, grade_level: gradeNum, chapter: chapName, lesson: lessName, topic: topName }, topName, topId); }}
+                        onClick={(e) => { e.stopPropagation(); onDeleteFolder({ subject: subjName, grade_level: gradeNum, chapter: chapName, lesson: cleanLessName, topic: cleanTopName }, cleanTopName, topId); }}
                         title="Xóa Thư mục"
                         className="p-1.5 text-red-500 hover:bg-red-100 rounded-lg transition opacity-0 group-hover:opacity-100"
                       >

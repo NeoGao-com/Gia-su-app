@@ -98,12 +98,21 @@ async def get_tree_structure(
         q_res = await db.execute(q_query)
         for r in q_res.all():
             subj, grade, chap, less, top, cnt = r
-            grade_str = f"Khối {grade}"
-            if subj not in tree: tree[subj] = {}
-            if grade_str not in tree[subj]: tree[subj][grade_str] = {}
-            if chap not in tree[subj][grade_str]: tree[subj][grade_str][chap] = {}
-            if less not in tree[subj][grade_str][chap]: tree[subj][grade_str][chap][less] = {}
-            tree[subj][grade_str][chap][less][top] = cnt
+            subj_str = (subj or "Toán").strip()
+            grade_str = f"Khối {grade}" if grade else "Khối 10"
+            chap_str = (chap or "Chương chung").strip()
+            less_str = (less or "Bài chung").strip()
+            top_str = (top or "Dạng chung").strip()
+
+            if chap_str.lower() in ("null", "none", ""): chap_str = "Chương chung"
+            if less_str.lower() in ("null", "none", ""): less_str = "Bài chung"
+            if top_str.lower() in ("null", "none", ""): top_str = "Dạng chung"
+
+            if subj_str not in tree: tree[subj_str] = {}
+            if grade_str not in tree[subj_str]: tree[subj_str][grade_str] = {}
+            if chap_str not in tree[subj_str][grade_str]: tree[subj_str][grade_str][chap_str] = {}
+            if less_str not in tree[subj_str][grade_str][chap_str]: tree[subj_str][grade_str][chap_str][less_str] = {}
+            tree[subj_str][grade_str][chap_str][less_str][top_str] = cnt
         
         await redis_client.set(cache_key, json.dumps(tree), expire=1800)
         return tree
@@ -325,9 +334,21 @@ async def get_questions(
         query = select(Question).filter((Question.status != "EXAM_CLONE") | (Question.status.is_(None)))
         if subject: query = query.filter(Question.subject == subject)
         if grade_level is not None: query = query.filter(Question.grade_level == grade_level)
-        if chapter: query = query.filter(Question.chapter == chapter)
-        if lesson: query = query.filter(Question.lesson == lesson)
-        if topic: query = query.filter(Question.topic == topic)
+        if chapter:
+            if chapter in ("Chương chung", "null", "None"):
+                query = query.filter((Question.chapter == chapter) | (Question.chapter.is_(None)) | (Question.chapter == "") | (Question.chapter == "null"))
+            else:
+                query = query.filter(Question.chapter == chapter)
+        if lesson:
+            if lesson in ("Bài chung", "null", "None"):
+                query = query.filter((Question.lesson == lesson) | (Question.lesson.is_(None)) | (Question.lesson == "") | (Question.lesson == "null"))
+            else:
+                query = query.filter(Question.lesson == lesson)
+        if topic:
+            if topic in ("Dạng chung", "null", "None"):
+                query = query.filter((Question.topic == topic) | (Question.topic.is_(None)) | (Question.topic == "") | (Question.topic == "null"))
+            else:
+                query = query.filter(Question.topic == topic)
         if difficulty: query = query.filter(Question.difficulty == difficulty)
         if question_type: query = query.filter(Question.question_type == question_type)
         if search: query = query.filter(Question.content.ilike(f"%{search}%"))
@@ -353,6 +374,30 @@ def normalize_question_payload(raw: Dict[str, Any]) -> Dict[str, Any]:
         data["options"] = data.pop("answers")
     if "level" in data and "difficulty" not in data:
         data["difficulty"] = data.pop("level")
+
+    # Chapter, Lesson, Topic aliases
+    if "chuong" in data and not data.get("chapter"):
+        data["chapter"] = data.pop("chuong")
+    if "bai" in data and not data.get("lesson"):
+        data["lesson"] = data.pop("bai")
+    elif "bai_hoc" in data and not data.get("lesson"):
+        data["lesson"] = data.pop("bai_hoc")
+    if "dang" in data and not data.get("topic"):
+        data["topic"] = data.pop("dang")
+    elif "dang_bai" in data and not data.get("topic"):
+        data["topic"] = data.pop("dang_bai")
+    elif "chuyen_de" in data and not data.get("topic"):
+        data["topic"] = data.pop("chuyen_de")
+
+    # Sanitize and default chapter, lesson, topic
+    chap = str(data.get("chapter") or "").strip()
+    data["chapter"] = "Chương chung" if chap.lower() in ("null", "none", "") else chap
+
+    less = str(data.get("lesson") or "").strip()
+    data["lesson"] = "Bài chung" if less.lower() in ("null", "none", "") else less
+
+    top = str(data.get("topic") or "").strip()
+    data["topic"] = "Dạng chung" if top.lower() in ("null", "none", "") else top
         
     # 2. Normalize question_type
     q_type = str(data.get("question_type", "")).strip().upper()

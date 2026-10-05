@@ -85,7 +85,9 @@ CÁC TRƯỜNG THUỘC TÍNH DÙNG CHUNG CHO MỖI CÂU HỎI:
 - "difficulty": Mức độ nhận thức: "NHAN_BIET", "THONG_HIEU", "VAN_DUNG", hoặc "VAN_DUNG_CAO".
 - "subject": "${isAutoSubj ? 'Tên môn học nhận diện từ đề' : subject}".
 - "grade_level": ${isAutoGrade ? 10 : grade}.
-- "chapter": "Tên chương hoặc chủ đề kiến thức (nếu có)".
+- "chapter": "Tên chương hoặc chủ đề kiến thức lớn (ví dụ: 'Mệnh đề và tập hợp')".
+- "lesson": "Tên bài học cụ thể (ví dụ: 'Bài 1: Mệnh đề', nếu không có ghi 'Bài chung')".
+- "topic": "Dạng bài học hoặc chuyên đề nhỏ (ví dụ: 'Dạng 1: Nhận biết mệnh đề', nếu không có ghi 'Dạng chung')".
 - "explanation": Lời giải thích chi tiết từng bước bằng công thức LaTeX.
 
 ĐỊNH DẠNG ĐẦU RA (CỰC KỲ QUAN TRỌNG):
@@ -99,7 +101,9 @@ VÍ DỤ MẪU JSON CHUẨN:
     "question_type": "MULTIPLE_CHOICE",
     "subject": "${isAutoSubj ? 'Toán' : subject}",
     "grade_level": ${isAutoGrade ? 10 : grade},
-    "chapter": "Hàm số",
+    "chapter": "Hàm số bậc hai",
+    "lesson": "Bài 1: Khái niệm hàm số",
+    "topic": "Dạng 1: Tọa độ đỉnh parabol",
     "difficulty": "THONG_HIEU",
     "options": [
       "$(2; -1)$",
@@ -120,6 +124,8 @@ const SAMPLE_DEMO_QUESTIONS = [
     subject: "Toán",
     grade_level: 10,
     chapter: "Hàm số bậc hai",
+    lesson: "Bài 1: Khái niệm hàm số",
+    topic: "Dạng 1: Tọa độ đỉnh parabol",
     difficulty: "THONG_HIEU",
     options: ["$(2; -1)$", "$(-2; -1)$", "$(2; 1)$", "$(1; 0)$"],
     correct_option: 0,
@@ -131,6 +137,8 @@ const SAMPLE_DEMO_QUESTIONS = [
     subject: "Toán",
     grade_level: 10,
     chapter: "Vectơ",
+    lesson: "Bài 1: Khái niệm vectơ",
+    topic: "Dạng 1: Các định nghĩa cơ bản",
     difficulty: "THONG_HIEU",
     sub_questions: [
       { statement: "Hai vectơ cùng phương thì cùng hướng.", answer: false },
