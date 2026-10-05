@@ -30,12 +30,17 @@ class Settings(BaseSettings):
     REDIS_URL: str = os.getenv("REDIS_URL", "redis://localhost:6379/0")
 
     # Supabase Integration
-    SUPABASE_URL: Optional[str] = os.getenv("SUPABASE_URL") or os.getenv("NEXT_PUBLIC_SUPABASE_URL")
+    SUPABASE_URL: Optional[str] = (
+        os.getenv("SUPABASE_URL")
+        or os.getenv("NEXT_PUBLIC_SUPABASE_URL")
+        or "https://eicdbwhdjdonhzywdivu.supabase.co"
+    )
     SUPABASE_KEY: Optional[str] = (
         os.getenv("SUPABASE_SERVICE_ROLE_KEY")
         or os.getenv("SUPABASE_ANON_KEY")
         or os.getenv("NEXT_PUBLIC_SUPABASE_ANON_KEY")
         or os.getenv("SUPABASE_KEY")
+        or "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVpY2Rid2hkamRvbmh6eXdkaXZ1Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc5MDk1MzEyMSwiZXhwIjoyMTA2NTI5MTIxfQ.faGZW351wMvD0rA0eyGRgr4B-L61WQlQlKJPLs8X3eo"
     )
     SUPABASE_STORAGE_BUCKET: str = os.getenv("SUPABASE_STORAGE_BUCKET", "quiz-uploads")
 
