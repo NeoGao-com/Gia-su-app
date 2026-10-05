@@ -1,5 +1,6 @@
 import asyncio
 import logging
+import json
 import bcrypt
 import uuid
 from datetime import datetime, timedelta, timezone
@@ -65,10 +66,40 @@ async def get_current_user(request: Request, db: AsyncSession = Depends(get_db))
             # If Redis is temporarily unreachable, log and allow or fail gracefully
             logger.error(f"Redis blacklist check error: {str(e)}")
 
+    # Check if user is cached
+    cache_key = f"auth:user:{email}"
+    try:
+        cached_str = await redis_client.get(cache_key)
+        if cached_str:
+            data = json.loads(cached_str)
+            user = User(
+                id=data["id"],
+                email=data["email"],
+                full_name=data.get("full_name"),
+                role=data["role"],
+                is_active=data.get("is_active", True)
+            )
+            return user
+    except Exception:
+        pass
+
     result = await db.execute(select(User).filter(User.email == email))
     user = result.scalars().first()
     if user is None:
         raise credentials_exception
+
+    try:
+        u_data = {
+            "id": user.id,
+            "email": user.email,
+            "full_name": user.full_name,
+            "role": user.role,
+            "is_active": user.is_active
+        }
+        await redis_client.set(cache_key, json.dumps(u_data), ex=60)
+    except Exception:
+        pass
+
     return user
 
 async def get_current_teacher(current_user: User = Depends(get_current_user)):

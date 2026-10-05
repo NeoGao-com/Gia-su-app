@@ -38,10 +38,10 @@ if "postgresql" in db_url:
         "statement_cache_size": 0,
         "command_timeout": 30
     }
-    if os.getenv("VERCEL"):
-        engine_kwargs["poolclass"] = NullPool
-    else:
-        engine_kwargs["pool_pre_ping"] = True
+    engine_kwargs["pool_pre_ping"] = True
+    engine_kwargs["pool_size"] = 5
+    engine_kwargs["max_overflow"] = 5
+    engine_kwargs["pool_recycle"] = 180
 else:
     engine_kwargs["pool_pre_ping"] = True
 
