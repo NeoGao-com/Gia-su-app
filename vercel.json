@@ -3,7 +3,6 @@
   "services": {
     "backend": {
       "root": "backend",
-      "framework": "fastapi",
       "entrypoint": "main:app"
     },
     "frontend": {
@@ -19,7 +18,7 @@
   },
   "rewrites": [
     {
-      "source": "/api/(.*)",
+      "source": "/api/:path*",
       "destination": {
         "service": "backend"
       }
