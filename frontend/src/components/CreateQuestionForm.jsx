@@ -18,7 +18,7 @@ export function CreateQuestionForm({ _formData, _setFormData, _onSubmit }) {
       {/* Taxonomy */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         {['Môn học', 'Khối lớp', 'Chương', 'Bài'].map((label) => (
-          <select key={label} className="px-4 py-3 rounded-xl border border-gray-100 bg-[#f8f9fe] text-sm text-gray-600">
+          <select key={label} className="px-4 py-3 rounded-xl border border-gray-200 bg-gray-50 text-sm text-gray-700 focus:bg-white focus:outline-none focus:border-indigo-600 focus:ring-1 focus:ring-indigo-500 font-medium">
             <option>{label}</option>
           </select>
         ))}
@@ -28,14 +28,14 @@ export function CreateQuestionForm({ _formData, _setFormData, _onSubmit }) {
       <TextToolbar onInsertLatex={insertLatex} />
       <textarea 
         placeholder="Nhập nội dung câu hỏi..."
-        className="w-full p-4 rounded-xl border border-gray-100 bg-[#f8f9fe] text-sm text-gray-700 min-h-[120px]" 
+        className="w-full p-4 rounded-xl border border-gray-200 bg-gray-50 text-sm text-gray-800 min-h-[120px] focus:bg-white focus:outline-none focus:border-indigo-600 focus:ring-1 focus:ring-indigo-500" 
       />
 
       {/* Image URL */}
       <input 
         type="text" 
         placeholder="URL hình ảnh (nếu có)..."
-        className="w-full p-4 rounded-xl border border-gray-100 bg-[#f8f9fe] text-sm text-gray-700" 
+        className="w-full p-4 rounded-xl border border-gray-200 bg-gray-50 text-sm text-gray-800 focus:bg-white focus:outline-none focus:border-indigo-600 focus:ring-1 focus:ring-indigo-500" 
       />
 
       {/* Options */}
@@ -44,18 +44,18 @@ export function CreateQuestionForm({ _formData, _setFormData, _onSubmit }) {
           <input 
             key={label}
             placeholder={`Đáp án ${label}`}
-            className="p-4 rounded-xl border border-gray-100 bg-[#f8f9fe] text-sm text-gray-700" 
+            className="p-4 rounded-xl border border-gray-200 bg-gray-50 text-sm text-gray-800 focus:bg-white focus:outline-none focus:border-indigo-600 focus:ring-1 focus:ring-indigo-500 font-medium" 
           />
         ))}
       </div>
 
       {/* Correct Answer */}
-      <select className="w-full px-4 py-3 rounded-xl border border-gray-100 bg-[#f8f9fe] text-sm text-gray-600">
+      <select className="w-full px-4 py-3 rounded-xl border border-gray-200 bg-gray-50 text-sm text-gray-700 focus:bg-white focus:outline-none focus:border-indigo-600 focus:ring-1 focus:ring-indigo-500 font-medium">
         <option>Chọn đáp án đúng</option>
         {['A', 'B', 'C', 'D'].map(l => <option key={l}>{l}</option>)}
       </select>
 
-      <button className="w-full py-3 bg-[#9382f6] text-white rounded-xl font-bold hover:bg-[#6c5ce7] transition">
+      <button className="w-full py-3 bg-indigo-600 text-white rounded-xl font-bold hover:bg-indigo-700 transition cursor-pointer shadow-xs">
         Lưu câu hỏi
       </button>
     </div>
