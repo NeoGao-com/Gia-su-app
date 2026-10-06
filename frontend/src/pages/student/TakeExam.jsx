@@ -441,15 +441,26 @@ export function TakeExam() {
                   <ChevronLeft className="w-4 h-4" />
                   <span>Câu trước</span>
                 </button>
-                <button
-                  type="button"
-                  onClick={() => setCurrentIndex(prev => Math.min(questions.length - 1, prev + 1))}
-                  disabled={currentIndex === questions.length - 1}
-                  className="flex items-center space-x-1.5 px-5 py-2.5 rounded-xl bg-indigo-600 text-xs font-semibold text-white hover:bg-indigo-700 disabled:opacity-40 transition shadow-xs cursor-pointer"
-                >
-                  <span>Câu sau</span>
-                  <ChevronRight className="w-4 h-4" />
-                </button>
+                {currentIndex === questions.length - 1 ? (
+                  <button
+                    type="button"
+                    onClick={() => handleSubmit(false)}
+                    disabled={submitting}
+                    className="flex items-center space-x-1.5 px-6 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-xs sm:text-sm font-bold text-white transition shadow-xs disabled:opacity-50 cursor-pointer"
+                  >
+                    <Send className="w-4 h-4" />
+                    <span>{submitting ? 'Đang nộp...' : 'Nộp bài'}</span>
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => setCurrentIndex(prev => Math.min(questions.length - 1, prev + 1))}
+                    className="flex items-center space-x-1.5 px-5 py-2.5 rounded-xl bg-indigo-600 text-xs font-semibold text-white hover:bg-indigo-700 transition shadow-xs cursor-pointer"
+                  >
+                    <span>Câu sau</span>
+                    <ChevronRight className="w-4 h-4" />
+                  </button>
+                )}
               </div>
             </div>
           ) : (
