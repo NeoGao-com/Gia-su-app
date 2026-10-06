@@ -6,7 +6,8 @@ from sqlalchemy import func, or_
 from typing import List, Any, Optional, Dict
 from pydantic import BaseModel
 from datetime import datetime, timezone
-from app.database import get_db
+import json
+from app.database import get_db, redis_client
 from app.models.exam import Exam, ExamSubmission, exam_questions
 from app.models.question import Question
 from app.models.user import User
@@ -16,6 +17,15 @@ from app.schemas.exam import ExamSubmissionRequest, ExamSubmissionResponse, Exam
 from app.services.grading import GradingService
 
 router = APIRouter(prefix="/api/student", tags=["student"])
+
+async def invalidate_student_exams_cache(user_id: Optional[int] = None):
+    try:
+        pattern = f"student:exams:{user_id}:*" if user_id else "student:exams:*"
+        keys = await redis_client.keys(pattern)
+        if keys:
+            await redis_client.delete(*keys)
+    except Exception:
+        pass
 
 
 @router.post("/exams/{exam_id}/start", response_model=ExamSubmissionResponse, summary="Bắt đầu bài thi")
@@ -92,6 +102,7 @@ async def start_exam(
         db.add(new_sub)
         await db.commit()
         await db.refresh(new_sub)
+        await invalidate_student_exams_cache(current_user.id)
         return new_sub
     except Exception as e:
         await db.rollback()
@@ -133,6 +144,14 @@ async def get_student_exams(
     )
     assigned_union = assigned_subq_1.union(assigned_subq_2).subquery()
 
+    cache_key = f"student:exams:{current_user.id}:{page}:{limit}"
+    try:
+        cached = await redis_client.get(cache_key)
+        if cached:
+            return json.loads(cached)
+    except Exception:
+        pass
+
     offset = (page - 1) * limit
     result = await db.execute(
         select(Exam)
@@ -149,28 +168,61 @@ async def get_student_exams(
         .limit(limit)
     )
     exams = result.scalars().unique().all()
+    if not exams:
+        return []
+
+    exam_ids = [exam.id for exam in exams]
+
+    # 1. Batch load attempts taken in 1 query (replaces N queries)
+    att_res = await db.execute(
+        select(ExamSubmission.exam_id, func.count(ExamSubmission.id))
+        .filter(
+            ExamSubmission.exam_id.in_(exam_ids),
+            ExamSubmission.user_id == current_user.id,
+            ExamSubmission.status != "IN_PROGRESS"
+        )
+        .group_by(ExamSubmission.exam_id)
+    )
+    attempts_map = {row[0]: row[1] for row in att_res.all()}
+
+    # 2. Batch load assignment overrides & classroom name in 1 query (replaces 2N queries)
+    asgn_res = await db.execute(
+        select(Assignment, Classroom.name)
+        .join(ClassroomStudent, ClassroomStudent.classroom_id == Assignment.classroom_id)
+        .outerjoin(Classroom, Classroom.id == Assignment.classroom_id)
+        .filter(
+            Assignment.exam_id.in_(exam_ids),
+            ClassroomStudent.student_id == current_user.id,
+            or_(ClassroomStudent.is_active == True, ClassroomStudent.is_active == None),
+            or_(Assignment.is_active == True, Assignment.is_active == None)
+        )
+    )
+    asgn_map = {}
+    for asgn_obj, cr_name in asgn_res.all():
+        if asgn_obj.exam_id not in asgn_map:
+            asgn_map[asgn_obj.exam_id] = (asgn_obj, cr_name)
+
+    # 3. Batch load all student submissions for these exams in 1 query (replaces N queries)
+    subs_res = await db.execute(
+        select(ExamSubmission)
+        .filter(
+            ExamSubmission.exam_id.in_(exam_ids),
+            ExamSubmission.user_id == current_user.id
+        )
+        .order_by(ExamSubmission.id.desc())
+    )
+    subs_by_exam = {}
+    for sub in subs_res.scalars().all():
+        if sub.exam_id not in subs_by_exam:
+            subs_by_exam[sub.exam_id] = []
+        subs_by_exam[sub.exam_id].append(sub)
 
     response_items = []
     for exam in exams:
-        att_res = await db.execute(
-            select(func.count(ExamSubmission.id))
-            .filter(ExamSubmission.exam_id == exam.id, ExamSubmission.user_id == current_user.id, ExamSubmission.status != "IN_PROGRESS")
-        )
-        attempts_taken = att_res.scalar() or 0
+        attempts_taken = attempts_map.get(exam.id, 0)
         q_count = len(exam.questions) if exam.questions else 0
+        asgn, classroom_name = asgn_map.get(exam.id, (None, None))
 
-        # Kiểm tra override từ Assignment
-        asgn_res = await db.execute(
-            select(Assignment)
-            .join(ClassroomStudent, ClassroomStudent.classroom_id == Assignment.classroom_id)
-            .filter(
-                Assignment.exam_id == exam.id,
-                ClassroomStudent.student_id == current_user.id,
-                or_(ClassroomStudent.is_active == True, ClassroomStudent.is_active == None),
-                or_(Assignment.is_active == True, Assignment.is_active == None)
-            )
-        )
-        asgn = asgn_res.scalars().first()
         effective_max_attempts = (asgn.max_attempts if asgn and asgn.max_attempts else None) or exam.max_attempts or 1
         effective_duration = (asgn.duration_minutes_override if asgn and asgn.duration_minutes_override else None) or exam.duration_minutes or 45
 
@@ -179,25 +231,16 @@ async def get_student_exams(
         primary_subject = list(subjects)[0] if len(subjects) == 1 else (", ".join(sorted(subjects)) if subjects else None)
         primary_grade = list(grade_levels)[0] if grade_levels else None
 
-        # Kiểm tra trạng thái làm bài của học sinh
-        subs_res = await db.execute(
-            select(ExamSubmission)
-            .filter(ExamSubmission.exam_id == exam.id, ExamSubmission.user_id == current_user.id)
-            .order_by(ExamSubmission.id.desc())
-        )
-        all_subs = subs_res.scalars().all()
+        all_subs = subs_by_exam.get(exam.id, [])
         latest_sub = all_subs[0] if all_subs else None
         latest_status = latest_sub.status if latest_sub else "NOT_STARTED"
         latest_submission_id = latest_sub.id if latest_sub else None
         valid_scores = [s.score for s in all_subs if s.score is not None]
         highest_score = max(valid_scores) if valid_scores else None
-
-        # Lấy tên lớp học nếu là bài tập được giao
         classroom_id = asgn.classroom_id if asgn else None
-        classroom_name = None
-        if classroom_id:
-            cr_res = await db.execute(select(Classroom.name).filter(Classroom.id == classroom_id))
-            classroom_name = cr_res.scalar_one_or_none()
+
+        created_at_val = exam.created_at.isoformat() if hasattr(exam.created_at, 'isoformat') and exam.created_at else str(exam.created_at) if exam.created_at else None
+        due_date_val = asgn.due_date.isoformat() if asgn and hasattr(asgn.due_date, 'isoformat') and asgn.due_date else (asgn.due_date if asgn else None)
 
         response_items.append({
             "id": exam.id,
@@ -208,20 +251,25 @@ async def get_student_exams(
             "max_attempts": effective_max_attempts,
             "show_answers_after_submit": exam.show_answers_after_submit,
             "is_published": exam.is_published,
-            "created_at": exam.created_at,
+            "created_at": created_at_val,
             "created_by_id": exam.created_by_id,
             "attempts_taken": attempts_taken,
             "question_count": q_count,
             "subject": primary_subject,
             "grade_level": primary_grade,
             "exam_type": getattr(exam, 'exam_type', 'EXAM') or 'EXAM',
-            "due_date": asgn.due_date if asgn else None,
+            "due_date": due_date_val,
             "classroom_id": classroom_id,
             "classroom_name": classroom_name,
             "latest_status": latest_status,
             "latest_submission_id": latest_submission_id,
             "highest_score": highest_score
         })
+
+    try:
+        await redis_client.set(cache_key, json.dumps(response_items), ex=45)
+    except Exception:
+        pass
 
     return response_items
 
@@ -407,6 +455,7 @@ async def submit_student_exam(
 
     await db.commit()
     await db.refresh(submission)
+    await invalidate_student_exams_cache(current_user.id)
 
     return submission
 

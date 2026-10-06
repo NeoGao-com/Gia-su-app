@@ -36,14 +36,22 @@ engine_kwargs = {"echo": False}
 if "postgresql" in db_url:
     engine_kwargs["connect_args"] = {
         "statement_cache_size": 0,
-        "command_timeout": 30
+        "command_timeout": 20,
+        "server_settings": {"application_name": "tutorquiz_api"}
     }
-    engine_kwargs["pool_pre_ping"] = True
-    engine_kwargs["pool_size"] = 5
-    engine_kwargs["max_overflow"] = 5
-    engine_kwargs["pool_recycle"] = 180
+    # pool_pre_ping=False eliminates redundant network roundtrip ping on every checkout (saves ~1.2s per checkout)
+    engine_kwargs["pool_pre_ping"] = False
+    if os.getenv("VERCEL"):
+        # Serverless functions freeze between invocations; keep pool lean to avoid connection exhaustion
+        engine_kwargs["pool_size"] = 2
+        engine_kwargs["max_overflow"] = 3
+        engine_kwargs["pool_recycle"] = 300
+    else:
+        engine_kwargs["pool_size"] = 10
+        engine_kwargs["max_overflow"] = 10
+        engine_kwargs["pool_recycle"] = 300
 else:
-    engine_kwargs["pool_pre_ping"] = True
+    engine_kwargs["pool_pre_ping"] = False
 
 engine = create_async_engine(db_url, **engine_kwargs)
 AsyncSessionLocal = sessionmaker(

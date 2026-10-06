@@ -201,17 +201,29 @@ async def get_exams(
     result = await db.execute(query)
     exams = result.scalars().all()
     exams_response = []
-    for e in exams:
-        ex = ExamResponse.model_validate(e).model_dump(mode="json")
-        cnt_res = await db.execute(
-            select(func.count()).select_from(exam_questions).where(exam_questions.c.exam_id == e.id)
+    if exams:
+        exam_ids = [e.id for e in exams]
+        # Batch question counts in 1 single query (replaces N queries)
+        q_cnt_res = await db.execute(
+            select(exam_questions.c.exam_id, func.count())
+            .where(exam_questions.c.exam_id.in_(exam_ids))
+            .group_by(exam_questions.c.exam_id)
         )
-        ex["question_count"] = cnt_res.scalar() or 0
+        q_counts = {row[0]: row[1] for row in q_cnt_res.all()}
+
+        # Batch submission counts in 1 single query (replaces N queries)
         sub_cnt_res = await db.execute(
-            select(func.count(ExamSubmission.id)).where(ExamSubmission.exam_id == e.id)
+            select(ExamSubmission.exam_id, func.count(ExamSubmission.id))
+            .where(ExamSubmission.exam_id.in_(exam_ids))
+            .group_by(ExamSubmission.exam_id)
         )
-        ex["submissions_count"] = sub_cnt_res.scalar() or 0
-        exams_response.append(ex)
+        sub_counts = {row[0]: row[1] for row in sub_cnt_res.all()}
+
+        for e in exams:
+            ex = ExamResponse.model_validate(e).model_dump(mode="json")
+            ex["question_count"] = q_counts.get(e.id, 0)
+            ex["submissions_count"] = sub_counts.get(e.id, 0)
+            exams_response.append(ex)
 
     response_data = {
         "total": total,

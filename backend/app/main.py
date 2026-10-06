@@ -10,42 +10,59 @@ from app.routers import rendering, auth, questions, exam, export, student, uploa
 
 logger = logging.getLogger(__name__)
 
+_DB_INITIALIZED = False
+
 async def init_db_tables():
+    global _DB_INITIALIZED
+    if _DB_INITIALIZED:
+        return {"status": "success", "message": "Already initialized"}
+
     try:
         async with engine.begin() as conn:
             await conn.run_sync(Base.metadata.create_all)
 
-        # 1. Add missing user columns BEFORE any queries on User table
         from sqlalchemy import text
-        user_column_names = [
-            "phone_number",
-            "parent_phone",
-            "parent_name",
-            "date_of_birth",
-            "gender",
-            "school",
-            "student_code",
-            "notes",
-        ]
-        for col in user_column_names:
-            try:
-                async with engine.begin() as conn:
-                    await conn.execute(text(f"ALTER TABLE users ADD COLUMN IF NOT EXISTS {col} VARCHAR"))
-            except Exception:
+        # 1. Batch add missing user columns in 1 single transaction (fast startup)
+        batch_alter_pg = """
+        ALTER TABLE users
+            ADD COLUMN IF NOT EXISTS phone_number VARCHAR(20),
+            ADD COLUMN IF NOT EXISTS parent_phone VARCHAR(20),
+            ADD COLUMN IF NOT EXISTS parent_name VARCHAR(100),
+            ADD COLUMN IF NOT EXISTS date_of_birth VARCHAR(20),
+            ADD COLUMN IF NOT EXISTS gender VARCHAR(10),
+            ADD COLUMN IF NOT EXISTS school VARCHAR(255),
+            ADD COLUMN IF NOT EXISTS student_code VARCHAR(50),
+            ADD COLUMN IF NOT EXISTS notes TEXT;
+        """
+        try:
+            async with engine.begin() as conn:
+                await conn.execute(text(batch_alter_pg))
+        except Exception:
+            # Fallback for SQLite which doesn't support multiple ADD COLUMN in one statement
+            user_column_names = [
+                "phone_number", "parent_phone", "parent_name", "date_of_birth",
+                "gender", "school", "student_code", "notes"
+            ]
+            for col in user_column_names:
                 try:
                     async with engine.begin() as conn:
                         await conn.execute(text(f"ALTER TABLE users ADD COLUMN {col} VARCHAR"))
                 except Exception:
                     pass
 
-        # 2. Create performance optimization indexes
+        # 2. Create high-performance composite indexes
         indexes = [
-            "CREATE INDEX IF NOT EXISTS idx_questions_lookup ON questions (subject, grade_level, chapter, lesson, topic)",
-            "CREATE INDEX IF NOT EXISTS idx_questions_creator ON questions (created_by_id, status)",
-            "CREATE INDEX IF NOT EXISTS idx_classrooms_instructor ON classrooms (instructor_id, is_deleted)",
-            "CREATE INDEX IF NOT EXISTS idx_assignments_classroom ON assignments (classroom_id, is_active)",
-            "CREATE INDEX IF NOT EXISTS idx_exams_creator ON exams (created_by_id, exam_type)",
-            "CREATE INDEX IF NOT EXISTS idx_submissions_exam ON exam_submissions (exam_id, student_id)",
+            "CREATE INDEX IF NOT EXISTS idx_questions_lookup ON questions (subject, grade_level, chapter, lesson, topic);",
+            "CREATE INDEX IF NOT EXISTS idx_questions_creator ON questions (created_by_id, status);",
+            "CREATE INDEX IF NOT EXISTS idx_classrooms_instructor ON classrooms (instructor_id, is_deleted);",
+            "CREATE INDEX IF NOT EXISTS idx_assignments_classroom ON assignments (classroom_id, is_active);",
+            "CREATE INDEX IF NOT EXISTS idx_assignments_exam_class ON assignments (exam_id, classroom_id, is_active);",
+            "CREATE INDEX IF NOT EXISTS idx_exams_creator ON exams (created_by_id, exam_type);",
+            "CREATE INDEX IF NOT EXISTS idx_exams_active_published ON exams (is_deleted, is_published, created_at DESC);",
+            "CREATE INDEX IF NOT EXISTS idx_exam_submissions_user_exam ON exam_submissions (user_id, exam_id, status);",
+            "CREATE INDEX IF NOT EXISTS idx_exam_submissions_exam_user ON exam_submissions (exam_id, user_id, submitted_at DESC);",
+            "CREATE INDEX IF NOT EXISTS idx_classroom_students_lookup ON classroom_students (student_id, classroom_id, is_active);",
+            "CREATE INDEX IF NOT EXISTS idx_notifications_user_id ON notifications (user_id);"
         ]
         for idx_sql in indexes:
             try:
@@ -53,6 +70,8 @@ async def init_db_tables():
                     await conn.execute(text(idx_sql))
             except Exception:
                 pass
+
+        _DB_INITIALIZED = True
 
         # 3. Seed default accounts if needed
         from app.models.user import User
@@ -128,14 +147,17 @@ async def read_root():
 @app.get("/health", tags=["Hệ thống"], summary="Kiểm tra trạng thái hệ thống")
 @app.get("/api/health", tags=["Hệ thống"], summary="Kiểm tra trạng thái hệ thống (prefix)")
 async def health_check():
-    status = {"status": "ok", "database": "unknown", "redis": "unknown"}
+    status = {"status": "ok", "database": "unknown", "db_latency_ms": None, "redis": "unknown"}
     try:
         from sqlalchemy import text
+        import time
+        t0 = time.time()
         async def check_db():
             async with engine.connect() as conn:
                 await conn.execute(text("SELECT 1"))
-        await asyncio.wait_for(check_db(), timeout=8.0)
+        await asyncio.wait_for(check_db(), timeout=5.0)
         status["database"] = "connected"
+        status["db_latency_ms"] = round((time.time() - t0) * 1000, 1)
     except Exception as e:
         status["database"] = f"error: {str(e)}"
 
