@@ -302,14 +302,14 @@ export function TakeExam() {
                   <div>
                     {currentQ.content.split('/key').map((part, pIdx, arr) => (
                       <React.Fragment key={pIdx}>
-                        <span>{part}</span>
+                        <MathRenderer content={part} inline />
                         {pIdx < arr.length - 1 && (
                           <input
                             type="text"
                             value={typeof answers[currentQ.id] === 'string' ? answers[currentQ.id] : ''}
                             onChange={(e) => handleAnswerChange(currentQ.id, e.target.value)}
                             placeholder="(Điền đáp án)"
-                            className="inline-block mx-2 px-3 py-1 border-b-2 border-indigo-600 bg-indigo-50/60 rounded-xl text-indigo-700 font-bold w-40 text-center focus:outline-none focus:bg-indigo-100/70"
+                            className="inline-block mx-2 px-3 py-1 border-b-2 border-indigo-600 bg-indigo-50/60 rounded-xl text-indigo-700 font-bold w-40 text-center focus:outline-none focus:bg-indigo-100/70 align-middle"
                           />
                         )}
                       </React.Fragment>

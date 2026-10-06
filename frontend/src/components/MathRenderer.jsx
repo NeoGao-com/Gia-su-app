@@ -18,22 +18,35 @@ function getCachedMathContent(raw) {
   return rendered;
 }
 
-export const MathRenderer = React.memo(function MathRenderer({ content, className = '' }) {
+export const MathRenderer = React.memo(function MathRenderer({ 
+  content, 
+  className = '', 
+  inline = false, 
+  as 
+}) {
   const containerRef = useRef(null);
+  const raw = content ? String(content) : '';
+  const html = getCachedMathContent(raw);
 
   useEffect(() => {
-    if (!containerRef.current) return;
-    if (!content) {
-      containerRef.current.innerHTML = '';
-      return;
+    if (containerRef.current && containerRef.current.innerHTML !== html) {
+      containerRef.current.innerHTML = html;
     }
+  }, [html]);
 
-    const raw = String(content);
-    containerRef.current.innerHTML = getCachedMathContent(raw);
-  }, [content]);
+  const Comp = as || (inline ? 'span' : 'div');
+  const baseDisplay = inline ? 'inline' : 'inline-block';
 
-  return <div ref={containerRef} className={`inline-block ${className}`} />;
+  return (
+    <Comp 
+      ref={containerRef} 
+      className={`${baseDisplay} ${className}`.trim()} 
+      dangerouslySetInnerHTML={{ __html: html }}
+    />
+  );
 });
+
+export { getCachedMathContent, renderMathContent };
 
 function renderMathContent(raw) {
   const regex = /(\$\$[\s\S]*?\$\$|\\\[[\s\S]*?\\\]|\$([^\s\$][^$]*?[^\s\$]|\S)\$|\\\([\s\S]*?\\\))/g;

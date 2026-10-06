@@ -288,7 +288,22 @@ export function SubmissionReviewModal({ isOpen, onClose, submissionId }) {
 
                   {/* Question Content */}
                   <div className="text-sm font-medium text-gray-800 leading-relaxed">
-                    <MathRenderer content={q.content} />
+                    {q.content && q.content.includes('/key') ? (
+                      <div>
+                        {q.content.split('/key').map((part, pIdx, arr) => (
+                          <React.Fragment key={pIdx}>
+                            <MathRenderer content={part} inline />
+                            {pIdx < arr.length - 1 && (
+                              <span className="inline-block mx-1.5 px-2.5 py-0.5 rounded-lg border border-dashed border-indigo-400 bg-indigo-50/70 text-indigo-700 font-bold text-xs align-middle">
+                                {q.userAns || '______'}
+                              </span>
+                            )}
+                          </React.Fragment>
+                        ))}
+                      </div>
+                    ) : (
+                      <MathRenderer content={q.content} />
+                    )}
                   </div>
 
                   {/* Attached Image */}

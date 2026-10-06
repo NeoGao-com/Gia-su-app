@@ -347,7 +347,26 @@ export function StudentPractice() {
 
                   {/* Question Text */}
                   <div className="text-base sm:text-lg font-medium text-slate-900 mb-6 leading-relaxed">
-                    <MathRenderer content={currentQ.content} />
+                    {currentQ.content && currentQ.content.includes('/key') ? (
+                      <div>
+                        {currentQ.content.split('/key').map((part, pIdx, arr) => (
+                          <React.Fragment key={pIdx}>
+                            <MathRenderer content={part} inline />
+                            {pIdx < arr.length - 1 && (
+                              <input
+                                type="text"
+                                value={typeof answers[currentQ.id] === 'string' ? answers[currentQ.id] : ''}
+                                onChange={(e) => handleAnswerChange(currentQ.id, e.target.value)}
+                                placeholder="(Điền đáp án)"
+                                className="inline-block mx-2 px-3 py-1 border-b-2 border-indigo-600 bg-indigo-50/60 rounded-xl text-indigo-700 font-bold w-40 text-center focus:outline-none focus:bg-indigo-100/70 align-middle"
+                              />
+                            )}
+                          </React.Fragment>
+                        ))}
+                      </div>
+                    ) : (
+                      <MathRenderer content={currentQ.content} />
+                    )}
                   </div>
 
                   {/* Optional Image */}
@@ -399,6 +418,16 @@ export function StudentPractice() {
                         </label>
                       );
                     })}
+
+                    {currentQ.question_type === 'SHORT_ANSWER' && !currentQ.content?.includes('/key') && (
+                      <input
+                        type="text"
+                        value={typeof answers[currentQ.id] === 'string' ? answers[currentQ.id] : ''}
+                        onChange={(e) => handleAnswerChange(currentQ.id, e.target.value)}
+                        placeholder="Nhập câu trả lời của bạn..."
+                        className="w-full p-4 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-600 text-slate-900 bg-white"
+                      />
+                    )}
                   </div>
 
                   {/* Navigation Buttons */}
@@ -621,7 +650,22 @@ export function StudentPractice() {
 
                         {/* Question Content */}
                         <div className="text-base text-slate-900 font-medium mb-4 leading-relaxed">
-                          <MathRenderer content={item.content} />
+                          {item.content && item.content.includes('/key') ? (
+                            <div>
+                              {item.content.split('/key').map((part, pIdx, arr) => (
+                                <React.Fragment key={pIdx}>
+                                  <MathRenderer content={part} inline />
+                                  {pIdx < arr.length - 1 && (
+                                    <span className="inline-block mx-1.5 px-2.5 py-0.5 rounded-lg border border-dashed border-indigo-400 bg-indigo-50/70 text-indigo-700 font-bold text-xs align-middle">
+                                      {item.student_answer || '______'}
+                                    </span>
+                                  )}
+                                </React.Fragment>
+                              ))}
+                            </div>
+                          ) : (
+                            <MathRenderer content={item.content} />
+                          )}
                         </div>
 
                         {/* Options */}
