@@ -377,15 +377,15 @@ export function QuestionBank() {
       <Navbar />
       <div className="flex">
         <Sidebar role="teacher" />
-        <main className="flex-1 p-5 sm:p-6 lg:p-8 max-w-7xl mx-auto w-full">
+        <main className="flex-1 p-4 sm:p-5 lg:p-6 max-w-7xl mx-auto w-full lg:h-[calc(100vh-4rem)] lg:flex lg:flex-col lg:overflow-hidden">
           {/* Top Header */}
-          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-4 shrink-0">
             <div>
-              <h1 className="text-2xl font-bold text-slate-900 flex items-center space-x-2">
+              <h1 className="text-xl sm:text-2xl font-bold text-slate-900 flex items-center space-x-2">
                 <FolderTree className="w-6 h-6 text-indigo-600" />
                 <span>Ngân hàng Câu hỏi & Cây phân loại</span>
               </h1>
-              <p className="text-xs text-slate-500 mt-1">Quản lý kho câu hỏi phân tầng theo Môn, Khối, Chương, Bài và Dạng bài chuẩn giáo dục.</p>
+              <p className="text-xs text-slate-500 mt-0.5">Quản lý kho câu hỏi phân tầng theo Môn, Khối, Chương, Bài và Dạng bài chuẩn giáo dục.</p>
             </div>
             <div className="flex flex-wrap items-center gap-2">
               <button
@@ -430,9 +430,9 @@ export function QuestionBank() {
             </div>
           </div>
 
-          <div className="grid grid-cols-12 gap-6">
+          <div className="grid grid-cols-12 gap-6 lg:flex-1 lg:min-h-0">
             {/* Left Column: Knowledge Tree */}
-            <div className="col-span-12 lg:col-span-4">
+            <div className="col-span-12 lg:col-span-4 lg:h-full lg:min-h-0 flex flex-col">
               <WinFileExplorerTree
                 treeData={treeData}
                 selectedCategory={selectedCategory}
@@ -445,7 +445,7 @@ export function QuestionBank() {
             </div>
 
             {/* Right Column: Questions List & Filters */}
-            <div className="col-span-12 lg:col-span-8 space-y-4">
+            <div className="col-span-12 lg:col-span-8 lg:h-full lg:min-h-0 lg:overflow-y-auto overscroll-contain space-y-4 pr-1">
               {/* Search Bar */}
               <div className="bg-white p-3 rounded-2xl border border-slate-200/90 shadow-xs flex items-center space-x-3">
                 <Search className="w-4 h-4 text-slate-400 ml-2 shrink-0" />

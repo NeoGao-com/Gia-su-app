@@ -123,8 +123,8 @@ export function WinFileExplorerTree({ treeData, onSelectCategory, onAddCategory,
   };
 
   return (
-    <div className="bg-white rounded-2xl p-4 border border-slate-200/80 shadow-xs font-sans select-none text-sm">
-      <div className="flex justify-between items-center pb-3 mb-3 border-b border-slate-200/80">
+    <div className="bg-white rounded-2xl p-4 border border-slate-200/80 shadow-xs font-sans select-none text-sm h-full flex flex-col min-h-0">
+      <div className="flex justify-between items-center pb-3 mb-3 border-b border-slate-200/80 shrink-0">
         <div className="font-bold text-slate-800 flex items-center space-x-2">
           <FolderOpen className="w-5 h-5 text-indigo-600" />
           <span>Cây danh mục kiến thức</span>
@@ -140,7 +140,7 @@ export function WinFileExplorerTree({ treeData, onSelectCategory, onAddCategory,
           </button>
         )}
       </div>
-      <div className="space-y-1 overflow-y-auto max-h-[600px] pr-1">
+      <div className="space-y-1 overflow-y-auto flex-1 min-h-0 max-h-[500px] lg:max-h-none overscroll-contain pr-1">
         {Object.keys(treeData || {}).length === 0 ? (
           <div className="text-center py-8 text-xs text-gray-400">Chưa có danh mục nào.</div>
         ) : (
