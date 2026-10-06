@@ -252,18 +252,94 @@ async def create_student(
 
     full_name = payload.get("full_name", "").strip() or email.split("@")[0]
     password = payload.get("password") or "Password@123!"
+    phone_number = (payload.get("phone_number") or "").strip() or None
+    parent_phone = (payload.get("parent_phone") or "").strip() or None
+    parent_name = (payload.get("parent_name") or "").strip() or None
+    date_of_birth = (payload.get("date_of_birth") or "").strip() or None
+    gender = (payload.get("gender") or "").strip() or None
+    school = (payload.get("school") or "").strip() or None
+    student_code = (payload.get("student_code") or "").strip() or None
+    grade_level = payload.get("grade_level") or None
+    notes = (payload.get("notes") or "").strip() or None
+
+    if existing:
+        if existing.is_deleted:
+            existing.is_deleted = False
+            existing.is_active = True
+        if phone_number: existing.phone_number = phone_number
+        if parent_phone: existing.parent_phone = parent_phone
+        if parent_name: existing.parent_name = parent_name
+        if date_of_birth: existing.date_of_birth = date_of_birth
+        if gender: existing.gender = gender
+        if school: existing.school = school
+        if student_code: existing.student_code = student_code
+        if grade_level: existing.grade_level = grade_level
+        if notes: existing.notes = notes
+        await db.commit()
+        await db.refresh(existing)
+        return existing
+
     from app.core.security import get_password_hash
     new_student = User(
         email=email,
         full_name=full_name,
         hashed_password=get_password_hash(password),
         role="STUDENT",
+        phone_number=phone_number,
+        parent_phone=parent_phone,
+        parent_name=parent_name,
+        date_of_birth=date_of_birth,
+        gender=gender,
+        school=school,
+        student_code=student_code,
+        grade_level=grade_level,
+        notes=notes,
         is_active=True
     )
     db.add(new_student)
     await db.commit()
     await db.refresh(new_student)
     return new_student
+
+@router.put("/students/{student_id}", summary="Cập nhật thông tin học sinh")
+async def update_student(
+    student_id: int,
+    payload: dict,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_teacher)
+):
+    student = await db.get(User, student_id)
+    if not student or student.is_deleted:
+        raise HTTPException(status_code=404, detail="Học sinh không tồn tại")
+
+    if "full_name" in payload and payload["full_name"]:
+        student.full_name = payload["full_name"].strip()
+    if "phone_number" in payload:
+        student.phone_number = (payload["phone_number"] or "").strip() or None
+    if "parent_phone" in payload:
+        student.parent_phone = (payload["parent_phone"] or "").strip() or None
+    if "parent_name" in payload:
+        student.parent_name = (payload["parent_name"] or "").strip() or None
+    if "date_of_birth" in payload:
+        student.date_of_birth = (payload["date_of_birth"] or "").strip() or None
+    if "gender" in payload:
+        student.gender = (payload["gender"] or "").strip() or None
+    if "school" in payload:
+        student.school = (payload["school"] or "").strip() or None
+    if "student_code" in payload:
+        student.student_code = (payload["student_code"] or "").strip() or None
+    if "grade_level" in payload:
+        student.grade_level = payload["grade_level"]
+    if "notes" in payload:
+        student.notes = (payload["notes"] or "").strip() or None
+    if "password" in payload and payload["password"]:
+        from app.core.security import get_password_hash
+        student.hashed_password = get_password_hash(payload["password"])
+
+    await db.commit()
+    await db.refresh(student)
+    await invalidate_classroom_cache()
+    return student
 
 @router.delete("/students/{student_id}", summary="Xóa học sinh khỏi hệ thống")
 async def delete_student(
@@ -321,6 +397,15 @@ async def add_student_to_classroom(
             full_name=full_name,
             hashed_password=get_password_hash(password),
             role="STUDENT",
+            phone_number=(payload.get("phone_number") or "").strip() or None,
+            parent_phone=(payload.get("parent_phone") or "").strip() or None,
+            parent_name=(payload.get("parent_name") or "").strip() or None,
+            date_of_birth=(payload.get("date_of_birth") or "").strip() or None,
+            gender=(payload.get("gender") or "").strip() or None,
+            school=(payload.get("school") or "").strip() or None,
+            student_code=(payload.get("student_code") or "").strip() or None,
+            grade_level=payload.get("grade_level") or None,
+            notes=(payload.get("notes") or "").strip() or None,
             is_active=True
         )
         db.add(student)

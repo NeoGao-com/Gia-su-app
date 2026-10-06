@@ -7,7 +7,10 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from app.database import get_db, redis_client
 from app.models.user import User
-from app.schemas.auth import UserCreate, UserResponse, ForgotPasswordRequest, ResetPasswordRequest
+from app.schemas.auth import (
+    UserCreate, UserResponse, ForgotPasswordRequest,
+    ResetPasswordRequest, ProfileUpdateRequest, ChangePasswordRequest
+)
 from app.core.security import get_password_hash, verify_password, create_access_token, get_current_user
 from app.core.config import settings
 from app.core.csrf import generate_csrf_token, CSRF_COOKIE_NAME
@@ -168,3 +171,50 @@ async def reset_password(request: Request, payload: ResetPasswordRequest, db: As
     logger.info(f"Password successfully reset for user ID {user.id} ({user.email}) from IP {client_ip}")
 
     return {"message": "Đặt lại mật khẩu thành công"}
+
+@router.put("/profile", response_model=UserResponse, summary="Cập nhật thông tin cá nhân")
+async def update_profile(
+    payload: ProfileUpdateRequest,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    if payload.full_name is not None:
+        current_user.full_name = payload.full_name.strip()
+    if payload.phone_number is not None:
+        current_user.phone_number = payload.phone_number.strip()
+    if payload.parent_phone is not None:
+        current_user.parent_phone = payload.parent_phone.strip()
+    if payload.parent_name is not None:
+        current_user.parent_name = payload.parent_name.strip()
+    if payload.date_of_birth is not None:
+        current_user.date_of_birth = payload.date_of_birth.strip()
+    if payload.gender is not None:
+        current_user.gender = payload.gender.strip()
+    if payload.school is not None:
+        current_user.school = payload.school.strip()
+    if payload.student_code is not None:
+        current_user.student_code = payload.student_code.strip()
+    if payload.grade_level is not None:
+        current_user.grade_level = payload.grade_level
+    if payload.notes is not None:
+        current_user.notes = payload.notes.strip()
+
+    await db.commit()
+    await db.refresh(current_user)
+    return current_user
+
+@router.post("/change-password", summary="Đổi mật khẩu tài khoản")
+async def change_password(
+    payload: ChangePasswordRequest,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    if not verify_password(payload.current_password, current_user.hashed_password):
+        raise HTTPException(status_code=400, detail="Mật khẩu hiện tại không chính xác")
+
+    if payload.new_password == payload.current_password:
+        raise HTTPException(status_code=400, detail="Mật khẩu mới không được trùng với mật khẩu cũ")
+
+    current_user.hashed_password = get_password_hash(payload.new_password)
+    await db.commit()
+    return {"message": "Đổi mật khẩu thành công"}

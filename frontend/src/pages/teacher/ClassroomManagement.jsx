@@ -4,7 +4,8 @@ import { Sidebar } from '../../components/Sidebar';
 import api, { clearApiCache } from '../../api/axios';
 import {
   Plus, Trash2, UserPlus, CheckSquare, Square, Search,
-  Copy, Check, Users, UserMinus, Edit3
+  Copy, Check, Users, UserMinus, Edit3, Phone, School,
+  Calendar, HeartHandshake, KeyRound, Pencil, GraduationCap, FileText
 } from 'lucide-react';
 import { Modal } from '../../components/Modal';
 import { EditAssignmentModal } from '../../components/EditAssignmentModal';
@@ -27,7 +28,33 @@ export function ClassroomManagement() {
   const [systemStudentForm, setSystemStudentForm] = useState({
     full_name: '',
     email: '',
-    password: 'Password@123!'
+    password: 'Password@123!',
+    phone_number: '',
+    parent_phone: '',
+    parent_name: '',
+    date_of_birth: '',
+    gender: 'Nam',
+    school: '',
+    student_code: '',
+    grade_level: '',
+    notes: '',
+  });
+
+  // Edit student modal & form
+  const [isEditStudentModalOpen, setIsEditStudentModalOpen] = useState(false);
+  const [editingStudent, setEditingStudent] = useState(null);
+  const [editStudentForm, setEditStudentForm] = useState({
+    full_name: '',
+    phone_number: '',
+    parent_phone: '',
+    parent_name: '',
+    date_of_birth: '',
+    gender: 'Nam',
+    school: '',
+    student_code: '',
+    grade_level: '',
+    notes: '',
+    password: '',
   });
 
   const [isUnassignExamModalOpen, setIsUnassignExamModalOpen] = useState(false);
@@ -37,7 +64,6 @@ export function ClassroomManagement() {
   const [isEditAssignmentModalOpen, setIsEditAssignmentModalOpen] = useState(false);
   const [assignmentToEdit, setAssignmentToEdit] = useState(null);
 
-
   // New group form
   const [form, setForm] = useState({ name: '', description: '' });
 
@@ -45,7 +71,16 @@ export function ClassroomManagement() {
   const [newStudentForm, setNewStudentForm] = useState({
     full_name: '',
     email: '',
-    password: 'Password@123!'
+    password: 'Password@123!',
+    phone_number: '',
+    parent_phone: '',
+    parent_name: '',
+    date_of_birth: '',
+    gender: 'Nam',
+    school: '',
+    student_code: '',
+    grade_level: '',
+    notes: '',
   });
 
   const [selectedStudentIds, setSelectedStudentIds] = useState([]);
@@ -175,12 +210,34 @@ export function ClassroomManagement() {
       await api.post(`/classrooms/${selectedClass.id}/students`, {
         email: newStudentForm.email.trim(),
         full_name: newStudentForm.full_name.trim() || newStudentForm.email.split('@')[0],
-        password: newStudentForm.password || 'Password@123!'
+        password: newStudentForm.password || 'Password@123!',
+        phone_number: newStudentForm.phone_number?.trim() || null,
+        parent_phone: newStudentForm.parent_phone?.trim() || null,
+        parent_name: newStudentForm.parent_name?.trim() || null,
+        date_of_birth: newStudentForm.date_of_birth || null,
+        gender: newStudentForm.gender || null,
+        school: newStudentForm.school?.trim() || null,
+        student_code: newStudentForm.student_code?.trim() || null,
+        grade_level: newStudentForm.grade_level ? parseInt(newStudentForm.grade_level, 10) : null,
+        notes: newStudentForm.notes?.trim() || null,
       });
       const list = await refreshStudentsInClass(selectedClass.id);
       setStudentsInClass(list);
       await refreshAllStudents();
-      setNewStudentForm({ full_name: '', email: '', password: 'Password@123!' });
+      setNewStudentForm({
+        full_name: '',
+        email: '',
+        password: 'Password@123!',
+        phone_number: '',
+        parent_phone: '',
+        parent_name: '',
+        date_of_birth: '',
+        gender: 'Nam',
+        school: '',
+        student_code: '',
+        grade_level: '',
+        notes: '',
+      });
       setIsStudentModalOpen(false);
       toast.success('Đã thêm học sinh vào nhóm thành công!');
     } catch (err) {
@@ -268,14 +325,91 @@ export function ClassroomManagement() {
       await api.post('/classrooms/students', {
         email: systemStudentForm.email.trim(),
         full_name: systemStudentForm.full_name.trim() || systemStudentForm.email.split('@')[0],
-        password: systemStudentForm.password || 'Password@123!'
+        password: systemStudentForm.password || 'Password@123!',
+        phone_number: systemStudentForm.phone_number?.trim() || null,
+        parent_phone: systemStudentForm.parent_phone?.trim() || null,
+        parent_name: systemStudentForm.parent_name?.trim() || null,
+        date_of_birth: systemStudentForm.date_of_birth || null,
+        gender: systemStudentForm.gender || null,
+        school: systemStudentForm.school?.trim() || null,
+        student_code: systemStudentForm.student_code?.trim() || null,
+        grade_level: systemStudentForm.grade_level ? parseInt(systemStudentForm.grade_level, 10) : null,
+        notes: systemStudentForm.notes?.trim() || null,
       });
       await refreshAllStudents();
       setIsSystemStudentModalOpen(false);
-      setSystemStudentForm({ full_name: '', email: '', password: 'Password@123!' });
+      setSystemStudentForm({
+        full_name: '',
+        email: '',
+        password: 'Password@123!',
+        phone_number: '',
+        parent_phone: '',
+        parent_name: '',
+        date_of_birth: '',
+        gender: 'Nam',
+        school: '',
+        student_code: '',
+        grade_level: '',
+        notes: '',
+      });
       toast.success('Đã thêm học sinh vào hệ thống thành công!');
     } catch (err) {
       toast.error(err.response?.data?.detail || 'Không thể thêm học sinh');
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleOpenEditStudent = (student) => {
+    setEditingStudent(student);
+    setEditStudentForm({
+      full_name: student.full_name || '',
+      phone_number: student.phone_number || '',
+      parent_phone: student.parent_phone || '',
+      parent_name: student.parent_name || '',
+      date_of_birth: student.date_of_birth || '',
+      gender: student.gender || 'Nam',
+      school: student.school || '',
+      student_code: student.student_code || '',
+      grade_level: student.grade_level ? String(student.grade_level) : '',
+      notes: student.notes || '',
+      password: '',
+    });
+    setIsEditStudentModalOpen(true);
+  };
+
+  const handleSaveEditStudent = async (e) => {
+    e.preventDefault();
+    if (!editingStudent) return;
+    setActionLoading(true);
+    try {
+      const payload = {
+        full_name: editStudentForm.full_name.trim(),
+        phone_number: editStudentForm.phone_number?.trim() || null,
+        parent_phone: editStudentForm.parent_phone?.trim() || null,
+        parent_name: editStudentForm.parent_name?.trim() || null,
+        date_of_birth: editStudentForm.date_of_birth || null,
+        gender: editStudentForm.gender || null,
+        school: editStudentForm.school?.trim() || null,
+        student_code: editStudentForm.student_code?.trim() || null,
+        grade_level: editStudentForm.grade_level ? parseInt(editStudentForm.grade_level, 10) : null,
+        notes: editStudentForm.notes?.trim() || null,
+      };
+      if (editStudentForm.password.trim()) {
+        payload.password = editStudentForm.password.trim();
+      }
+
+      await api.put(`/classrooms/students/${editingStudent.id}`, payload);
+      await refreshAllStudents();
+      if (selectedClass) {
+        const list = await refreshStudentsInClass(selectedClass.id);
+        setStudentsInClass(list);
+      }
+      setIsEditStudentModalOpen(false);
+      setEditingStudent(null);
+      toast.success('Đã cập nhật thông tin học sinh thành công!');
+    } catch (err) {
+      toast.error(err.response?.data?.detail || 'Không thể cập nhật thông tin học sinh');
     } finally {
       setActionLoading(false);
     }
@@ -539,23 +673,49 @@ export function ClassroomManagement() {
                             key={s.id}
                             className="p-3.5 bg-slate-50 hover:bg-white hover:shadow-sm border border-slate-200/80 rounded-xl flex items-center justify-between transition"
                           >
-                            <div className="flex items-center space-x-3.5">
-                              <div className="w-9 h-9 rounded-xl bg-indigo-100 text-indigo-700 font-extrabold flex items-center justify-center text-sm shadow-xs">
+                            <div className="flex items-center space-x-3.5 min-w-0">
+                              <div className="w-9 h-9 rounded-xl bg-indigo-100 text-indigo-700 font-extrabold flex items-center justify-center text-sm shadow-xs shrink-0">
                                 {(s.full_name || s.email || '?').charAt(0).toUpperCase()}
                               </div>
-                              <div>
-                                <h4 className="font-bold text-sm text-slate-800">{s.full_name || 'Chưa đặt tên'}</h4>
-                                <p className="text-xs text-slate-400 font-mono">{s.email}</p>
+                              <div className="min-w-0">
+                                <h4 className="font-bold text-sm text-slate-800 truncate">{s.full_name || 'Chưa đặt tên'}</h4>
+                                <div className="flex flex-wrap items-center gap-2 mt-0.5 text-xs">
+                                  <span className="text-slate-400 font-mono text-[11px]">{s.email}</span>
+                                  {s.phone_number && (
+                                    <span className="text-[11px] text-slate-600 bg-slate-100 px-1.5 py-0.5 rounded flex items-center space-x-1">
+                                      <Phone className="w-2.5 h-2.5 text-slate-400" />
+                                      <span>{s.phone_number}</span>
+                                    </span>
+                                  )}
+                                  {s.parent_phone && (
+                                    <span className="text-[11px] text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded flex items-center space-x-1" title={`PH: ${s.parent_name || 'Phụ huynh'}`}>
+                                      <HeartHandshake className="w-2.5 h-2.5" />
+                                      <span>PH: {s.parent_phone}</span>
+                                    </span>
+                                  )}
+                                  {s.grade_level && (
+                                    <span className="text-[11px] text-indigo-700 bg-indigo-50 px-1.5 py-0.5 rounded font-semibold">
+                                      Khối {s.grade_level}
+                                    </span>
+                                  )}
+                                </div>
                               </div>
                             </div>
 
-                            <div className="flex items-center space-x-3">
-                              <span className="text-[11px] bg-emerald-50 text-emerald-700 border border-emerald-200/60 font-bold px-2.5 py-0.5 rounded-full">
+                            <div className="flex items-center space-x-1.5 shrink-0">
+                              <span className="text-[11px] bg-emerald-50 text-emerald-700 border border-emerald-200/60 font-bold px-2.5 py-0.5 rounded-full hidden sm:inline-block">
                                 Hoạt động
                               </span>
                               <button
+                                onClick={() => handleOpenEditStudent(s)}
+                                className="text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 p-1.5 rounded-lg transition"
+                                title="Chỉnh sửa thông tin học sinh"
+                              >
+                                <Pencil className="w-4 h-4" />
+                              </button>
+                              <button
                                 onClick={() => handleRemoveStudentFromClass(s.id, s.full_name || s.email)}
-                                className="text-slate-400 hover:text-rose-600 p-1.5 rounded-lg transition"
+                                className="text-slate-400 hover:text-rose-600 hover:bg-rose-50 p-1.5 rounded-lg transition"
                                 title="Xóa học sinh khỏi lớp"
                               >
                                 <UserMinus className="w-4 h-4" />
@@ -588,8 +748,8 @@ export function ClassroomManagement() {
                   <thead>
                     <tr className="bg-slate-50 border-b border-slate-200 text-[11px] font-bold text-slate-500 uppercase tracking-wider">
                       <th className="p-4 rounded-l-xl">Học sinh</th>
-                      <th className="p-4">Email</th>
-                      <th className="p-4">Vai trò</th>
+                      <th className="p-4">Liên hệ &amp; Phụ huynh</th>
+                      <th className="p-4">Trường &amp; Khối</th>
                       <th className="p-4">Trạng thái</th>
                       <th className="p-4 rounded-r-xl text-right">Thao tác</th>
                     </tr>
@@ -599,17 +759,41 @@ export function ClassroomManagement() {
                       <tr key={s.id} className="hover:bg-slate-50/80 transition">
                         <td className="p-4">
                           <div className="flex items-center space-x-3">
-                            <div className="w-8 h-8 rounded-xl bg-indigo-100 text-indigo-700 font-bold flex items-center justify-center text-xs">
+                            <div className="w-8 h-8 rounded-xl bg-indigo-100 text-indigo-700 font-bold flex items-center justify-center text-xs shrink-0">
                               {(s.full_name || s.email || '?').charAt(0).toUpperCase()}
                             </div>
-                            <span className="font-bold text-slate-800">{s.full_name || 'Chưa cập nhật'}</span>
+                            <div>
+                              <div className="font-bold text-slate-800">{s.full_name || 'Chưa cập nhật'}</div>
+                              <div className="text-[11px] text-slate-500 font-mono">{s.email}</div>
+                              {s.student_code && <div className="text-[10px] text-indigo-600 font-mono mt-0.5">MS: {s.student_code}</div>}
+                            </div>
                           </div>
                         </td>
-                        <td className="p-4 text-slate-600 font-mono text-xs">{s.email}</td>
-                        <td className="p-4">
-                          <span className="inline-flex items-center space-x-1 px-2.5 py-0.5 bg-indigo-50 border border-indigo-200/60 text-indigo-700 rounded-full text-xs font-semibold">
-                            <span>Học sinh</span>
-                          </span>
+                        <td className="p-4 text-xs">
+                          {s.phone_number ? (
+                            <div className="text-slate-800 font-medium flex items-center space-x-1">
+                              <Phone className="w-3 h-3 text-slate-400" />
+                              <span>{s.phone_number}</span>
+                            </div>
+                          ) : (
+                            <span className="text-slate-400 italic">Chưa có SĐT</span>
+                          )}
+                          {s.parent_phone && (
+                            <div className="text-emerald-700 mt-0.5 flex items-center space-x-1" title={s.parent_name ? `PH: ${s.parent_name}` : ''}>
+                              <HeartHandshake className="w-3 h-3 text-emerald-600" />
+                              <span>PH: {s.parent_phone} {s.parent_name && `(${s.parent_name})`}</span>
+                            </div>
+                          )}
+                        </td>
+                        <td className="p-4 text-xs">
+                          {s.school && <div className="text-slate-800 font-medium">{s.school}</div>}
+                          {s.grade_level ? (
+                            <span className="inline-block mt-0.5 px-2 py-0.5 bg-indigo-50 text-indigo-700 rounded-md font-bold text-[10px]">
+                              Khối {s.grade_level}
+                            </span>
+                          ) : (
+                            <span className="text-slate-400 italic text-[11px]">Chưa chọn khối</span>
+                          )}
                         </td>
                         <td className="p-4">
                           <span className="inline-flex items-center px-2.5 py-0.5 bg-emerald-50 text-emerald-700 border border-emerald-200/60 rounded-full text-xs font-bold">
@@ -617,13 +801,22 @@ export function ClassroomManagement() {
                           </span>
                         </td>
                         <td className="p-4 text-right">
-                          <button
-                            onClick={() => handleDeleteSystemStudent(s.id, s.full_name || s.email)}
-                            className="text-slate-400 hover:text-rose-600 p-1.5 rounded-lg transition inline-flex items-center space-x-1"
-                            title="Xóa học sinh khỏi hệ thống"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
+                          <div className="flex items-center justify-end space-x-1">
+                            <button
+                              onClick={() => handleOpenEditStudent(s)}
+                              className="text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 p-1.5 rounded-lg transition"
+                              title="Chỉnh sửa thông tin học sinh"
+                            >
+                              <Pencil className="w-4 h-4" />
+                            </button>
+                            <button
+                              onClick={() => handleDeleteSystemStudent(s.id, s.full_name || s.email)}
+                              className="text-slate-400 hover:text-rose-600 hover:bg-rose-50 p-1.5 rounded-lg transition"
+                              title="Xóa học sinh khỏi hệ thống"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </div>
                         </td>
                       </tr>
                     ))}
@@ -640,42 +833,136 @@ export function ClassroomManagement() {
             title="Thêm Học Sinh Mới Vào Hệ Thống"
           >
             <form onSubmit={handleCreateSystemStudent} className="space-y-4">
-              <div>
-                <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Họ và tên học sinh *</label>
-                <input
-                  type="text"
-                  required
-                  placeholder="Ví dụ: Nguyễn Văn An"
-                  value={systemStudentForm.full_name}
-                  onChange={e => setSystemStudentForm({ ...systemStudentForm, full_name: e.target.value })}
-                  className="w-full px-4 py-2.5 rounded-xl border border-slate-300 text-sm focus:outline-none focus:border-indigo-600 focus:ring-2 focus:ring-indigo-100"
-                />
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Họ và tên học sinh *</label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="Ví dụ: Nguyễn Văn An"
+                    value={systemStudentForm.full_name}
+                    onChange={e => setSystemStudentForm({ ...systemStudentForm, full_name: e.target.value })}
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm focus:outline-none focus:border-indigo-600 focus:ring-2 focus:ring-indigo-100"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Email đăng nhập *</label>
+                  <input
+                    type="email"
+                    required
+                    placeholder="hocsinh@gmail.com"
+                    value={systemStudentForm.email}
+                    onChange={e => setSystemStudentForm({ ...systemStudentForm, email: e.target.value })}
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm focus:outline-none focus:border-indigo-600 focus:ring-2 focus:ring-indigo-100"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Mật khẩu khởi tạo</label>
+                  <input
+                    type="text"
+                    value={systemStudentForm.password}
+                    onChange={e => setSystemStudentForm({ ...systemStudentForm, password: e.target.value })}
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm font-mono focus:outline-none focus:border-indigo-600 focus:ring-2 focus:ring-indigo-100"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Số điện thoại học sinh</label>
+                  <input
+                    type="tel"
+                    placeholder="0912 345 678"
+                    value={systemStudentForm.phone_number}
+                    onChange={e => setSystemStudentForm({ ...systemStudentForm, phone_number: e.target.value })}
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm focus:outline-none focus:border-indigo-600 focus:ring-2 focus:ring-indigo-100"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Khối lớp</label>
+                  <select
+                    value={systemStudentForm.grade_level}
+                    onChange={e => setSystemStudentForm({ ...systemStudentForm, grade_level: e.target.value })}
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm focus:outline-none focus:border-indigo-600 focus:ring-2 focus:ring-indigo-100"
+                  >
+                    <option value="">Chọn khối lớp</option>
+                    {[...Array(12)].map((_, i) => (
+                      <option key={i + 1} value={i + 1}>Khối {i + 1}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Giới tính</label>
+                  <select
+                    value={systemStudentForm.gender}
+                    onChange={e => setSystemStudentForm({ ...systemStudentForm, gender: e.target.value })}
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm focus:outline-none focus:border-indigo-600 focus:ring-2 focus:ring-indigo-100"
+                  >
+                    <option value="Nam">Nam</option>
+                    <option value="Nữ">Nữ</option>
+                    <option value="Khác">Khác</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Trường học</label>
+                  <input
+                    type="text"
+                    placeholder="THPT Chuyên..."
+                    value={systemStudentForm.school}
+                    onChange={e => setSystemStudentForm({ ...systemStudentForm, school: e.target.value })}
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm focus:outline-none focus:border-indigo-600 focus:ring-2 focus:ring-indigo-100"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Mã học sinh</label>
+                  <input
+                    type="text"
+                    placeholder="HS-01"
+                    value={systemStudentForm.student_code}
+                    onChange={e => setSystemStudentForm({ ...systemStudentForm, student_code: e.target.value })}
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm font-mono focus:outline-none focus:border-indigo-600 focus:ring-2 focus:ring-indigo-100"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Họ tên phụ huynh</label>
+                  <input
+                    type="text"
+                    placeholder="Nguyễn Văn B (Bố)"
+                    value={systemStudentForm.parent_name}
+                    onChange={e => setSystemStudentForm({ ...systemStudentForm, parent_name: e.target.value })}
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm focus:outline-none focus:border-indigo-600 focus:ring-2 focus:ring-indigo-100"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 uppercase mb-1">SĐT phụ huynh</label>
+                  <input
+                    type="tel"
+                    placeholder="0987 654 321"
+                    value={systemStudentForm.parent_phone}
+                    onChange={e => setSystemStudentForm({ ...systemStudentForm, parent_phone: e.target.value })}
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm focus:outline-none focus:border-indigo-600 focus:ring-2 focus:ring-indigo-100"
+                  />
+                </div>
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Email đăng nhập *</label>
-                <input
-                  type="email"
-                  required
-                  placeholder="hocsinh@gmail.com"
-                  value={systemStudentForm.email}
-                  onChange={e => setSystemStudentForm({ ...systemStudentForm, email: e.target.value })}
-                  className="w-full px-4 py-2.5 rounded-xl border border-slate-300 text-sm focus:outline-none focus:border-indigo-600 focus:ring-2 focus:ring-indigo-100"
+                <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Ghi chú học lực / Mục tiêu</label>
+                <textarea
+                  rows={2}
+                  placeholder="Ghi chú về học sinh, mục tiêu điểm số..."
+                  value={systemStudentForm.notes}
+                  onChange={e => setSystemStudentForm({ ...systemStudentForm, notes: e.target.value })}
+                  className="w-full px-3.5 py-2 rounded-xl border border-slate-300 text-sm focus:outline-none focus:border-indigo-600 focus:ring-2 focus:ring-indigo-100 resize-none"
                 />
               </div>
 
-              <div>
-                <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Mật khẩu mặc định</label>
-                <input
-                  type="text"
-                  value={systemStudentForm.password}
-                  onChange={e => setSystemStudentForm({ ...systemStudentForm, password: e.target.value })}
-                  className="w-full px-4 py-2.5 rounded-xl border border-slate-300 text-sm font-mono focus:outline-none focus:border-indigo-600 focus:ring-2 focus:ring-indigo-100"
-                />
-                <p className="text-[11px] text-slate-500 mt-1">Học sinh có thể đổi mật khẩu sau khi đăng nhập</p>
-              </div>
-
-              <div className="flex justify-end space-x-3 pt-3">
+              <div className="flex justify-end space-x-3 pt-3 border-t border-slate-100">
                 <button
                   type="button"
                   onClick={() => setIsSystemStudentModalOpen(false)}
@@ -765,43 +1052,137 @@ export function ClassroomManagement() {
 
               {studentModalMode === 'new' ? (
                 /* Quick Add Form */
-                <form onSubmit={handleQuickCreateStudent} className="space-y-3.5 pt-1">
-                  <div>
-                    <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Họ và tên học sinh *</label>
-                    <input
-                      type="text"
-                      required
-                      placeholder="Ví dụ: Nguyễn Văn An"
-                      value={newStudentForm.full_name}
-                      onChange={e => setNewStudentForm({ ...newStudentForm, full_name: e.target.value })}
-                      className="w-full px-4 py-2.5 rounded-xl border border-slate-300 text-sm focus:outline-none focus:border-indigo-600 focus:ring-2 focus:ring-indigo-100"
-                    />
+                <form onSubmit={handleQuickCreateStudent} className="space-y-4 pt-1">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                    <div>
+                      <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Họ và tên học sinh *</label>
+                      <input
+                        type="text"
+                        required
+                        placeholder="Ví dụ: Nguyễn Văn An"
+                        value={newStudentForm.full_name}
+                        onChange={e => setNewStudentForm({ ...newStudentForm, full_name: e.target.value })}
+                        className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm focus:outline-none focus:border-indigo-600 focus:ring-2 focus:ring-indigo-100"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Email đăng nhập *</label>
+                      <input
+                        type="email"
+                        required
+                        placeholder="hocsinh@gmail.com"
+                        value={newStudentForm.email}
+                        onChange={e => setNewStudentForm({ ...newStudentForm, email: e.target.value })}
+                        className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm focus:outline-none focus:border-indigo-600 focus:ring-2 focus:ring-indigo-100"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Mật khẩu khởi tạo</label>
+                      <input
+                        type="text"
+                        value={newStudentForm.password}
+                        onChange={e => setNewStudentForm({ ...newStudentForm, password: e.target.value })}
+                        className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm font-mono focus:outline-none focus:border-indigo-600 focus:ring-2 focus:ring-indigo-100"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Số điện thoại học sinh</label>
+                      <input
+                        type="tel"
+                        placeholder="0912 345 678"
+                        value={newStudentForm.phone_number}
+                        onChange={e => setNewStudentForm({ ...newStudentForm, phone_number: e.target.value })}
+                        className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm focus:outline-none focus:border-indigo-600 focus:ring-2 focus:ring-indigo-100"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Khối lớp</label>
+                      <select
+                        value={newStudentForm.grade_level}
+                        onChange={e => setNewStudentForm({ ...newStudentForm, grade_level: e.target.value })}
+                        className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm focus:outline-none focus:border-indigo-600 focus:ring-2 focus:ring-indigo-100"
+                      >
+                        <option value="">Chọn khối lớp</option>
+                        {[...Array(12)].map((_, i) => (
+                          <option key={i + 1} value={i + 1}>Khối {i + 1}</option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Giới tính</label>
+                      <select
+                        value={newStudentForm.gender}
+                        onChange={e => setNewStudentForm({ ...newStudentForm, gender: e.target.value })}
+                        className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm focus:outline-none focus:border-indigo-600 focus:ring-2 focus:ring-indigo-100"
+                      >
+                        <option value="Nam">Nam</option>
+                        <option value="Nữ">Nữ</option>
+                        <option value="Khác">Khác</option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Trường học</label>
+                      <input
+                        type="text"
+                        placeholder="THPT Chuyên..."
+                        value={newStudentForm.school}
+                        onChange={e => setNewStudentForm({ ...newStudentForm, school: e.target.value })}
+                        className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm focus:outline-none focus:border-indigo-600 focus:ring-2 focus:ring-indigo-100"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Mã học sinh</label>
+                      <input
+                        type="text"
+                        placeholder="HS-01"
+                        value={newStudentForm.student_code}
+                        onChange={e => setNewStudentForm({ ...newStudentForm, student_code: e.target.value })}
+                        className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm font-mono focus:outline-none focus:border-indigo-600 focus:ring-2 focus:ring-indigo-100"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Họ tên phụ huynh</label>
+                      <input
+                        type="text"
+                        placeholder="Nguyễn Văn B (Bố)"
+                        value={newStudentForm.parent_name}
+                        onChange={e => setNewStudentForm({ ...newStudentForm, parent_name: e.target.value })}
+                        className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm focus:outline-none focus:border-indigo-600 focus:ring-2 focus:ring-indigo-100"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-bold text-slate-700 uppercase mb-1">SĐT phụ huynh</label>
+                      <input
+                        type="tel"
+                        placeholder="0987 654 321"
+                        value={newStudentForm.parent_phone}
+                        onChange={e => setNewStudentForm({ ...newStudentForm, parent_phone: e.target.value })}
+                        className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm focus:outline-none focus:border-indigo-600 focus:ring-2 focus:ring-indigo-100"
+                      />
+                    </div>
                   </div>
 
                   <div>
-                    <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Email đăng nhập *</label>
-                    <input
-                      type="email"
-                      required
-                      placeholder="hocsinh@gmail.com"
-                      value={newStudentForm.email}
-                      onChange={e => setNewStudentForm({ ...newStudentForm, email: e.target.value })}
-                      className="w-full px-4 py-2.5 rounded-xl border border-slate-300 text-sm focus:outline-none focus:border-indigo-600 focus:ring-2 focus:ring-indigo-100"
+                    <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Ghi chú học lực / Mục tiêu</label>
+                    <textarea
+                      rows={2}
+                      placeholder="Ghi chú về học sinh, mục tiêu điểm số..."
+                      value={newStudentForm.notes}
+                      onChange={e => setNewStudentForm({ ...newStudentForm, notes: e.target.value })}
+                      className="w-full px-3.5 py-2 rounded-xl border border-slate-300 text-sm focus:outline-none focus:border-indigo-600 focus:ring-2 focus:ring-indigo-100 resize-none"
                     />
                   </div>
 
-                  <div>
-                    <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Mật khẩu mặc định</label>
-                    <input
-                      type="text"
-                      value={newStudentForm.password}
-                      onChange={e => setNewStudentForm({ ...newStudentForm, password: e.target.value })}
-                      className="w-full px-4 py-2.5 rounded-xl border border-slate-300 text-sm font-mono focus:outline-none focus:border-indigo-600 focus:ring-2 focus:ring-indigo-100"
-                    />
-                    <p className="text-[11px] text-slate-500 mt-1">Học sinh có thể đổi mật khẩu sau khi đăng nhập</p>
-                  </div>
-
-                  <div className="flex justify-end space-x-3 pt-3">
+                  <div className="flex justify-end space-x-3 pt-3 border-t border-slate-100">
                     <button
                       type="button"
                       onClick={() => setIsStudentModalOpen(false)}
@@ -977,6 +1358,166 @@ export function ClassroomManagement() {
                 </div>
               </div>
             </div>
+          </Modal>
+
+          {/* Modal: Edit Student Information */}
+          <Modal
+            isOpen={isEditStudentModalOpen}
+            onClose={() => {
+              setIsEditStudentModalOpen(false);
+              setEditingStudent(null);
+            }}
+            title={`Chỉnh Sửa Thông Tin Học Sinh "${editingStudent?.full_name || editingStudent?.email}"`}
+          >
+            <form onSubmit={handleSaveEditStudent} className="space-y-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Họ và tên học sinh *</label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="Ví dụ: Nguyễn Văn An"
+                    value={editStudentForm.full_name}
+                    onChange={e => setEditStudentForm({ ...editStudentForm, full_name: e.target.value })}
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm focus:outline-none focus:border-indigo-600 focus:ring-2 focus:ring-indigo-100"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Email đăng nhập</label>
+                  <input
+                    type="email"
+                    disabled
+                    value={editingStudent?.email || ''}
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 bg-slate-100 text-slate-500 text-sm font-mono cursor-not-allowed select-all"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Đổi mật khẩu mới (Tùy chọn)</label>
+                  <input
+                    type="text"
+                    placeholder="Để trống nếu không đổi"
+                    value={editStudentForm.password}
+                    onChange={e => setEditStudentForm({ ...editStudentForm, password: e.target.value })}
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm font-mono focus:outline-none focus:border-indigo-600 focus:ring-2 focus:ring-indigo-100"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Số điện thoại học sinh</label>
+                  <input
+                    type="tel"
+                    placeholder="0912 345 678"
+                    value={editStudentForm.phone_number}
+                    onChange={e => setEditStudentForm({ ...editStudentForm, phone_number: e.target.value })}
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm focus:outline-none focus:border-indigo-600 focus:ring-2 focus:ring-indigo-100"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Khối lớp</label>
+                  <select
+                    value={editStudentForm.grade_level}
+                    onChange={e => setEditStudentForm({ ...editStudentForm, grade_level: e.target.value })}
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm focus:outline-none focus:border-indigo-600 focus:ring-2 focus:ring-indigo-100"
+                  >
+                    <option value="">Chọn khối lớp</option>
+                    {[...Array(12)].map((_, i) => (
+                      <option key={i + 1} value={i + 1}>Khối {i + 1}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Giới tính</label>
+                  <select
+                    value={editStudentForm.gender}
+                    onChange={e => setEditStudentForm({ ...editStudentForm, gender: e.target.value })}
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm focus:outline-none focus:border-indigo-600 focus:ring-2 focus:ring-indigo-100"
+                  >
+                    <option value="Nam">Nam</option>
+                    <option value="Nữ">Nữ</option>
+                    <option value="Khác">Khác</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Trường học</label>
+                  <input
+                    type="text"
+                    placeholder="THPT Chuyên..."
+                    value={editStudentForm.school}
+                    onChange={e => setEditStudentForm({ ...editStudentForm, school: e.target.value })}
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm focus:outline-none focus:border-indigo-600 focus:ring-2 focus:ring-indigo-100"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Mã học sinh</label>
+                  <input
+                    type="text"
+                    placeholder="HS-01"
+                    value={editStudentForm.student_code}
+                    onChange={e => setEditStudentForm({ ...editStudentForm, student_code: e.target.value })}
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm font-mono focus:outline-none focus:border-indigo-600 focus:ring-2 focus:ring-indigo-100"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Họ tên phụ huynh</label>
+                  <input
+                    type="text"
+                    placeholder="Nguyễn Văn B (Bố)"
+                    value={editStudentForm.parent_name}
+                    onChange={e => setEditStudentForm({ ...editStudentForm, parent_name: e.target.value })}
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm focus:outline-none focus:border-indigo-600 focus:ring-2 focus:ring-indigo-100"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 uppercase mb-1">SĐT phụ huynh</label>
+                  <input
+                    type="tel"
+                    placeholder="0987 654 321"
+                    value={editStudentForm.parent_phone}
+                    onChange={e => setEditStudentForm({ ...editStudentForm, parent_phone: e.target.value })}
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm focus:outline-none focus:border-indigo-600 focus:ring-2 focus:ring-indigo-100"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Ghi chú học lực / Mục tiêu</label>
+                <textarea
+                  rows={2}
+                  placeholder="Ghi chú về học sinh, mục tiêu điểm số..."
+                  value={editStudentForm.notes}
+                  onChange={e => setEditStudentForm({ ...editStudentForm, notes: e.target.value })}
+                  className="w-full px-3.5 py-2 rounded-xl border border-slate-300 text-sm focus:outline-none focus:border-indigo-600 focus:ring-2 focus:ring-indigo-100 resize-none"
+                />
+              </div>
+
+              <div className="flex justify-end space-x-3 pt-3 border-t border-slate-100">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsEditStudentModalOpen(false);
+                    setEditingStudent(null);
+                  }}
+                  className="px-4 py-2.5 border border-slate-300 rounded-xl text-xs font-bold text-slate-700 hover:bg-slate-50"
+                >
+                  Hủy
+                </button>
+                <button
+                  type="submit"
+                  disabled={actionLoading}
+                  className="px-5 py-2.5 bg-indigo-600 text-white rounded-xl text-xs font-bold hover:bg-indigo-700 transition shadow-sm disabled:opacity-50"
+                >
+                  {actionLoading ? 'Đang lưu...' : 'Lưu thông tin học sinh'}
+                </button>
+              </div>
+            </form>
           </Modal>
 
           <EditAssignmentModal

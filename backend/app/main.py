@@ -36,7 +36,22 @@ async def init_db_tables():
             "CREATE INDEX IF NOT EXISTS idx_exams_creator ON exams (created_by_id, exam_type)",
             "CREATE INDEX IF NOT EXISTS idx_submissions_exam ON exam_submissions (exam_id, student_id)",
         ]
+        user_columns = [
+            "ALTER TABLE users ADD COLUMN IF NOT EXISTS phone_number VARCHAR",
+            "ALTER TABLE users ADD COLUMN IF NOT EXISTS parent_phone VARCHAR",
+            "ALTER TABLE users ADD COLUMN IF NOT EXISTS parent_name VARCHAR",
+            "ALTER TABLE users ADD COLUMN IF NOT EXISTS date_of_birth VARCHAR",
+            "ALTER TABLE users ADD COLUMN IF NOT EXISTS gender VARCHAR",
+            "ALTER TABLE users ADD COLUMN IF NOT EXISTS school VARCHAR",
+            "ALTER TABLE users ADD COLUMN IF NOT EXISTS student_code VARCHAR",
+            "ALTER TABLE users ADD COLUMN IF NOT EXISTS notes VARCHAR",
+        ]
         async with engine.begin() as conn:
+            for col_sql in user_columns:
+                try:
+                    await conn.execute(text(col_sql))
+                except Exception:
+                    pass
             for idx_sql in indexes:
                 try:
                     await conn.execute(text(idx_sql))

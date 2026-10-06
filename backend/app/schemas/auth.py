@@ -18,6 +18,14 @@ def validate_strong_password(v: str) -> str:
 class UserBase(BaseModel):
     email: EmailStr
     full_name: str
+    phone_number: Optional[str] = None
+    parent_phone: Optional[str] = None
+    parent_name: Optional[str] = None
+    date_of_birth: Optional[str] = None
+    gender: Optional[str] = None
+    school: Optional[str] = None
+    student_code: Optional[str] = None
+    notes: Optional[str] = None
 
 class UserCreate(UserBase):
     password: str
@@ -37,12 +45,43 @@ class UserResponse(UserBase):
     is_active: bool
     grade_level: Optional[int] = None
 
+class ProfileUpdateRequest(BaseModel):
+    full_name: Optional[str] = None
+    phone_number: Optional[str] = None
+    parent_phone: Optional[str] = None
+    parent_name: Optional[str] = None
+    date_of_birth: Optional[str] = None
+    gender: Optional[str] = None
+    school: Optional[str] = None
+    student_code: Optional[str] = None
+    grade_level: Optional[int] = None
+    notes: Optional[str] = None
+
+class ChangePasswordRequest(BaseModel):
+    current_password: str
+    new_password: str
+
+    @field_validator("new_password")
+    @classmethod
+    def validate_new_pwd(cls, v: str) -> str:
+        if len(v) < 6:
+            raise ValueError("Mật khẩu mới phải có ít nhất 6 ký tự")
+        return v
+
 class UserUpdate(BaseModel):
     email: Optional[EmailStr] = None
     full_name: Optional[str] = None
     password: Optional[str] = None
     role: Optional[str] = None
     grade_level: Optional[int] = None
+    phone_number: Optional[str] = None
+    parent_phone: Optional[str] = None
+    parent_name: Optional[str] = None
+    date_of_birth: Optional[str] = None
+    gender: Optional[str] = None
+    school: Optional[str] = None
+    student_code: Optional[str] = None
+    notes: Optional[str] = None
 
     @field_validator("password")
     @classmethod

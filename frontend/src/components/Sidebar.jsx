@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import { 
   LayoutDashboard, BookOpen, Users, Award, 
-  BarChart2, Cpu, FileText, Send, X, Sparkles
+  BarChart2, Cpu, FileText, Send, X, Sparkles, UserCheck
 } from 'lucide-react';
 
 export function Sidebar({ role }) {
@@ -39,6 +39,12 @@ export function Sidebar({ role }) {
           items: [
             { to: '/student/classrooms', icon: Users, label: 'Lớp học của tôi' },
             { to: '/student/history', icon: Award, label: 'Lịch sử & Điểm số' },
+          ]
+        },
+        {
+          title: 'Tài khoản & Cài đặt',
+          items: [
+            { to: '/student/profile', icon: UserCheck, label: 'Hồ sơ & Mật khẩu' },
           ]
         }
       ];
