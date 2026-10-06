@@ -684,8 +684,8 @@ async def get_student_classrooms_detailed(
         .join(ClassroomStudent, ClassroomStudent.classroom_id == Classroom.id)
         .filter(
             ClassroomStudent.student_id == current_user.id,
-            ClassroomStudent.is_active == True,
-            Classroom.is_deleted == False
+            or_(ClassroomStudent.is_active == True, ClassroomStudent.is_active.is_(None)),
+            or_(Classroom.is_deleted == False, Classroom.is_deleted.is_(None))
         )
     )
     classrooms = cr_res.scalars().all()
@@ -712,20 +712,28 @@ async def get_student_classrooms_detailed(
                     "score": sub_info.get("score") if sub_info else None
                 })
 
+        teacher_name = c.instructor.full_name if c.instructor and c.instructor.full_name else (c.instructor.username if c.instructor else "Thầy/Cô phụ trách")
+        teacher_email = c.instructor.email if c.instructor else ""
+        student_count = len([s for s in c.students if getattr(s, 'is_active', True)]) or 1
+
         items.append({
             "id": c.id,
             "name": c.name,
             "description": c.description,
             "code": c.code,
-            "instructor_name": c.instructor.full_name if c.instructor else "Giáo viên",
-            "instructor_email": c.instructor.email if c.instructor else "",
-            "students_count": len([s for s in c.students if getattr(s, 'is_active', True)]),
+            "instructor_name": teacher_name,
+            "instructor_email": teacher_email,
+            "teacher_name": teacher_name,
+            "teacher_email": teacher_email,
+            "students_count": student_count,
+            "student_count": student_count,
             "assignments_count": len(active_assignments),
             "pending_assignments_count": len([a for a in active_assignments if not a["is_completed"]]),
+            "active_assignments_count": len([a for a in active_assignments if not a["is_completed"]]),
             "assignments": active_assignments
         })
 
-    return {"items": items, "total": len(items)}
+    return items
 
 
 @router.get("/practice/questions", summary="Lấy câu hỏi tự luyện cho học sinh")

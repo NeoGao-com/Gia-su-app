@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Navbar } from '../../components/Navbar';
 import { Sidebar } from '../../components/Sidebar';
-import api from '../../api/axios';
+import api, { clearApiCache } from '../../api/axios';
 import { 
   Users, KeyRound, BookOpen, Clock, Calendar, CheckCircle2, 
   Search, ArrowRight, ShieldCheck, Copy, Check, Sparkles, GraduationCap 
@@ -23,13 +23,28 @@ export function StudentClassrooms() {
     try {
       setLoading(true);
       const res = await api.get('/student/classrooms');
-      setClassrooms(Array.isArray(res.data) ? res.data : []);
+      const raw = Array.isArray(res.data) ? res.data : (res.data?.items || []);
+      const mapped = raw.map(c => ({
+        ...c,
+        teacher_name: c.teacher_name || c.instructor_name || c.instructor?.full_name || 'Thầy/Cô phụ trách',
+        teacher_email: c.teacher_email || c.instructor_email || c.instructor?.email || '',
+        student_count: c.student_count ?? c.students_count ?? (Array.isArray(c.students) ? c.students.length : 1),
+        active_assignments_count: c.active_assignments_count ?? c.pending_assignments_count ?? (Array.isArray(c.assignments) ? c.assignments.length : 0),
+      }));
+      setClassrooms(mapped);
     } catch {
       // Fallback to standard classrooms endpoint
       try {
         const fallback = await api.get('/classrooms', { params: { limit: 50 } });
         const items = Array.isArray(fallback.data?.items) ? fallback.data.items : (Array.isArray(fallback.data) ? fallback.data : []);
-        setClassrooms(items);
+        const mapped = items.map(c => ({
+          ...c,
+          teacher_name: c.teacher_name || c.instructor_name || c.instructor?.full_name || 'Thầy/Cô phụ trách',
+          teacher_email: c.teacher_email || c.instructor_email || c.instructor?.email || '',
+          student_count: c.student_count ?? c.students_count ?? (Array.isArray(c.students) ? c.students.length : 1),
+          active_assignments_count: c.active_assignments_count ?? c.pending_assignments_count ?? (Array.isArray(c.assignments) ? c.assignments.length : 0),
+        }));
+        setClassrooms(mapped);
       } catch {
         setClassrooms([]);
       }
@@ -50,6 +65,7 @@ export function StudentClassrooms() {
     setJoining(true);
     try {
       const res = await api.post('/classrooms/join', { code });
+      clearApiCache();
       toast.success(`Chúc mừng bạn đã gia nhập lớp "${res.data?.name || code}"!`);
       setJoinCode('');
       fetchClassrooms();
