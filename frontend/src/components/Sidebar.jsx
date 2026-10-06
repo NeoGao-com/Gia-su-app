@@ -32,7 +32,6 @@ export function Sidebar({ role }) {
             { to: '/student', icon: LayoutDashboard, label: 'Tổng quan học tập' },
             { to: '/student/assignments', icon: Send, label: 'Bài tập cần nộp' },
             { to: '/student/exams', icon: FileText, label: 'Đề thi & Kiểm tra' },
-            { to: '/student/practice', icon: Sparkles, label: 'Luyện tập tự do' },
           ]
         },
         {

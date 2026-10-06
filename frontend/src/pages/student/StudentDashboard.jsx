@@ -244,15 +244,15 @@ export function StudentDashboard() {
               </Link>
 
               <Link
-                to="/student/practice"
+                to="/student/history"
                 className="p-4 rounded-xl bg-slate-50 hover:bg-white hover:border-amber-300 border border-slate-200/80 transition group flex flex-col justify-between"
               >
                 <div className="w-8 h-8 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center mb-2 group-hover:scale-105 transition">
-                  <Sparkles className="w-4 h-4" />
+                  <Award className="w-4 h-4" />
                 </div>
                 <div>
-                  <div className="font-semibold text-xs sm:text-sm text-slate-800">Luyện tập tự do</div>
-                  <div className="text-[11px] text-slate-500 mt-0.5">Ôn tập theo chuyên đề</div>
+                  <div className="font-semibold text-xs sm:text-sm text-slate-800">Sổ điểm & Lịch sử</div>
+                  <div className="text-[11px] text-slate-500 mt-0.5">Tiến độ & kết quả thi</div>
                 </div>
               </Link>
 

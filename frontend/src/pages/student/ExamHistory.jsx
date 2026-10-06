@@ -176,7 +176,7 @@ export function ExamHistory() {
               <h3 className="text-base font-bold text-slate-800">Chưa có kết quả nộp bài nào</h3>
               <p className="text-xs text-slate-500 mt-1 max-w-sm mx-auto">
                 {history.length === 0 
-                  ? 'Bạn chưa hoàn thành bài thi nào. Hãy bắt đầu với bài tập về nhà hoặc đề tự luyện!' 
+                  ? 'Bạn chưa hoàn thành bài thi nào. Hãy bắt đầu với bài tập về nhà hoặc đề kiểm tra!' 
                   : 'Không có bài nộp nào phù hợp với bộ lọc hiện tại.'}
               </p>
               {history.length === 0 && (

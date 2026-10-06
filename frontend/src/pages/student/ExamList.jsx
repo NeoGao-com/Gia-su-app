@@ -150,14 +150,14 @@ export function ExamList() {
               <FileText className="w-12 h-12 text-slate-300 mx-auto mb-3" />
               <h3 className="text-base font-bold text-slate-800">Chưa tìm thấy bài thi phù hợp</h3>
               <p className="text-xs text-slate-500 mt-1 max-w-sm mx-auto">
-                Hiện tại không có đề thi nào khả dụng theo bộ lọc của bạn. Bạn có thể kiểm tra mục "Bài tập về nhà" hoặc tự tạo đề ôn luyện trong mục "Tự luyện & Ôn tập".
+                Hiện tại không có đề thi nào khả dụng theo bộ lọc của bạn. Bạn có thể kiểm tra mục "Bài tập cần nộp" hoặc xóa bộ lọc để tìm lại.
               </p>
               <div className="mt-4 flex items-center justify-center space-x-3">
                 <Link
-                  to="/student/practice"
+                  to="/student/assignments"
                   className="px-4 py-2 bg-indigo-600 text-white rounded-xl text-xs font-semibold hover:bg-indigo-700 transition shadow-xs"
                 >
-                  Tự luyện đề mới
+                  Xem bài tập cần nộp
                 </Link>
               </div>
             </div>
