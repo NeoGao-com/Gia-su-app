@@ -21,7 +21,14 @@ import {
   AlertCircle,
   LogOut,
   CheckCircle2,
-  Zap
+  Zap,
+  PhoneCall,
+  Phone,
+  MessageCircle,
+  HelpCircle,
+  ExternalLink,
+  Headphones,
+  Clock
 } from 'lucide-react';
 import { useToast } from '../../context/ToastContext';
 
@@ -38,6 +45,10 @@ export function Login() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [socialLoading, setSocialLoading] = useState(null);
+
+  // Teacher Contact Modal State
+  const [showTeacherContactModal, setShowTeacherContactModal] = useState(false);
+  const [copiedContact, setCopiedContact] = useState(null);
 
   // Active user session detection
   const [activeUser, setActiveUser] = useState(() => {
@@ -63,6 +74,13 @@ export function Login() {
   const location = useLocation();
   const [searchParams] = useSearchParams();
   const { toast } = useToast();
+
+  const copyContact = (text, label) => {
+    navigator.clipboard.writeText(text);
+    setCopiedContact(label);
+    toast.success(`Đã sao chép ${label}: ${text}`);
+    setTimeout(() => setCopiedContact(null), 2000);
+  };
 
   const getRedirectUrl = (userRole) => {
     const queryRedirect = searchParams.get('redirect');
@@ -309,6 +327,22 @@ export function Login() {
                   <p className="text-[11px] text-indigo-200/70 mt-0.5">Đếm lượt rời màn hình, xáo trộn mã đề và giới hạn thời gian.</p>
                 </div>
               </div>
+            </div>
+
+            {/* Teacher Contact / Student Help Card on Left Hero */}
+            <div className="mt-6 p-4 rounded-2xl bg-white/10 backdrop-blur-md border border-white/15">
+              <div className="flex items-center space-x-2.5 mb-1.5">
+                <div className="w-7 h-7 rounded-lg bg-emerald-400/20 text-emerald-300 flex items-center justify-center shrink-0">
+                  <PhoneCall className="w-3.5 h-3.5" />
+                </div>
+                <div>
+                  <h4 className="text-xs font-bold text-white">Liên hệ Giáo viên &amp; Hỗ trợ học tập</h4>
+                  <p className="text-[10px] text-indigo-200/80">Hotline &amp; Zalo: 0988 123 456 (08:00 - 22:00)</p>
+                </div>
+              </div>
+              <p className="text-[11px] text-indigo-100/85 leading-relaxed">
+                Học sinh chưa có tài khoản hoặc cần mã vào lớp học vui lòng nhắn tin trực tiếp cho Thầy/Cô để được hỗ trợ nhanh chóng.
+              </p>
             </div>
           </div>
 
@@ -584,12 +618,47 @@ export function Login() {
 
           {/* Chuyển hướng đăng ký */}
           <div className="mt-6 pt-5 border-t border-slate-100 text-center">
-            <p className="text-xs sm:text-sm text-slate-600">
+            <p className="text-xs sm:text-sm text-slate-600 mb-3">
               Chưa có tài khoản?{' '}
               <Link to="/register" className="text-indigo-600 font-bold hover:underline">
                 Đăng ký tài khoản mới ngay
               </Link>
             </p>
+
+            {/* Khối Hỗ trợ học viên & Liên hệ Giáo viên */}
+            <div className="p-3 sm:p-3.5 bg-gradient-to-r from-indigo-50/90 via-sky-50/70 to-indigo-50/90 rounded-2xl border border-indigo-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-left">
+              <div className="flex items-center space-x-3 min-w-0">
+                <div className="w-9 h-9 rounded-xl bg-indigo-600 text-white flex items-center justify-center shrink-0 shadow-xs">
+                  <Headphones className="w-4 h-4" />
+                </div>
+                <div className="min-w-0">
+                  <div className="flex items-center space-x-1.5">
+                    <span className="text-xs font-bold text-slate-900">Liên hệ Giáo viên &amp; Trợ giảng</span>
+                    <span className="text-[9px] font-extrabold uppercase px-1.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800">Trực tuyến</span>
+                  </div>
+                  <p className="text-[11px] text-slate-500 truncate">Cần mã lớp, cấp lại mật khẩu hoặc hỗ trợ thi?</p>
+                </div>
+              </div>
+              <div className="flex items-center space-x-2 shrink-0">
+                <a
+                  href="https://zalo.me/0988123456"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="px-2.5 py-1.5 bg-[#0068FF] hover:bg-[#0057d9] text-white text-[11px] font-bold rounded-lg transition shadow-2xs flex items-center space-x-1"
+                >
+                  <MessageCircle className="w-3 h-3" />
+                  <span>Zalo</span>
+                </a>
+                <button
+                  type="button"
+                  onClick={() => setShowTeacherContactModal(true)}
+                  className="px-2.5 py-1.5 bg-white hover:bg-slate-50 text-indigo-700 text-[11px] font-bold rounded-lg border border-indigo-200 transition shadow-2xs flex items-center space-x-1 cursor-pointer"
+                >
+                  <span>Chi tiết</span>
+                  <ArrowRight className="w-3 h-3" />
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -745,6 +814,159 @@ export function Login() {
                   </p>
                 </div>
               )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* --- MODAL THÔNG TIN LIÊN LẠC VỚI GIÁO VIÊN --- */}
+      {showTeacherContactModal && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-fadeIn">
+          <div className="bg-white rounded-3xl max-w-lg w-full p-6 sm:p-7 shadow-2xl border border-slate-200 relative max-h-[90vh] overflow-y-auto">
+            <button
+              onClick={() => setShowTeacherContactModal(false)}
+              className="absolute top-4 right-4 p-2 text-slate-400 hover:text-slate-600 rounded-full hover:bg-slate-100 transition cursor-pointer"
+            >
+              <X className="w-5 h-5" />
+            </button>
+
+            {/* Header */}
+            <div className="flex items-center space-x-3.5 mb-5">
+              <div className="w-12 h-12 rounded-2xl bg-indigo-50 border border-indigo-100 text-indigo-600 flex items-center justify-center shrink-0">
+                <GraduationCap className="w-6 h-6" />
+              </div>
+              <div>
+                <h3 className="text-lg font-extrabold text-slate-900">
+                  Thông tin liên lạc Giáo viên &amp; Trợ giảng
+                </h3>
+                <p className="text-xs text-slate-500 font-medium">
+                  Kênh giải đáp học tập, cấp mã lớp và hỗ trợ học sinh / phụ huynh
+                </p>
+              </div>
+            </div>
+
+            {/* Main Contact Cards */}
+            <div className="space-y-3 mb-5">
+              {/* Số điện thoại / Hotline */}
+              <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200/90 flex items-center justify-between">
+                <div className="flex items-center space-x-3">
+                  <div className="w-9 h-9 rounded-xl bg-indigo-100 text-indigo-700 flex items-center justify-center shrink-0">
+                    <Phone className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Điện thoại / Hotline</div>
+                    <div className="text-sm font-extrabold font-mono text-slate-800">0988 123 456</div>
+                  </div>
+                </div>
+                <div className="flex items-center space-x-1.5">
+                  <a
+                    href="tel:0988123456"
+                    className="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded-xl transition shadow-2xs flex items-center space-x-1"
+                  >
+                    <PhoneCall className="w-3 h-3" />
+                    <span>Gọi ngay</span>
+                  </a>
+                  <button
+                    type="button"
+                    onClick={() => copyContact('0988 123 456', 'SĐT')}
+                    className="p-1.5 text-slate-500 hover:text-slate-800 hover:bg-slate-200/60 rounded-xl transition cursor-pointer"
+                    title="Sao chép số điện thoại"
+                  >
+                    {copiedContact === 'SĐT' ? <Check className="w-4 h-4 text-emerald-600" /> : <Copy className="w-4 h-4" />}
+                  </button>
+                </div>
+              </div>
+
+              {/* Zalo */}
+              <div className="p-3.5 rounded-2xl bg-[#0068FF]/5 border border-[#0068FF]/20 flex items-center justify-between">
+                <div className="flex items-center space-x-3">
+                  <div className="w-9 h-9 rounded-xl bg-[#0068FF] text-white font-black text-sm flex items-center justify-center shrink-0 shadow-2xs">
+                    Z
+                  </div>
+                  <div>
+                    <div className="text-[11px] font-bold text-[#0068FF] uppercase tracking-wider">Tài khoản Zalo Thầy/Cô</div>
+                    <div className="text-sm font-extrabold font-mono text-slate-800">0988 123 456</div>
+                  </div>
+                </div>
+                <div className="flex items-center space-x-1.5">
+                  <a
+                    href="https://zalo.me/0988123456"
+                    target="_blank"
+                    rel="noreferrer"
+                    className="px-3 py-1.5 bg-[#0068FF] hover:bg-[#0057d9] text-white text-xs font-bold rounded-xl transition shadow-2xs flex items-center space-x-1"
+                  >
+                    <MessageCircle className="w-3 h-3" />
+                    <span>Nhắn Zalo</span>
+                  </a>
+                  <button
+                    type="button"
+                    onClick={() => copyContact('0988 123 456', 'Zalo')}
+                    className="p-1.5 text-slate-500 hover:text-slate-800 hover:bg-slate-200/60 rounded-xl transition cursor-pointer"
+                    title="Sao chép Zalo"
+                  >
+                    {copiedContact === 'Zalo' ? <Check className="w-4 h-4 text-emerald-600" /> : <Copy className="w-4 h-4" />}
+                  </button>
+                </div>
+              </div>
+
+              {/* Email */}
+              <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200/90 flex items-center justify-between">
+                <div className="flex items-center space-x-3 min-w-0">
+                  <div className="w-9 h-9 rounded-xl bg-amber-100 text-amber-700 flex items-center justify-center shrink-0">
+                    <Mail className="w-4 h-4" />
+                  </div>
+                  <div className="min-w-0">
+                    <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Hòm thư điện tử</div>
+                    <div className="text-xs font-bold font-mono text-slate-800 truncate">giaovien@tutorquiz.edu.vn</div>
+                  </div>
+                </div>
+                <div className="flex items-center space-x-1.5 shrink-0">
+                  <a
+                    href="mailto:giaovien@tutorquiz.edu.vn"
+                    className="px-3 py-1.5 bg-slate-800 hover:bg-slate-900 text-white text-xs font-bold rounded-xl transition shadow-2xs flex items-center space-x-1"
+                  >
+                    <ExternalLink className="w-3 h-3" />
+                    <span>Gửi Mail</span>
+                  </a>
+                  <button
+                    type="button"
+                    onClick={() => copyContact('giaovien@tutorquiz.edu.vn', 'Email')}
+                    className="p-1.5 text-slate-500 hover:text-slate-800 hover:bg-slate-200/60 rounded-xl transition cursor-pointer"
+                    title="Sao chép email"
+                  >
+                    {copiedContact === 'Email' ? <Check className="w-4 h-4 text-emerald-600" /> : <Copy className="w-4 h-4" />}
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {/* Office hours & Guidance */}
+            <div className="bg-slate-50 rounded-2xl p-4 border border-slate-200 text-xs space-y-2.5 mb-5">
+              <div className="flex items-center space-x-2 text-indigo-700 font-bold">
+                <Clock className="w-4 h-4 shrink-0" />
+                <span>Khung giờ hỗ trợ: 08:00 - 22:00 hàng ngày (Tất cả các ngày trong tuần)</span>
+              </div>
+              <div className="border-t border-slate-200/80 pt-2 space-y-1.5 text-slate-600 leading-relaxed">
+                <p>
+                  <span className="font-bold text-slate-800">• Chưa có tài khoản:</span> Nhắn tin Zalo kèm Họ tên, Trường lớp để Thầy/Cô khởi tạo tài khoản học tập miễn phí.
+                </p>
+                <p>
+                  <span className="font-bold text-slate-800">• Quên mật khẩu:</span> Bấm "Quên mật khẩu" trên màn hình hoặc nhắn Thầy/Cô để được cấp lại mật khẩu mới trong 1 phút.
+                </p>
+                <p>
+                  <span className="font-bold text-slate-800">• Mã vào lớp:</span> Mã lớp (6 ký tự) do giáo viên chủ nhiệm cung cấp riêng cho từng nhóm học sinh.
+                </p>
+              </div>
+            </div>
+
+            <div className="flex justify-end">
+              <button
+                type="button"
+                onClick={() => setShowTeacherContactModal(false)}
+                className="px-5 py-2.5 bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold rounded-xl transition cursor-pointer"
+              >
+                Đã hiểu &amp; Đóng
+              </button>
             </div>
           </div>
         </div>

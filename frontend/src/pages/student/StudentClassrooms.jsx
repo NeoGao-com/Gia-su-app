@@ -4,7 +4,8 @@ import { Sidebar } from '../../components/Sidebar';
 import api, { clearApiCache } from '../../api/axios';
 import { 
   Users, KeyRound, BookOpen, Clock, Calendar, CheckCircle2, 
-  Search, ArrowRight, ShieldCheck, Copy, Check, Sparkles, GraduationCap 
+  Search, ArrowRight, ShieldCheck, Copy, Check, Sparkles, GraduationCap,
+  PhoneCall, Phone, MessageCircle, Mail, ExternalLink, Headphones, X, Info
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useToast } from '../../context/ToastContext';
@@ -17,34 +18,39 @@ export function StudentClassrooms() {
   const [joinCode, setJoinCode] = useState('');
   const [joining, setJoining] = useState(false);
   const [copiedCode, setCopiedCode] = useState(null);
-  const [selectedClass, setSelectedClass] = useState(null);
+  const [contactModalClass, setContactModalClass] = useState(null);
+  const [copiedContact, setCopiedContact] = useState(null);
+
+  const cleanPhone = (phone) => (phone || '').replace(/[^0-9]/g, '');
+
+  const copyContact = (text, label) => {
+    navigator.clipboard.writeText(text);
+    setCopiedContact(label);
+    toast.success(`Đã sao chép ${label}: ${text}`);
+    setTimeout(() => setCopiedContact(null), 2000);
+  };
+
+  const mapClassItem = (c) => ({
+    ...c,
+    teacher_name: c.teacher_name || c.instructor_name || c.instructor?.full_name || 'Thầy/Cô phụ trách',
+    teacher_email: c.teacher_email || c.instructor_email || c.instructor?.email || 'giaovien@tutorquiz.edu.vn',
+    teacher_phone: c.teacher_phone || c.instructor_phone || c.instructor?.phone_number || '0988 123 456',
+    student_count: c.student_count ?? c.students_count ?? (Array.isArray(c.students) ? c.students.length : 1),
+    active_assignments_count: c.active_assignments_count ?? c.pending_assignments_count ?? (Array.isArray(c.assignments) ? c.assignments.length : 0),
+  });
 
   const fetchClassrooms = async () => {
     try {
       setLoading(true);
       const res = await api.get('/student/classrooms');
       const raw = Array.isArray(res.data) ? res.data : (res.data?.items || []);
-      const mapped = raw.map(c => ({
-        ...c,
-        teacher_name: c.teacher_name || c.instructor_name || c.instructor?.full_name || 'Thầy/Cô phụ trách',
-        teacher_email: c.teacher_email || c.instructor_email || c.instructor?.email || '',
-        student_count: c.student_count ?? c.students_count ?? (Array.isArray(c.students) ? c.students.length : 1),
-        active_assignments_count: c.active_assignments_count ?? c.pending_assignments_count ?? (Array.isArray(c.assignments) ? c.assignments.length : 0),
-      }));
-      setClassrooms(mapped);
+      setClassrooms(raw.map(mapClassItem));
     } catch {
       // Fallback to standard classrooms endpoint
       try {
         const fallback = await api.get('/classrooms', { params: { limit: 50 } });
         const items = Array.isArray(fallback.data?.items) ? fallback.data.items : (Array.isArray(fallback.data) ? fallback.data : []);
-        const mapped = items.map(c => ({
-          ...c,
-          teacher_name: c.teacher_name || c.instructor_name || c.instructor?.full_name || 'Thầy/Cô phụ trách',
-          teacher_email: c.teacher_email || c.instructor_email || c.instructor?.email || '',
-          student_count: c.student_count ?? c.students_count ?? (Array.isArray(c.students) ? c.students.length : 1),
-          active_assignments_count: c.active_assignments_count ?? c.pending_assignments_count ?? (Array.isArray(c.assignments) ? c.assignments.length : 0),
-        }));
-        setClassrooms(mapped);
+        setClassrooms(items.map(mapClassItem));
       } catch {
         setClassrooms([]);
       }
@@ -155,7 +161,7 @@ export function StudentClassrooms() {
             </div>
 
             {/* Search and Filter */}
-            <div className="bg-white rounded-2xl border border-slate-200/90 p-4 shadow-sm flex items-center space-x-3">
+            <div className="bg-white rounded-2xl border border-slate-200/90 p-4 shadow-sm flex items-center space-x-3 mb-4">
               <div className="relative flex-1">
                 <Search className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
                 <input
@@ -174,6 +180,21 @@ export function StudentClassrooms() {
                   Xóa
                 </button>
               )}
+            </div>
+
+            {/* Teacher Support Info Banner */}
+            <div className="p-3.5 sm:p-4 rounded-2xl bg-gradient-to-r from-indigo-50/90 via-sky-50/70 to-blue-50/80 border border-indigo-100/90 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-2xs">
+              <div className="flex items-center space-x-3">
+                <div className="w-9 h-9 rounded-xl bg-indigo-600 text-white flex items-center justify-center shrink-0 shadow-xs">
+                  <Headphones className="w-4 h-4" />
+                </div>
+                <div>
+                  <h4 className="text-xs font-bold text-slate-900">Kênh liên hệ trực tiếp với Thầy/Cô phụ trách</h4>
+                  <p className="text-[11px] text-slate-500 mt-0.5">
+                    Mỗi lớp đều hiển thị Hotline, Zalo và Email giáo viên. Bạn có thể bấm "Liên hệ Thầy/Cô" trên từng lớp để gọi điện hoặc nhắn tin hỏi bài ngay.
+                  </p>
+                </div>
+              </div>
             </div>
           </div>
 
@@ -223,7 +244,8 @@ export function StudentClassrooms() {
                       </p>
 
                       {/* Teacher & Stats Info */}
-                      <div className="space-y-2 py-3 border-y border-slate-100 text-xs text-slate-600 mb-4">
+                      <div className="space-y-2.5 py-3 border-y border-slate-100 text-xs text-slate-600 mb-3">
+                        {/* Tên Giáo viên */}
                         <div className="flex items-center justify-between">
                           <span className="text-slate-400 font-medium">Giáo viên:</span>
                           <span className="font-bold text-slate-800 flex items-center space-x-1">
@@ -232,25 +254,60 @@ export function StudentClassrooms() {
                           </span>
                         </div>
 
+                        {/* SĐT / Zalo của Giáo viên */}
+                        <div className="flex items-center justify-between">
+                          <span className="text-slate-400 font-medium">Hotline / Zalo:</span>
+                          <div className="flex items-center space-x-1.5">
+                            <span className="font-bold font-mono text-slate-700 text-[11px]">
+                              {c.teacher_phone || '0988 123 456'}
+                            </span>
+                            <a
+                              href={`https://zalo.me/${cleanPhone(c.teacher_phone || '0988 123 456')}`}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="p-1 text-[#0068FF] hover:bg-[#0068FF]/10 rounded-md transition"
+                              title="Nhắn Zalo cho Thầy/Cô"
+                            >
+                              <MessageCircle className="w-3.5 h-3.5" />
+                            </a>
+                            <a
+                              href={`tel:${cleanPhone(c.teacher_phone || '0988 123 456')}`}
+                              className="p-1 text-emerald-600 hover:bg-emerald-50 rounded-md transition"
+                              title="Gọi điện thoại"
+                            >
+                              <Phone className="w-3.5 h-3.5" />
+                            </a>
+                          </div>
+                        </div>
+
+                        {/* Email của Giáo viên */}
                         {c.teacher_email && (
                           <div className="flex items-center justify-between">
-                            <span className="text-slate-400 font-medium">Liên hệ:</span>
-                            <span className="text-slate-600 font-mono text-[11px] truncate max-w-[160px]">{c.teacher_email}</span>
+                            <span className="text-slate-400 font-medium">Email:</span>
+                            <a
+                              href={`mailto:${c.teacher_email}`}
+                              className="text-slate-600 hover:text-indigo-600 font-mono text-[11px] truncate max-w-[150px] transition"
+                              title={`Gửi email đến ${c.teacher_email}`}
+                            >
+                              {c.teacher_email}
+                            </a>
                           </div>
                         )}
 
+                        {/* Sĩ số lớp */}
                         <div className="flex items-center justify-between">
                           <span className="text-slate-400 font-medium">Sĩ số lớp:</span>
                           <span className="font-semibold text-slate-700 tabular-nums">{c.student_count || 1} học sinh</span>
                         </div>
 
+                        {/* Mã lớp */}
                         {c.code && (
-                          <div className="flex items-center justify-between pt-1">
+                          <div className="flex items-center justify-between pt-0.5">
                             <span className="text-slate-400 font-medium">Mã lớp:</span>
                             <button
                               type="button"
                               onClick={() => copyToClipboard(c.code)}
-                              className="inline-flex items-center space-x-1 font-mono font-bold text-xs bg-slate-50 hover:bg-indigo-50 text-indigo-700 px-2 py-0.5 rounded-lg border border-slate-200 transition"
+                              className="inline-flex items-center space-x-1 font-mono font-bold text-xs bg-slate-50 hover:bg-indigo-50 text-indigo-700 px-2 py-0.5 rounded-lg border border-slate-200 transition cursor-pointer"
                               title="Bấm để sao chép mã lớp"
                             >
                               <span>{c.code}</span>
@@ -259,6 +316,16 @@ export function StudentClassrooms() {
                           </div>
                         )}
                       </div>
+
+                      {/* Nút mở Modal liên hệ Thầy/Cô chi tiết */}
+                      <button
+                        type="button"
+                        onClick={() => setContactModalClass(c)}
+                        className="w-full mb-3 py-2 px-3 rounded-xl bg-indigo-50/70 hover:bg-indigo-100/80 text-indigo-700 font-bold text-xs flex items-center justify-center space-x-1.5 transition border border-indigo-200/60 cursor-pointer shadow-2xs group-hover:border-indigo-300"
+                      >
+                        <PhoneCall className="w-3.5 h-3.5 text-indigo-600" />
+                        <span>Liên hệ Thầy/Cô phụ trách</span>
+                      </button>
                     </div>
 
                     {/* Footer Actions */}
@@ -288,6 +355,168 @@ export function StudentClassrooms() {
           )}
         </main>
       </div>
+
+      {/* --- MODAL CHI TIẾT LIÊN HỆ GIÁO VIÊN BỘ MÔN --- */}
+      {contactModalClass && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-fadeIn">
+          <div className="bg-white rounded-3xl max-w-md w-full p-6 sm:p-7 shadow-2xl border border-slate-200 relative max-h-[90vh] overflow-y-auto">
+            <button
+              onClick={() => setContactModalClass(null)}
+              className="absolute top-4 right-4 p-2 text-slate-400 hover:text-slate-600 rounded-full hover:bg-slate-100 transition cursor-pointer"
+            >
+              <X className="w-5 h-5" />
+            </button>
+
+            {/* Header */}
+            <div className="flex items-center space-x-3 mb-5">
+              <div className="w-12 h-12 rounded-2xl bg-indigo-600 text-white font-extrabold flex items-center justify-center text-lg shadow-md shadow-indigo-600/20 shrink-0">
+                {(contactModalClass.teacher_name || 'T').charAt(0).toUpperCase()}
+              </div>
+              <div className="min-w-0">
+                <div className="flex items-center space-x-1.5">
+                  <h3 className="text-base font-extrabold text-slate-900 truncate">
+                    {contactModalClass.teacher_name || 'Thầy/Cô phụ trách'}
+                  </h3>
+                  <ShieldCheck className="w-4 h-4 text-indigo-600 shrink-0" />
+                </div>
+                <p className="text-xs text-slate-500 font-medium truncate">
+                  Giáo viên phụ trách lớp <span className="font-bold text-slate-700">{contactModalClass.name}</span>
+                </p>
+              </div>
+            </div>
+
+            {/* Classroom Info Pill */}
+            <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-200/80 mb-4 flex items-center justify-between text-xs">
+              <span className="text-slate-500">Mã lớp tham gia:</span>
+              <span className="font-mono font-extrabold text-indigo-700 bg-white px-2 py-0.5 rounded-md border border-slate-200">
+                {contactModalClass.code}
+              </span>
+            </div>
+
+            {/* Contact Action Cards */}
+            <div className="space-y-2.5 mb-5">
+              {/* Phone */}
+              <div className="p-3 rounded-2xl bg-slate-50 border border-slate-200/90 flex items-center justify-between">
+                <div className="flex items-center space-x-3">
+                  <div className="w-8 h-8 rounded-lg bg-emerald-100 text-emerald-700 flex items-center justify-center shrink-0">
+                    <Phone className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Số điện thoại / Hotline</div>
+                    <div className="text-xs font-extrabold font-mono text-slate-800">
+                      {contactModalClass.teacher_phone || '0988 123 456'}
+                    </div>
+                  </div>
+                </div>
+                <div className="flex items-center space-x-1">
+                  <a
+                    href={`tel:${cleanPhone(contactModalClass.teacher_phone || '0988 123 456')}`}
+                    className="px-2.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-[11px] font-bold rounded-lg transition shadow-2xs flex items-center space-x-1"
+                  >
+                    <PhoneCall className="w-3 h-3" />
+                    <span>Gọi</span>
+                  </a>
+                  <button
+                    type="button"
+                    onClick={() => copyContact(contactModalClass.teacher_phone || '0988 123 456', 'SĐT')}
+                    className="p-1.5 text-slate-500 hover:text-slate-800 hover:bg-slate-200/60 rounded-lg transition cursor-pointer"
+                    title="Sao chép SĐT"
+                  >
+                    {copiedContact === 'SĐT' ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
+                  </button>
+                </div>
+              </div>
+
+              {/* Zalo */}
+              <div className="p-3 rounded-2xl bg-[#0068FF]/5 border border-[#0068FF]/20 flex items-center justify-between">
+                <div className="flex items-center space-x-3">
+                  <div className="w-8 h-8 rounded-lg bg-[#0068FF] text-white font-black text-xs flex items-center justify-center shrink-0 shadow-2xs">
+                    Z
+                  </div>
+                  <div>
+                    <div className="text-[10px] font-bold text-[#0068FF] uppercase tracking-wider">Tài khoản Zalo</div>
+                    <div className="text-xs font-extrabold font-mono text-slate-800">
+                      {contactModalClass.teacher_phone || '0988 123 456'}
+                    </div>
+                  </div>
+                </div>
+                <div className="flex items-center space-x-1">
+                  <a
+                    href={`https://zalo.me/${cleanPhone(contactModalClass.teacher_phone || '0988 123 456')}`}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="px-2.5 py-1.5 bg-[#0068FF] hover:bg-[#0057d9] text-white text-[11px] font-bold rounded-lg transition shadow-2xs flex items-center space-x-1"
+                  >
+                    <MessageCircle className="w-3 h-3" />
+                    <span>Nhắn Zalo</span>
+                  </a>
+                  <button
+                    type="button"
+                    onClick={() => copyContact(contactModalClass.teacher_phone || '0988 123 456', 'Zalo')}
+                    className="p-1.5 text-slate-500 hover:text-slate-800 hover:bg-slate-200/60 rounded-lg transition cursor-pointer"
+                    title="Sao chép Zalo"
+                  >
+                    {copiedContact === 'Zalo' ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
+                  </button>
+                </div>
+              </div>
+
+              {/* Email */}
+              <div className="p-3 rounded-2xl bg-slate-50 border border-slate-200/90 flex items-center justify-between">
+                <div className="flex items-center space-x-3 min-w-0">
+                  <div className="w-8 h-8 rounded-lg bg-amber-100 text-amber-700 flex items-center justify-center shrink-0">
+                    <Mail className="w-4 h-4" />
+                  </div>
+                  <div className="min-w-0">
+                    <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Hòm thư Email</div>
+                    <div className="text-xs font-bold font-mono text-slate-800 truncate">
+                      {contactModalClass.teacher_email || 'giaovien@tutorquiz.edu.vn'}
+                    </div>
+                  </div>
+                </div>
+                <div className="flex items-center space-x-1 shrink-0">
+                  <a
+                    href={`mailto:${contactModalClass.teacher_email || 'giaovien@tutorquiz.edu.vn'}`}
+                    className="px-2.5 py-1.5 bg-slate-800 hover:bg-slate-900 text-white text-[11px] font-bold rounded-lg transition shadow-2xs flex items-center space-x-1"
+                  >
+                    <ExternalLink className="w-3 h-3" />
+                    <span>Gửi Mail</span>
+                  </a>
+                  <button
+                    type="button"
+                    onClick={() => copyContact(contactModalClass.teacher_email || 'giaovien@tutorquiz.edu.vn', 'Email')}
+                    className="p-1.5 text-slate-500 hover:text-slate-800 hover:bg-slate-200/60 rounded-lg transition cursor-pointer"
+                    title="Sao chép Email"
+                  >
+                    {copiedContact === 'Email' ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {/* Note for student */}
+            <div className="bg-indigo-50/70 rounded-2xl p-3.5 border border-indigo-100 text-[11px] text-slate-600 space-y-1.5 mb-5">
+              <div className="flex items-center space-x-1.5 text-indigo-700 font-bold">
+                <Clock className="w-3.5 h-3.5 shrink-0" />
+                <span>Khung giờ hỗ trợ giải đáp: 08:00 - 22:00 hàng ngày</span>
+              </div>
+              <p className="text-slate-600 leading-relaxed">
+                💡 <span className="font-semibold text-slate-800">Lưu ý khi hỏi bài:</span> Hãy gửi kèm ảnh chụp câu hỏi hoặc mã đề thi qua Zalo để Thầy/Cô nắm được bài tập và hướng dẫn chi tiết nhé!
+              </p>
+            </div>
+
+            <div className="flex justify-end">
+              <button
+                type="button"
+                onClick={() => setContactModalClass(null)}
+                className="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold rounded-xl transition cursor-pointer"
+              >
+                Đóng
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

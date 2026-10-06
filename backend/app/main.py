@@ -21,8 +21,8 @@ async def init_db_tables():
             res = await session.execute(select(User).limit(1))
             if not res.scalars().first():
                 logger.info("Auto-seeding default accounts...")
-                t = User(email="teacher@example.com", full_name="Giáo Viên", hashed_password=get_password_hash("Password@123!"), role="TEACHER")
-                s = User(email="student@example.com", full_name="Học Sinh", hashed_password=get_password_hash("Password@123!"), role="STUDENT")
+                t = User(email="teacher@example.com", full_name="Giáo Viên", phone_number="0988 123 456", hashed_password=get_password_hash("Password@123!"), role="TEACHER")
+                s = User(email="student@example.com", full_name="Học Sinh", phone_number="0912 345 678", hashed_password=get_password_hash("Password@123!"), role="STUDENT")
                 session.add_all([t, s])
                 await session.commit()
                 logger.info("Default accounts created successfully!")
@@ -36,20 +36,20 @@ async def init_db_tables():
             "CREATE INDEX IF NOT EXISTS idx_exams_creator ON exams (created_by_id, exam_type)",
             "CREATE INDEX IF NOT EXISTS idx_submissions_exam ON exam_submissions (exam_id, student_id)",
         ]
-        user_columns = [
-            "ALTER TABLE users ADD COLUMN IF NOT EXISTS phone_number VARCHAR",
-            "ALTER TABLE users ADD COLUMN IF NOT EXISTS parent_phone VARCHAR",
-            "ALTER TABLE users ADD COLUMN IF NOT EXISTS parent_name VARCHAR",
-            "ALTER TABLE users ADD COLUMN IF NOT EXISTS date_of_birth VARCHAR",
-            "ALTER TABLE users ADD COLUMN IF NOT EXISTS gender VARCHAR",
-            "ALTER TABLE users ADD COLUMN IF NOT EXISTS school VARCHAR",
-            "ALTER TABLE users ADD COLUMN IF NOT EXISTS student_code VARCHAR",
-            "ALTER TABLE users ADD COLUMN IF NOT EXISTS notes VARCHAR",
+        user_column_names = [
+            "phone_number",
+            "parent_phone",
+            "parent_name",
+            "date_of_birth",
+            "gender",
+            "school",
+            "student_code",
+            "notes",
         ]
         async with engine.begin() as conn:
-            for col_sql in user_columns:
+            for col in user_column_names:
                 try:
-                    await conn.execute(text(col_sql))
+                    await conn.execute(text(f"ALTER TABLE users ADD COLUMN {col} VARCHAR"))
                 except Exception:
                     pass
             for idx_sql in indexes:

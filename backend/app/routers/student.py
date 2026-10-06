@@ -712,8 +712,9 @@ async def get_student_classrooms_detailed(
                     "score": sub_info.get("score") if sub_info else None
                 })
 
-        teacher_name = c.instructor.full_name if c.instructor and c.instructor.full_name else (c.instructor.username if c.instructor else "Thầy/Cô phụ trách")
+        teacher_name = c.instructor.full_name if c.instructor and c.instructor.full_name else (c.instructor.username if c.instructor and hasattr(c.instructor, 'username') else "Thầy/Cô phụ trách")
         teacher_email = c.instructor.email if c.instructor else ""
+        teacher_phone = c.instructor.phone_number if c.instructor and c.instructor.phone_number else ""
         student_count = len([s for s in c.students if getattr(s, 'is_active', True)]) or 1
 
         items.append({
@@ -723,8 +724,10 @@ async def get_student_classrooms_detailed(
             "code": c.code,
             "instructor_name": teacher_name,
             "instructor_email": teacher_email,
+            "instructor_phone": teacher_phone,
             "teacher_name": teacher_name,
             "teacher_email": teacher_email,
+            "teacher_phone": teacher_phone,
             "students_count": student_count,
             "student_count": student_count,
             "assignments_count": len(active_assignments),
