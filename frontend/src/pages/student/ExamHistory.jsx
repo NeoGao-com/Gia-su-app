@@ -267,6 +267,7 @@ export function ExamHistory() {
       {/* KaTeX Step-by-Step Review Modal */}
       {selectedSubmissionId && (
         <SubmissionReviewModal
+          isOpen={Boolean(selectedSubmissionId)}
           submissionId={selectedSubmissionId}
           onClose={() => setSelectedSubmissionId(null)}
         />

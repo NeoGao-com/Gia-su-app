@@ -26,8 +26,10 @@ export function SubmissionReviewModal({ isOpen, onClose, submissionId }) {
   const [loading, setLoading] = useState(true);
   const [filterType, setFilterType] = useState('all'); // 'all' | 'correct' | 'incorrect'
 
+  const isModalOpen = isOpen !== undefined ? Boolean(isOpen) : Boolean(submissionId);
+
   useEffect(() => {
-    if (!isOpen || !submissionId) {
+    if (!isModalOpen || !submissionId) {
       setData(null);
       return;
     }
@@ -43,9 +45,9 @@ export function SubmissionReviewModal({ isOpen, onClose, submissionId }) {
       .finally(() => {
         setLoading(false);
       });
-  }, [isOpen, submissionId]);
+  }, [isModalOpen, submissionId]);
 
-  if (!isOpen) return null;
+  if (!isModalOpen) return null;
 
   const submission = data?.submission || {};
   const questions = data?.questions || [];
@@ -97,7 +99,7 @@ export function SubmissionReviewModal({ isOpen, onClose, submissionId }) {
 
   return (
     <Modal
-      isOpen={isOpen}
+      isOpen={isModalOpen}
       onClose={onClose}
       title={data?.exam_title ? `Xem lại bài làm: ${data.exam_title}` : 'Chi tiết bài làm'}
       maxWidth="max-w-4xl"

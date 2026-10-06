@@ -275,6 +275,7 @@ export function ExamList() {
       {/* Review Modal for Instant Solutions */}
       {selectedSubmissionId && (
         <SubmissionReviewModal
+          isOpen={Boolean(selectedSubmissionId)}
           submissionId={selectedSubmissionId}
           onClose={() => setSelectedSubmissionId(null)}
         />

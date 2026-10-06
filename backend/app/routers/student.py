@@ -381,7 +381,10 @@ async def submit_student_exam(
             "image_url": q.image_url,
             "latex_code": q.latex_code,
             "sample_solution": q.sample_solution,
-            "explanation": getattr(q, 'explanation', None)
+            "explanation": getattr(q, 'explanation', None),
+            "correct_answer": getattr(q, 'correct_answer', None),
+            "correct_answers": getattr(q, 'correct_answers', None),
+            "correct_option": getattr(q, 'correct_option', None)
         })
     submission.question_snapshot = snapshot
 
@@ -471,7 +474,36 @@ async def get_submission_details(
     exam = exam_result.scalars().first()
 
     if submission.question_snapshot:
-        questions = submission.question_snapshot
+        raw_questions = submission.question_snapshot
+        # Check if snapshot is missing correct_answer / correct_option
+        needs_enrich = False
+        if raw_questions and isinstance(raw_questions, list) and len(raw_questions) > 0 and isinstance(raw_questions[0], dict):
+            if "correct_answer" not in raw_questions[0] and "correct_option" not in raw_questions[0]:
+                needs_enrich = True
+
+        if needs_enrich:
+            q_ids = [q.get("id") for q in raw_questions if isinstance(q, dict) and "id" in q]
+            if q_ids:
+                db_q_res = await db.execute(select(Question).filter(Question.id.in_(q_ids)))
+                db_q_map = {db_q.id: db_q for db_q in db_q_res.scalars().all()}
+                enriched = []
+                for sq in raw_questions:
+                    if isinstance(sq, dict) and sq.get("id") in db_q_map:
+                        db_q = db_q_map[sq["id"]]
+                        eq = dict(sq)
+                        eq["correct_answer"] = db_q.correct_answer
+                        eq["correct_answers"] = db_q.correct_answers
+                        eq["correct_option"] = db_q.correct_option
+                        eq["sample_solution"] = db_q.sample_solution or eq.get("sample_solution")
+                        eq["explanation"] = getattr(db_q, "explanation", None) or eq.get("explanation")
+                        enriched.append(eq)
+                    else:
+                        enriched.append(sq)
+                questions = enriched
+            else:
+                questions = raw_questions
+        else:
+            questions = raw_questions
     else:
         q_result = await db.execute(
             select(Question).join(exam_questions, Question.id == exam_questions.c.question_id).filter(exam_questions.c.exam_id == submission.exam_id)
@@ -519,7 +551,7 @@ async def get_submission_details(
 
     return {
         "submission": submission,
-        "exam_title": exam.title,
+        "exam_title": exam.title if exam else "Bài kiểm tra",
         "show_answers": show_answers,
         "questions": processed_questions
     }

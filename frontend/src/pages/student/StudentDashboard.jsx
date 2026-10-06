@@ -438,6 +438,7 @@ export function StudentDashboard() {
       {/* Review Modal for Submission Details */}
       {selectedSubmissionId && (
         <SubmissionReviewModal
+          isOpen={Boolean(selectedSubmissionId)}
           submissionId={selectedSubmissionId}
           onClose={() => setSelectedSubmissionId(null)}
         />
