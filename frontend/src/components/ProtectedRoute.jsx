@@ -1,5 +1,5 @@
 import React from 'react';
-import { Navigate, Outlet } from 'react-router-dom';
+import { Navigate, Outlet, useLocation } from 'react-router-dom';
 
 function parseUser(userStr) {
   try {
@@ -10,16 +10,17 @@ function parseUser(userStr) {
 }
 
 export function ProtectedRoute({ allowedRoles }) {
+  const location = useLocation();
   const token = localStorage.getItem('access_token');
   const userStr = localStorage.getItem('user');
 
   if (!token || !userStr) {
-    return <Navigate to="/login" replace />;
+    return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
   const user = parseUser(userStr);
   if (!user) {
-    return <Navigate to="/login" replace />;
+    return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
   const userRole = (user.role || '').toLowerCase();

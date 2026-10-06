@@ -30,6 +30,7 @@ class OAuthSyncRequest(BaseModel):
     full_name: Optional[str] = None
     provider: Optional[str] = "oauth"
     avatar_url: Optional[str] = None
+    role: Optional[str] = "STUDENT"
 
 def get_base_frontend_url(request: Request) -> str:
     # Prefer explicit frontend URL from settings if configured
@@ -257,7 +258,11 @@ async def sync_oauth_user(payload: OAuthSyncRequest, response: Response, db: Asy
     if not payload.email:
         raise HTTPException(status_code=400, detail="Thiếu địa chỉ email")
 
-    user = await get_or_create_oauth_user(db, email=payload.email, full_name=payload.full_name)
+    target_role = (payload.role or "STUDENT").upper()
+    if target_role not in ["STUDENT", "TEACHER", "ADMIN"]:
+        target_role = "STUDENT"
+
+    user = await get_or_create_oauth_user(db, email=payload.email, full_name=payload.full_name, default_role=target_role)
 
     access_token = create_access_token(data={"sub": user.email})
     response.set_cookie(key="access_token", value=access_token, httponly=True, samesite="lax", path="/")
