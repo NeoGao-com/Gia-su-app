@@ -30,6 +30,11 @@ async def invalidate_exams_cache():
             await redis_client.delete(*keys)
     except Exception as e:
         logger.error(f"Redis cache invalidate error: {str(e)}")
+    try:
+        from app.routers.analytics import invalidate_analytics_cache
+        await invalidate_analytics_cache()
+    except Exception:
+        pass
 
 async def check_grading_authorization(db: AsyncSession, submission: ExamSubmission, current_user: User):
     exam = await db.get(Exam, submission.exam_id)

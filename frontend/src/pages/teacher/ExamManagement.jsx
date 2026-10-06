@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Navbar } from '../../components/Navbar';
 import { Sidebar } from '../../components/Sidebar';
-import api from '../../api/axios';
+import api, { clearApiCache } from '../../api/axios';
 import { AssignmentModal } from '../../components/AssignmentModal';
 import { Plus, Search, Edit3, Trash2, Send, CheckCircle2, XCircle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
@@ -56,6 +56,7 @@ export function ExamManagement() {
       await api.put(`/exams/${exam.id}`, {
         is_published: !exam.is_published
       });
+      clearApiCache();
       toast.success(exam.is_published ? 'Đã chuyển đề thi về bản nháp' : 'Đã xuất bản đề thi thành công!');
       await fetchExams();
     } catch (err) {
@@ -76,6 +77,7 @@ export function ExamManagement() {
 
     try {
       await api.delete(`/exams/${examId}${isHard ? '?hard=true&force=true' : ''}`);
+      clearApiCache();
       toast.success('Đã xóa đề thi thành công');
       await fetchExams();
     } catch (err) {
@@ -124,6 +126,7 @@ export function ExamManagement() {
         show_answers_after_submit: editShowAnswers,
         is_published: editPublished
       });
+      clearApiCache();
       setEditModalOpen(false);
       fetchExams();
       toast.success('Cập nhật đề thi thành công!');

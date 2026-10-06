@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Navbar } from '../../components/Navbar';
 import { Sidebar } from '../../components/Sidebar';
-import api from '../../api/axios';
+import api, { clearApiCache } from '../../api/axios';
 import {
   Plus, Trash2, UserPlus, CheckSquare, Square, Search,
   Copy, Check, Users, UserMinus, Edit3
@@ -139,6 +139,7 @@ export function ClassroomManagement() {
       onConfirm: async () => {
         try {
           await api.delete(`/classrooms/${id}`);
+          clearApiCache();
           await refreshClassrooms();
           if (selectedClass?.id === id) setSelectedClass(null);
           toast.success('Đã xóa nhóm kèm thành công!');
@@ -154,6 +155,7 @@ export function ClassroomManagement() {
     if (!form.name.trim()) return;
     try {
       const res = await api.post('/classrooms', form);
+      clearApiCache();
       setIsClassModalOpen(false);
       setForm({ name: '', description: '' });
       await refreshClassrooms();

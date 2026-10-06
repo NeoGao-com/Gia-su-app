@@ -27,6 +27,11 @@ async def invalidate_questions_cache():
             await redis_client.delete(*keys)
     except Exception as e:
         logger.error(f"Redis cache invalidate error: {str(e)}")
+    try:
+        from app.routers.analytics import invalidate_analytics_cache
+        await invalidate_analytics_cache()
+    except Exception:
+        pass
 
 @router.post("", response_model=QuestionResponse, summary="Tạo câu hỏi mới")
 @router.post("/", response_model=QuestionResponse, include_in_schema=False)

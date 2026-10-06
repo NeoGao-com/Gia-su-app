@@ -31,9 +31,14 @@ router = APIRouter(prefix="/api/classrooms", tags=["classroom"])
 
 async def invalidate_classroom_cache():
     try:
-        keys = await redis_client.keys("classrooms:list:*")
+        keys = await redis_client.keys("classrooms:*")
         if keys:
             await redis_client.delete(*keys)
+    except Exception:
+        pass
+    try:
+        from app.routers.analytics import invalidate_analytics_cache
+        await invalidate_analytics_cache()
     except Exception:
         pass
 
@@ -340,6 +345,7 @@ async def add_student_to_classroom(
         db.add(cs_new)
 
     await db.commit()
+    await invalidate_classroom_cache()
     return {"message": "Đã thêm học sinh vào lớp thành công"}
 
 
@@ -437,6 +443,7 @@ async def delete_classroom(
 
     classroom.is_deleted = True
     await db.commit()
+    await invalidate_classroom_cache()
     logger.info(f"Classroom soft-deleted: {classroom_id} by {current_user.email} from IP {client_ip}")
     return {"message": "Classroom deleted successfully"}
 
@@ -478,6 +485,7 @@ async def remove_student_from_classroom(
 
     cs.is_active = False
     await db.commit()
+    await invalidate_classroom_cache()
     return {"message": "Student removed successfully"}
 
 @router.delete("/{classroom_id}/leave")
@@ -506,6 +514,7 @@ async def leave_classroom(
 
     cs.is_active = False
     await db.commit()
+    await invalidate_classroom_cache()
     return {"message": "Successfully left the classroom"}
 
 @router.get("/{classroom_id}/gradebook", response_model=GradebookResponse)

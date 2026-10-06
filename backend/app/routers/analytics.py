@@ -1,16 +1,29 @@
 from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
-from sqlalchemy import func
+from sqlalchemy import func, or_
+from typing import Optional
 import json
 from app.database import get_db, redis_client
 from app.models.exam import Exam, ExamSubmission
 from app.models.question import Question
-from app.models.classroom import Classroom
+from app.models.classroom import Classroom, ClassroomStudent, Assignment
 from app.core.security import get_current_teacher
 from app.models.user import User
 
 router = APIRouter(prefix="/api/analytics", tags=["analytics"])
+
+async def invalidate_analytics_cache(user_id: Optional[int] = None):
+    """Xóa cache thống kê tổng quan của giáo viên khi có thay đổi dữ liệu"""
+    try:
+        if user_id:
+            await redis_client.delete(f"analytics:summary:{user_id}")
+        else:
+            keys = await redis_client.keys("analytics:summary:*")
+            if keys:
+                await redis_client.delete(*keys)
+    except Exception:
+        pass
 
 @router.get("/summary", summary="Thống kê tổng quan cho giáo viên")
 async def get_teacher_summary(
@@ -26,23 +39,67 @@ async def get_teacher_summary(
         except Exception:
             pass
 
-    # Total exams
-    exams_count_res = await db.execute(select(func.count(Exam.id)))
+    # 1. Tổng số lớp học đang hoạt động (không tính lớp đã xóa is_deleted=True)
+    classrooms_query = select(func.count(Classroom.id)).filter(Classroom.is_deleted == False)
+    if current_user.role == "TEACHER":
+        classrooms_query = classrooms_query.filter(Classroom.instructor_id == current_user.id)
+    classrooms_count_res = await db.execute(classrooms_query)
+    classrooms_count = classrooms_count_res.scalar() or 0
+
+    # 2. Tổng số học sinh đang hoạt động trong các lớp của giáo viên
+    students_query = (
+        select(func.count(func.distinct(ClassroomStudent.student_id)))
+        .join(Classroom, ClassroomStudent.classroom_id == Classroom.id)
+        .join(User, ClassroomStudent.student_id == User.id)
+        .filter(
+            Classroom.is_deleted == False,
+            ClassroomStudent.is_active == True,
+            User.is_deleted == False
+        )
+    )
+    if current_user.role == "TEACHER":
+        students_query = students_query.filter(Classroom.instructor_id == current_user.id)
+    students_count_res = await db.execute(students_query)
+    students_count = students_count_res.scalar() or 0
+
+    # 3. Tổng số đề thi khả dụng (không tính đề đã xóa is_deleted=True)
+    exams_query = select(func.count(Exam.id)).filter(Exam.is_deleted == False)
+    if current_user.role == "TEACHER":
+        exams_query = exams_query.filter(
+            or_(
+                Exam.created_by_id == current_user.id,
+                Exam.created_by_id.is_(None)
+            )
+        )
+    exams_count_res = await db.execute(exams_query)
     exams_count = exams_count_res.scalar() or 0
 
-    # Total questions
+    # 4. Tổng số câu hỏi trong ngân hàng câu hỏi
     questions_count_res = await db.execute(select(func.count(Question.id)))
     questions_count = questions_count_res.scalar() or 0
 
-    # Total classrooms
-    classrooms_count_res = await db.execute(select(func.count(Classroom.id)))
-    classrooms_count = classrooms_count_res.scalar() or 0
-
-    # Recent exam submissions statistics
-    submissions_res = await db.execute(
+    # 5. Thống kê bài nộp trên các đề thi chưa bị xóa thuộc phạm vi của giáo viên
+    sub_query = (
         select(ExamSubmission.score, Exam.title)
         .join(Exam, ExamSubmission.exam_id == Exam.id)
+        .filter(Exam.is_deleted == False)
     )
+    if current_user.role == "TEACHER":
+        sub_query = sub_query.filter(
+            or_(
+                Exam.created_by_id == current_user.id,
+                Exam.id.in_(
+                    select(Assignment.exam_id)
+                    .join(Classroom, Assignment.classroom_id == Classroom.id)
+                    .filter(
+                        Classroom.instructor_id == current_user.id,
+                        Classroom.is_deleted == False,
+                        Assignment.is_active == True
+                    )
+                )
+            )
+        )
+    submissions_res = await db.execute(sub_query)
     submissions = submissions_res.all()
 
     score_ranges = {
@@ -77,6 +134,7 @@ async def get_teacher_summary(
         "exams_count": int(exams_count),
         "questions_count": int(questions_count),
         "classrooms_count": int(classrooms_count),
+        "students_count": int(students_count),
         "submissions_count": int(submissions_count),
         "average_score": float(avg_score),
         "score_distribution": distribution_data

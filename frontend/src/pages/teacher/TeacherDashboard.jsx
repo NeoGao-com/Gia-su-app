@@ -51,9 +51,9 @@ export function TeacherDashboard() {
         setRecentExams(examList);
         setStats({
           questions: summaryRes.data?.questions_count ?? 0,
-          exams: summaryRes.data?.exams_count ?? examList.length,
-          classrooms: summaryRes.data?.classrooms_count ?? classList.length,
-          students: studentList.length,
+          exams: summaryRes.data?.exams_count ?? (examRes.data?.total ?? examList.length),
+          classrooms: summaryRes.data?.classrooms_count ?? (classRes.data?.total ?? classList.length),
+          students: summaryRes.data?.students_count ?? studentList.length,
         });
       } catch (err) {
         console.error('Error loading dashboard:', err);
