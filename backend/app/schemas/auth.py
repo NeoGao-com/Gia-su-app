@@ -16,8 +16,8 @@ def validate_strong_password(v: str) -> str:
     return v
 
 class UserBase(BaseModel):
-    email: EmailStr
-    full_name: str
+    email: str
+    full_name: Optional[str] = "Người dùng"
     phone_number: Optional[str] = None
     parent_phone: Optional[str] = None
     parent_name: Optional[str] = None
@@ -28,6 +28,8 @@ class UserBase(BaseModel):
     notes: Optional[str] = None
 
 class UserCreate(UserBase):
+    email: EmailStr
+    full_name: str
     password: str
     role: Optional[str] = "STUDENT"
     grade_level: Optional[int] = None

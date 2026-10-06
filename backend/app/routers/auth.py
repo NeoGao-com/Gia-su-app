@@ -5,6 +5,7 @@ from jose import jwt, JWTError
 from fastapi import APIRouter, Depends, HTTPException, status, Response, Request, Body
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
+from sqlalchemy import func
 from app.database import get_db, redis_client
 from app.models.user import User
 from app.schemas.auth import (
@@ -54,19 +55,32 @@ async def login(request: Request, response: Response, payload: dict = Body(None)
     if request.method == "OPTIONS":
         return Response(status_code=200)
 
-    email = payload.get("email")
-    password = payload.get("password")
+    if not payload or not isinstance(payload, dict):
+        raise HTTPException(status_code=400, detail="Dữ liệu đăng nhập không hợp lệ")
+
+    raw_email = payload.get("email") or ""
+    email = raw_email.strip()
+    password = payload.get("password") or ""
     client_ip = request.client.host if request.client else "unknown"
 
+    if not email or not password:
+        raise HTTPException(status_code=400, detail="Vui lòng nhập đầy đủ email và mật khẩu")
+
+    user = None
     try:
-        result = await db.execute(select(User).filter(User.email == email))
+        result = await db.execute(select(User).filter(func.lower(User.email) == email.lower()))
         user = result.scalars().first()
     except Exception as e:
-        logger.warning(f"Table not ready during login ({e}), initializing tables and default seeds...")
-        from app.main import init_db_tables
-        await init_db_tables()
-        result = await db.execute(select(User).filter(User.email == email))
-        user = result.scalars().first()
+        logger.warning(f"Database query error during login ({e}), executing schema sync...")
+        try:
+            from app.main import init_db_tables
+            await init_db_tables()
+            result = await db.execute(select(User).filter(func.lower(User.email) == email.lower()))
+            user = result.scalars().first()
+        except Exception as retry_err:
+            logger.error(f"Retry login query failed: {retry_err}")
+            user = None
+
     if not user or not verify_password(password, user.hashed_password):
         logger.warning(f"Login failed: Incorrect email or password for {email} from IP {client_ip}")
         raise HTTPException(status_code=401, detail="Email hoặc mật khẩu không chính xác")
@@ -92,11 +106,27 @@ async def login(request: Request, response: Response, payload: dict = Body(None)
         path="/"
     )
     logger.info(f"User logged in successfully: {user.email} (role: {user.role}) from IP {client_ip}")
+
+    # Safe user serialization that never crashes with 500
+    try:
+        user_dict = UserResponse.model_validate(user).model_dump(mode="json")
+    except Exception as ser_err:
+        logger.warning(f"UserResponse serialization fallback: {ser_err}")
+        user_dict = {
+            "id": user.id,
+            "email": user.email,
+            "full_name": user.full_name or user.email,
+            "role": user.role,
+            "is_active": user.is_active,
+            "grade_level": user.grade_level,
+            "phone_number": getattr(user, "phone_number", None),
+        }
+
     return {
         "message": "Đăng nhập thành công",
         "access_token": access_token,
         "token_type": "bearer",
-        "user": UserResponse.model_validate(user).model_dump()
+        "user": user_dict
     }
 
 @router.post("/logout", summary="Đăng xuất khỏi hệ thống")

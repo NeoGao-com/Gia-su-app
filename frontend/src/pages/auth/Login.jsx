@@ -265,104 +265,13 @@ export function Login() {
       <div className="absolute -bottom-32 -right-32 w-96 h-96 bg-slate-200/60 rounded-full blur-3xl pointer-events-none" />
 
       {/* Main Container */}
-      <div className="w-full max-w-5xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 items-stretch relative z-10">
-        
-        {/* --- LEFT HERO BANNER (Desktop Showcase) --- */}
-        <div className="hidden lg:flex lg:col-span-5 bg-gradient-to-br from-indigo-900 via-indigo-800 to-slate-900 text-white rounded-3xl p-8 sm:p-9 shadow-xl border border-indigo-700/40 relative overflow-hidden flex-col justify-between">
-          <div className="absolute -top-20 -right-20 w-64 h-64 bg-indigo-500/20 rounded-full blur-3xl pointer-events-none" />
-          <div className="absolute -bottom-20 -left-20 w-64 h-64 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none" />
-
-          {/* Top Brand Identity */}
-          <div className="relative z-10">
-            <div className="flex items-center space-x-3 mb-6">
-              <div className="w-12 h-12 rounded-2xl bg-white/10 backdrop-blur-md border border-white/20 flex items-center justify-center shadow-inner">
-                <BookOpen className="w-6 h-6 text-white" />
-              </div>
-              <div>
-                <div className="flex items-center space-x-2">
-                  <h1 className="text-xl font-extrabold tracking-tight">TutorQuiz</h1>
-                  <span className="px-2 py-0.5 rounded-full bg-indigo-500/30 text-indigo-200 border border-indigo-400/30 text-[10px] font-bold">
-                    v2.0
-                  </span>
-                </div>
-                <p className="text-xs text-indigo-200/80 font-medium">Khảo thí & Học tập trực tuyến</p>
-              </div>
-            </div>
-
-            <h2 className="text-2xl font-bold leading-snug mb-3">
-              Dạy &amp; Học thông minh với hệ thống thi trắc nghiệm toàn diện
-            </h2>
-            <p className="text-xs text-indigo-200 leading-relaxed font-normal">
-              Đồng bộ bài giảng, tạo đề thi tự động với ngân hàng câu hỏi chuẩn kiến thức và phân tích tiến độ học tập tức thì.
-            </p>
-
-            {/* Feature Highlights List */}
-            <div className="mt-8 space-y-3.5">
-              <div className="flex items-start space-x-3 bg-white/5 border border-white/10 p-3 rounded-2xl backdrop-blur-xs">
-                <div className="w-7 h-7 rounded-lg bg-emerald-500/20 border border-emerald-400/30 text-emerald-300 flex items-center justify-center shrink-0 mt-0.5">
-                  <Zap className="w-3.5 h-3.5" />
-                </div>
-                <div>
-                  <h4 className="text-xs font-bold text-white">Chấm điểm tự động &amp; Chi tiết</h4>
-                  <p className="text-[11px] text-indigo-200/70 mt-0.5">Hiển thị kết quả, lời giải và phổ điểm ngay sau khi nộp bài.</p>
-                </div>
-              </div>
-
-              <div className="flex items-start space-x-3 bg-white/5 border border-white/10 p-3 rounded-2xl backdrop-blur-xs">
-                <div className="w-7 h-7 rounded-lg bg-indigo-400/20 border border-indigo-300/30 text-indigo-200 flex items-center justify-center shrink-0 mt-0.5">
-                  <Sparkles className="w-3.5 h-3.5" />
-                </div>
-                <div>
-                  <h4 className="text-xs font-bold text-white">Trích xuất &amp; Quản lý đề thi</h4>
-                  <p className="text-[11px] text-indigo-200/70 mt-0.5">Nhập câu hỏi từ Word, PDF hoặc ngân hàng đề chuẩn xác.</p>
-                </div>
-              </div>
-
-              <div className="flex items-start space-x-3 bg-white/5 border border-white/10 p-3 rounded-2xl backdrop-blur-xs">
-                <div className="w-7 h-7 rounded-lg bg-amber-400/20 border border-amber-300/30 text-amber-200 flex items-center justify-center shrink-0 mt-0.5">
-                  <ShieldCheck className="w-3.5 h-3.5" />
-                </div>
-                <div>
-                  <h4 className="text-xs font-bold text-white">Giám sát công bằng</h4>
-                  <p className="text-[11px] text-indigo-200/70 mt-0.5">Đếm lượt rời màn hình, xáo trộn mã đề và giới hạn thời gian.</p>
-                </div>
-              </div>
-            </div>
-
-            {/* Teacher Contact / Student Help Card on Left Hero */}
-            <div className="mt-6 p-4 rounded-2xl bg-white/10 backdrop-blur-md border border-white/15">
-              <div className="flex items-center space-x-2.5 mb-1.5">
-                <div className="w-7 h-7 rounded-lg bg-emerald-400/20 text-emerald-300 flex items-center justify-center shrink-0">
-                  <PhoneCall className="w-3.5 h-3.5" />
-                </div>
-                <div>
-                  <h4 className="text-xs font-bold text-white">Liên hệ Giáo viên &amp; Hỗ trợ học tập</h4>
-                  <p className="text-[10px] text-indigo-200/80">Hotline &amp; Zalo: 0988 123 456 (08:00 - 22:00)</p>
-                </div>
-              </div>
-              <p className="text-[11px] text-indigo-100/85 leading-relaxed">
-                Học sinh chưa có tài khoản hoặc cần mã vào lớp học vui lòng nhắn tin trực tiếp cho Thầy/Cô để được hỗ trợ nhanh chóng.
-              </p>
-            </div>
-          </div>
-
-          {/* Bottom Social Proof / Trust Badge */}
-          <div className="relative z-10 pt-6 border-t border-white/10 mt-6 flex items-center justify-between text-xs text-indigo-200">
-            <span className="flex items-center space-x-1.5 font-medium">
-              <CheckCircle2 className="w-4 h-4 text-emerald-400" />
-              <span>An toàn, bảo mật dữ liệu</span>
-            </span>
-            <span className="font-semibold text-white/90">2,500+ Người dùng</span>
-          </div>
-        </div>
-
-        {/* --- RIGHT FORM COLUMN --- */}
-        <div className="col-span-1 lg:col-span-7 bg-white rounded-3xl p-6 sm:p-9 shadow-card border border-slate-200/90 flex flex-col justify-between">
+      <div className="w-full max-w-xl mx-auto relative z-10">
+        <div className="bg-white rounded-3xl p-6 sm:p-9 shadow-card border border-slate-200/90 flex flex-col justify-between">
           <div>
-            {/* Mobile Header (Brand info for <lg) */}
-            <div className="text-center lg:text-left mb-6">
-              <div className="lg:hidden flex justify-center mb-3">
-                <div className="w-12 h-12 rounded-2xl bg-indigo-600 flex items-center justify-center text-white shadow-sm shadow-indigo-600/20">
+            {/* Brand Header */}
+            <div className="text-center mb-6">
+              <div className="flex justify-center mb-3">
+                <div className="w-12 h-12 rounded-2xl bg-indigo-600 flex items-center justify-center text-white shadow-md shadow-indigo-600/20">
                   <BookOpen className="w-6 h-6" />
                 </div>
               </div>

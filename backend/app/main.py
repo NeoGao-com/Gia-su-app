@@ -14,6 +14,47 @@ async def init_db_tables():
     try:
         async with engine.begin() as conn:
             await conn.run_sync(Base.metadata.create_all)
+
+        # 1. Add missing user columns BEFORE any queries on User table
+        from sqlalchemy import text
+        user_column_names = [
+            "phone_number",
+            "parent_phone",
+            "parent_name",
+            "date_of_birth",
+            "gender",
+            "school",
+            "student_code",
+            "notes",
+        ]
+        for col in user_column_names:
+            try:
+                async with engine.begin() as conn:
+                    await conn.execute(text(f"ALTER TABLE users ADD COLUMN IF NOT EXISTS {col} VARCHAR"))
+            except Exception:
+                try:
+                    async with engine.begin() as conn:
+                        await conn.execute(text(f"ALTER TABLE users ADD COLUMN {col} VARCHAR"))
+                except Exception:
+                    pass
+
+        # 2. Create performance optimization indexes
+        indexes = [
+            "CREATE INDEX IF NOT EXISTS idx_questions_lookup ON questions (subject, grade_level, chapter, lesson, topic)",
+            "CREATE INDEX IF NOT EXISTS idx_questions_creator ON questions (created_by_id, status)",
+            "CREATE INDEX IF NOT EXISTS idx_classrooms_instructor ON classrooms (instructor_id, is_deleted)",
+            "CREATE INDEX IF NOT EXISTS idx_assignments_classroom ON assignments (classroom_id, is_active)",
+            "CREATE INDEX IF NOT EXISTS idx_exams_creator ON exams (created_by_id, exam_type)",
+            "CREATE INDEX IF NOT EXISTS idx_submissions_exam ON exam_submissions (exam_id, student_id)",
+        ]
+        for idx_sql in indexes:
+            try:
+                async with engine.begin() as conn:
+                    await conn.execute(text(idx_sql))
+            except Exception:
+                pass
+
+        # 3. Seed default accounts if needed
         from app.models.user import User
         from app.core.security import get_password_hash
         from sqlalchemy.future import select
@@ -26,37 +67,6 @@ async def init_db_tables():
                 session.add_all([t, s])
                 await session.commit()
                 logger.info("Default accounts created successfully!")
-        # Create performance optimization indexes
-        from sqlalchemy import text
-        indexes = [
-            "CREATE INDEX IF NOT EXISTS idx_questions_lookup ON questions (subject, grade_level, chapter, lesson, topic)",
-            "CREATE INDEX IF NOT EXISTS idx_questions_creator ON questions (created_by_id, status)",
-            "CREATE INDEX IF NOT EXISTS idx_classrooms_instructor ON classrooms (instructor_id, is_deleted)",
-            "CREATE INDEX IF NOT EXISTS idx_assignments_classroom ON assignments (classroom_id, is_active)",
-            "CREATE INDEX IF NOT EXISTS idx_exams_creator ON exams (created_by_id, exam_type)",
-            "CREATE INDEX IF NOT EXISTS idx_submissions_exam ON exam_submissions (exam_id, student_id)",
-        ]
-        user_column_names = [
-            "phone_number",
-            "parent_phone",
-            "parent_name",
-            "date_of_birth",
-            "gender",
-            "school",
-            "student_code",
-            "notes",
-        ]
-        async with engine.begin() as conn:
-            for col in user_column_names:
-                try:
-                    await conn.execute(text(f"ALTER TABLE users ADD COLUMN {col} VARCHAR"))
-                except Exception:
-                    pass
-            for idx_sql in indexes:
-                try:
-                    await conn.execute(text(idx_sql))
-                except Exception:
-                    pass
 
         return {"status": "success", "message": "Database initialized, indexed and seeded"}
     except Exception as e:
@@ -65,9 +75,10 @@ async def init_db_tables():
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Non-blocking async init only on non-serverless environments
-    if not os.getenv("VERCEL"):
-        asyncio.create_task(init_db_tables())
+    try:
+        await init_db_tables()
+    except Exception as e:
+        logger.warning(f"Startup DB init non-fatal warning: {e}")
     yield
 
 app = FastAPI(
