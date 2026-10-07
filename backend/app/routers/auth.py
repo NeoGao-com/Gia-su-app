@@ -234,6 +234,9 @@ async def update_profile(
         if payload.notes is not None:
             user.notes = payload.notes.strip() if payload.notes else None
 
+        if user.is_active is None:
+            user.is_active = True
+
         await db.commit()
         await db.refresh(user)
 

@@ -279,5 +279,40 @@ def test_practice_recommendations_route_registered():
     assert res.status_code in (401, 403)
 
 
+def test_user_response_null_safe():
+    from app.schemas.auth import UserResponse
+    class MockUser:
+        id = 99
+        email = "test@example.com"
+        full_name = "Test Student"
+        phone_number = None
+        parent_phone = None
+        parent_name = None
+        date_of_birth = None
+        gender = None
+        school = None
+        student_code = None
+        notes = None
+        role = None
+        is_active = None
+        grade_level = None
+
+    validated = UserResponse.model_validate(MockUser())
+    assert validated.id == 99
+    assert validated.role is None or validated.role == "STUDENT"
+    assert validated.is_active is None or validated.is_active is True
+
+
+@pytest.mark.asyncio
+async def test_safe_redis_expire_normalization():
+    from app.database import SafeRedis
+    redis_instance = SafeRedis("redis://localhost:6379/0")
+    # Should not raise TypeError when expire is passed
+    # It will safely normalize kwargs and return None if disconnected
+    res = await redis_instance.set("test_key", "val", expire=60)
+    assert res is None or res is True
+
+
+
 
 

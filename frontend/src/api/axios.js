@@ -101,10 +101,12 @@ api.interceptors.response.use(
   (error) => {
     const status = error.response ? error.response.status : null;
     if (status === 401) {
-      // Xóa thông tin đăng nhập hoặc chuyển hướng nếu không ở trang /login
+      // Xóa thông tin đăng nhập và chuyển hướng nếu không ở các trang công khai
       localStorage.removeItem('access_token');
       localStorage.removeItem('user');
-      if (!window.location.pathname.includes('/login')) {
+      const publicPaths = ['/login', '/register', '/forgot-password', '/oauth-callback'];
+      const isPublicPath = publicPaths.some((p) => window.location.pathname.startsWith(p));
+      if (!isPublicPath) {
         window.location.href = '/login';
       }
     }

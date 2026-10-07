@@ -4,6 +4,7 @@ from sqlalchemy import func, or_
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from sqlalchemy.orm import selectinload
+from sqlalchemy.orm.attributes import flag_modified
 from typing import List, Optional, Any, Dict
 import json
 import random
@@ -165,6 +166,7 @@ async def grade_essay_submission_ai(
         submission.grading_status = "GRADED"
         submission.status = "GRADED"
 
+    flag_modified(submission, "graded_answers")
     await db.commit()
     logger.info(f"AI grading successful: Submission {submission_id} graded by {current_user.email} from IP {client_ip}")
     return {

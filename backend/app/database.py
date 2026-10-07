@@ -92,6 +92,8 @@ class SafeRedis:
     async def set(self, *args, **kwargs):
         if self._is_disabled():
             return None
+        if "expire" in kwargs:
+            kwargs["ex"] = kwargs.pop("expire")
         try:
             res = await self.client.set(*args, **kwargs)
             self._record_success()

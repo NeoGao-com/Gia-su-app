@@ -16,7 +16,7 @@ def validate_strong_password(v: str) -> str:
     return v
 
 class UserBase(BaseModel):
-    email: str
+    email: Optional[str] = ""
     full_name: Optional[str] = "Người dùng"
     phone_number: Optional[str] = None
     parent_phone: Optional[str] = None
@@ -43,8 +43,8 @@ class UserCreate(UserBase):
 class UserResponse(UserBase):
     model_config = ConfigDict(from_attributes=True)
     id: int
-    role: str
-    is_active: bool
+    role: Optional[str] = "STUDENT"
+    is_active: Optional[bool] = True
     grade_level: Optional[int] = None
 
 class ProfileUpdateRequest(BaseModel):

@@ -119,7 +119,7 @@ async def get_tree_structure(
             if less_str not in tree[subj_str][grade_str][chap_str]: tree[subj_str][grade_str][chap_str][less_str] = {}
             tree[subj_str][grade_str][chap_str][less_str][top_str] = cnt
         
-        await redis_client.set(cache_key, json.dumps(tree), expire=1800)
+        await redis_client.set(cache_key, json.dumps(tree), ex=1800)
         return tree
     except Exception as e:
         logger.error(f"Error fetching tree structure: {str(e)}")

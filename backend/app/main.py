@@ -32,21 +32,35 @@ async def init_db_tables():
             ADD COLUMN IF NOT EXISTS gender VARCHAR(10),
             ADD COLUMN IF NOT EXISTS school VARCHAR(255),
             ADD COLUMN IF NOT EXISTS student_code VARCHAR(50),
-            ADD COLUMN IF NOT EXISTS notes TEXT;
+            ADD COLUMN IF NOT EXISTS grade_level INTEGER,
+            ADD COLUMN IF NOT EXISTS notes TEXT,
+            ADD COLUMN IF NOT EXISTS is_deleted BOOLEAN DEFAULT FALSE,
+            ADD COLUMN IF NOT EXISTS reset_token VARCHAR(255),
+            ADD COLUMN IF NOT EXISTS reset_token_expires TIMESTAMP WITH TIME ZONE;
         """
         try:
             async with engine.begin() as conn:
                 await conn.execute(text(batch_alter_pg))
         except Exception:
             # Fallback for SQLite which doesn't support multiple ADD COLUMN in one statement
-            user_column_names = [
-                "phone_number", "parent_phone", "parent_name", "date_of_birth",
-                "gender", "school", "student_code", "notes"
+            user_column_defs = [
+                ("phone_number", "VARCHAR(20)"),
+                ("parent_phone", "VARCHAR(20)"),
+                ("parent_name", "VARCHAR(100)"),
+                ("date_of_birth", "VARCHAR(20)"),
+                ("gender", "VARCHAR(10)"),
+                ("school", "VARCHAR(255)"),
+                ("student_code", "VARCHAR(50)"),
+                ("grade_level", "INTEGER"),
+                ("notes", "TEXT"),
+                ("is_deleted", "BOOLEAN DEFAULT 0"),
+                ("reset_token", "VARCHAR(255)"),
+                ("reset_token_expires", "TIMESTAMP")
             ]
-            for col in user_column_names:
+            for col, col_type in user_column_defs:
                 try:
                     async with engine.begin() as conn:
-                        await conn.execute(text(f"ALTER TABLE users ADD COLUMN {col} VARCHAR"))
+                        await conn.execute(text(f"ALTER TABLE users ADD COLUMN {col} {col_type}"))
                 except Exception:
                     pass
 
