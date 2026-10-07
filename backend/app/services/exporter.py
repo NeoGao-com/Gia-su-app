@@ -3,6 +3,10 @@ import logging
 import os
 import re
 import tempfile
+from typing import Optional, List, Dict, Any, Union
+
+logger = logging.getLogger(__name__)
+
 try:
     from docx import Document
     from docx.enum.table import WD_ALIGN_VERTICAL, WD_TABLE_ALIGNMENT
@@ -42,8 +46,6 @@ except ImportError as _rl_err:
     logger.warning(f"reportlab import warning: {_rl_err}")
 
 import requests
-
-logger = logging.getLogger(__name__)
 
 # Register Vietnamese TrueType fonts for ReportLab
 _font_registered = False
