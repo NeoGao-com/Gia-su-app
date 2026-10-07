@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { LogOut, User, BookOpen, Menu, Sparkles, ChevronDown, UserCheck } from 'lucide-react';
 import { useToast } from '../context/ToastContext';
@@ -8,11 +8,31 @@ export function Navbar() {
   const { toast } = useToast();
   const [dropdownOpen, setDropdownOpen] = useState(false);
 
-  const userStr = localStorage.getItem('user');
-  let user = null;
-  try {
-    user = userStr ? JSON.parse(userStr) : null;
-  } catch {}
+  const [user, setUser] = useState(() => {
+    try {
+      const userStr = localStorage.getItem('user');
+      return userStr ? JSON.parse(userStr) : null;
+    } catch {
+      return null;
+    }
+  });
+
+  useEffect(() => {
+    const handleUserUpdate = () => {
+      try {
+        const userStr = localStorage.getItem('user');
+        setUser(userStr ? JSON.parse(userStr) : null);
+      } catch {
+        setUser(null);
+      }
+    };
+    window.addEventListener('user-updated', handleUserUpdate);
+    window.addEventListener('storage', handleUserUpdate);
+    return () => {
+      window.removeEventListener('user-updated', handleUserUpdate);
+      window.removeEventListener('storage', handleUserUpdate);
+    };
+  }, []);
 
   const handleLogout = () => {
     localStorage.removeItem('access_token');

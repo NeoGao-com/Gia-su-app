@@ -514,6 +514,7 @@ def normalize_question_payload(raw: Dict[str, Any]) -> Dict[str, Any]:
 class QuestionImportRequest(BaseModel):
     questions: List[Dict[str, Any]]
 
+@router.post("/batch", summary="Lưu hàng loạt câu hỏi vào ngân hàng (alias)")
 @router.post("/import-json", summary="Nhập hàng loạt câu hỏi từ JSON")
 async def import_questions_json(
     payload: QuestionImportRequest,

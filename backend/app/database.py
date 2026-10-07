@@ -234,7 +234,28 @@ if os.getenv("VERCEL") and ("localhost" in settings.REDIS_URL or "127.0.0.1" in 
 else:
     redis_client = SafeRedis(settings.REDIS_URL)
 
+_DB_INITIALIZED = False
+_db_init_lock = None
+
+async def ensure_db_initialized():
+    global _DB_INITIALIZED, _db_init_lock
+    if _DB_INITIALIZED:
+        return
+    import asyncio
+    if _db_init_lock is None:
+        _db_init_lock = asyncio.Lock()
+    async with _db_init_lock:
+        if not _DB_INITIALIZED:
+            try:
+                from app.main import init_db_tables
+                await init_db_tables()
+            except Exception as e:
+                logger.warning(f"Auto init db on request warning: {e}")
+            _DB_INITIALIZED = True
+
 async def get_db():
+    if not _DB_INITIALIZED:
+        await ensure_db_initialized()
     async with AsyncSessionLocal() as session:
         yield session
 

@@ -313,6 +313,36 @@ async def test_safe_redis_expire_normalization():
     assert res is None or res is True
 
 
+def test_profile_update_request_grade_level_coercion():
+    from app.schemas.auth import ProfileUpdateRequest
+    req1 = ProfileUpdateRequest(grade_level="")
+    assert req1.grade_level is None
+
+    req2 = ProfileUpdateRequest(grade_level="12")
+    assert req2.grade_level == 12
+
+    req3 = ProfileUpdateRequest(grade_level=None)
+    assert req3.grade_level is None
+
+
+def test_questions_batch_route_exists():
+    from fastapi.testclient import TestClient
+    from app.main import app
+    client = TestClient(app)
+    # /api/questions/batch exists and requires auth (returns 401/403, not 404)
+    res = client.post("/api/questions/batch", json={"questions": []})
+    assert res.status_code in (401, 403, 400)
+
+
+def test_schedule_event_update_fields_set():
+    from app.schemas.schedule import ScheduleEventUpdate
+    req = ScheduleEventUpdate(classroom_id=None, description=None)
+    assert "classroom_id" in req.model_fields_set
+    assert "description" in req.model_fields_set
+    assert req.classroom_id is None
+
+
+
 
 
 

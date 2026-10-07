@@ -20,6 +20,12 @@ export function ClassroomDiscussionsModal({
   const fileInputRef = useRef(null);
   const commentFileInputRef = useRef(null);
 
+  const userStr = localStorage.getItem('user');
+  let currentUser = null;
+  try {
+    currentUser = userStr ? JSON.parse(userStr) : null;
+  } catch {}
+
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(false);
   const [activePost, setActivePost] = useState(null);
@@ -564,7 +570,7 @@ export function ClassroomDiscussionsModal({
                       </button>
                     )}
 
-                    {(isTeacher || activePost.user_id === activePost.author?.id) && (
+                    {(isTeacher || (currentUser && currentUser.id === activePost.user_id)) && (
                       <button
                         type="button"
                         onClick={() => handleDeletePost(activePost.id)}
@@ -647,7 +653,7 @@ export function ClassroomDiscussionsModal({
                               </button>
                             )}
 
-                            {isTeacher && (
+                            {(isTeacher || (currentUser && currentUser.id === c.user_id)) && (
                               <button
                                 type="button"
                                 onClick={() => handleDeleteComment(activePost.id, c.id)}

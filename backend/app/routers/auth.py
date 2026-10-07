@@ -209,7 +209,14 @@ async def update_profile(
     current_user: User = Depends(get_current_user)
 ):
     try:
-        user = await db.get(User, current_user.id)
+        try:
+            user = await db.get(User, current_user.id)
+        except Exception as e:
+            logger.warning(f"Table not ready or columns missing during update_profile ({e}), initializing...")
+            from app.main import init_db_tables
+            await init_db_tables()
+            user = await db.get(User, current_user.id)
+
         if not user or user.is_deleted:
             raise HTTPException(status_code=404, detail="Không tìm thấy thông tin người dùng")
 

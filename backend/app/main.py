@@ -53,7 +53,7 @@ async def init_db_tables():
                 ("student_code", "VARCHAR(50)"),
                 ("grade_level", "INTEGER"),
                 ("notes", "TEXT"),
-                ("is_deleted", "BOOLEAN DEFAULT 0"),
+                ("is_deleted", "BOOLEAN DEFAULT FALSE"),
                 ("reset_token", "VARCHAR(255)"),
                 ("reset_token_expires", "TIMESTAMP")
             ]

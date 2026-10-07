@@ -59,6 +59,16 @@ class ProfileUpdateRequest(BaseModel):
     grade_level: Optional[int] = None
     notes: Optional[str] = None
 
+    @field_validator("grade_level", mode="before")
+    @classmethod
+    def coerce_grade_level(cls, v):
+        if v is None or v == "" or v == "null":
+            return None
+        try:
+            return int(v)
+        except (ValueError, TypeError):
+            return None
+
 class ChangePasswordRequest(BaseModel):
     current_password: str
     new_password: str

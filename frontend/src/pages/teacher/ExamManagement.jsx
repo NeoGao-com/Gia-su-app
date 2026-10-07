@@ -128,7 +128,17 @@ export function ExamManagement() {
       setExportMenuExamId(null);
     } catch (err) {
       console.error(err);
-      toast.error(`Lỗi khi xuất file ${format.toUpperCase()}: ` + (err.response?.data?.detail || err.message));
+      let errMsg = err.message;
+      if (err.response?.data instanceof Blob) {
+        try {
+          const text = await err.response.data.text();
+          const parsed = JSON.parse(text);
+          errMsg = parsed.detail || errMsg;
+        } catch {}
+      } else if (err.response?.data?.detail) {
+        errMsg = err.response.data.detail;
+      }
+      toast.error(`Lỗi khi xuất file ${format.toUpperCase()}: ${errMsg}`);
     } finally {
       setExportingKey(null);
     }
@@ -262,8 +272,19 @@ export function ExamManagement() {
                   className="px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 focus:outline-none focus:border-indigo-600 transition"
                 >
                   <option value="">Tất cả môn học</option>
-                  {['Toán học', 'Vật lý', 'Hóa học', 'Sinh học', 'Tiếng Anh', 'Ngữ văn', 'Lịch sử', 'Địa lý', 'Tin học', 'GDCD'].map(s => (
-                    <option key={s} value={s}>{s}</option>
+                  {[
+                    { val: 'Toán', label: 'Toán học' },
+                    { val: 'Vật lý', label: 'Vật lý' },
+                    { val: 'Hóa học', label: 'Hóa học' },
+                    { val: 'Sinh học', label: 'Sinh học' },
+                    { val: 'Tiếng Anh', label: 'Tiếng Anh' },
+                    { val: 'Ngữ văn', label: 'Ngữ văn' },
+                    { val: 'Lịch sử', label: 'Lịch sử' },
+                    { val: 'Địa lý', label: 'Địa lý' },
+                    { val: 'Tin học', label: 'Tin học' },
+                    { val: 'GDCD', label: 'GDCD' },
+                  ].map(s => (
+                    <option key={s.val} value={s.val}>{s.label}</option>
                   ))}
                 </select>
 

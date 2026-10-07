@@ -82,7 +82,7 @@ async def grade_essay_submission_ai(
     submission_id: int,
     payload: Optional[EssayGradeRequest] = Body(None),
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_teacher)
+    current_user: User = Depends(get_current_user)
 ):
     client_ip = request.client.host if request.client else "unknown"
     result = await db.execute(select(ExamSubmission).filter(ExamSubmission.id == submission_id))
@@ -91,7 +91,11 @@ async def grade_essay_submission_ai(
         logger.warning(f"AI grading failed: Submission not found {submission_id} by {current_user.email} from IP {client_ip}")
         raise HTTPException(status_code=404, detail="Không tìm thấy bài nộp")
 
-    await check_grading_authorization(db, submission, current_user)
+    # Authorize: Submission owner or authorized teacher
+    if submission.user_id != current_user.id:
+        if current_user.role != "TEACHER":
+            raise HTTPException(status_code=403, detail="Bạn không có quyền chấm bài nộp này")
+        await check_grading_authorization(db, submission, current_user)
 
     q_result = await db.execute(
         select(Question).join(exam_questions, Question.id == exam_questions.c.question_id).filter(exam_questions.c.exam_id == submission.exam_id)
@@ -223,7 +227,32 @@ async def get_exams(
             .join(Question, Question.id == exam_questions.c.question_id)
         )
         if subject:
-            q_subfilter = q_subfilter.filter(Question.subject.ilike(f"%{subject}%"))
+            sub_raw = subject.strip()
+            # Normalize common subject variations
+            sub_lower = sub_raw.lower()
+            if sub_lower.startswith("toán"):
+                sub_pattern = "%toán%"
+            elif "vật" in sub_lower:
+                sub_pattern = "%vật%"
+            elif "hóa" in sub_lower or "hoá" in sub_lower:
+                sub_pattern = "%hóa%"
+            elif "sinh" in sub_lower:
+                sub_pattern = "%sinh%"
+            elif "anh" in sub_lower:
+                sub_pattern = "%anh%"
+            elif "văn" in sub_lower:
+                sub_pattern = "%văn%"
+            elif "sử" in sub_lower:
+                sub_pattern = "%sử%"
+            elif "địa" in sub_lower:
+                sub_pattern = "%địa%"
+            elif "tin" in sub_lower:
+                sub_pattern = "%tin%"
+            elif "gdcd" in sub_lower or "dân" in sub_lower:
+                sub_pattern = "%gdcd%"
+            else:
+                sub_pattern = f"%{sub_raw}%"
+            q_subfilter = q_subfilter.filter(Question.subject.ilike(sub_pattern))
         if grade_level:
             q_subfilter = q_subfilter.filter(Question.grade_level == grade_level)
         query = query.filter(Exam.id.in_(q_subfilter))

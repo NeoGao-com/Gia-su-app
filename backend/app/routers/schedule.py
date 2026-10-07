@@ -152,19 +152,19 @@ async def update_schedule_event(
     if not event or event.teacher_id != current_user.id:
         raise HTTPException(status_code=404, detail="Sự kiện không tồn tại hoặc bạn không có quyền sửa")
 
-    if payload.title is not None and payload.title.strip():
+    if "title" in payload.model_fields_set and payload.title:
         event.title = payload.title.strip()
-    if payload.description is not None:
+    if "description" in payload.model_fields_set:
         event.description = payload.description.strip() if payload.description else None
-    if payload.classroom_id is not None:
-        event.classroom_id = payload.classroom_id if payload.classroom_id > 0 else None
-    if payload.day_of_week is not None and 1 <= payload.day_of_week <= 7:
+    if "classroom_id" in payload.model_fields_set:
+        event.classroom_id = payload.classroom_id if (payload.classroom_id and payload.classroom_id > 0) else None
+    if "day_of_week" in payload.model_fields_set and payload.day_of_week and 1 <= payload.day_of_week <= 7:
         event.day_of_week = payload.day_of_week
-    if payload.color is not None:
+    if "color" in payload.model_fields_set and payload.color:
         event.color = payload.color
-    if payload.is_recurring is not None:
+    if "is_recurring" in payload.model_fields_set and payload.is_recurring is not None:
         event.is_recurring = payload.is_recurring
-    if payload.specific_date is not None:
+    if "specific_date" in payload.model_fields_set:
         event.specific_date = payload.specific_date.strip() if payload.specific_date else None
 
     # Handle time / resize updates

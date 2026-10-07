@@ -7,7 +7,7 @@ import {
   ArrowRight, Settings, FileText, Folder, FolderOpen, ChevronRight, 
   ChevronDown, Search, File, Shuffle, Copy, Sliders, Check, 
   AlertTriangle, Eye, ShieldCheck, Hash, Send, Edit3, CheckCircle2,
-  XCircle, Clock, Award, Archive, Filter, RefreshCw, Upload
+  XCircle, Clock, Award, Archive, Filter, RefreshCw, Upload, Download, FileDown
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '../../context/ToastContext';
@@ -51,6 +51,63 @@ export function ExamCreator() {
   const [editShowAnswers, setEditShowAnswers] = useState(true);
   const [editPublished, setEditPublished] = useState(false);
   const [savingEdit, setSavingEdit] = useState(false);
+
+  // Export State for Kho đề thi
+  const [exportMenuExamId, setExportMenuExamId] = useState(null);
+  const [exportingKey, setExportingKey] = useState(null);
+
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (!e.target.closest('.export-dropdown-box')) {
+        setExportMenuExamId(null);
+      }
+    };
+    document.addEventListener('click', handleClickOutside);
+    return () => document.removeEventListener('click', handleClickOutside);
+  }, []);
+
+  const handleExportExam = async (examId, examTitle, format, includeAnswers) => {
+    const key = `${examId}_${format}_${includeAnswers ? 'ans' : 'noans'}`;
+    try {
+      setExportingKey(key);
+      const res = await api.get(`/export/exam/${examId}/${format}`, {
+        params: { include_answers: includeAnswers },
+        responseType: 'blob',
+        headers: { 'Cache-Control': 'no-cache' }
+      });
+      const mime = format === 'pdf' 
+        ? 'application/pdf' 
+        : 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+      const blob = new Blob([res.data], { type: mime });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      const cleanTitle = (examTitle || `de_thi_${examId}`).replace(/[\\/:*?"<>|]/g, '_');
+      const suffix = includeAnswers ? '_co_dap_an' : '_de_bai';
+      a.setAttribute('download', `${cleanTitle}${suffix}.${format}`);
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(url);
+      toast.success(`Đã xuất file ${format.toUpperCase()} (${includeAnswers ? 'có đáp án' : 'đề bài'}) thành công!`);
+      setExportMenuExamId(null);
+    } catch (err) {
+      console.error(err);
+      let errMsg = err.message;
+      if (err.response?.data instanceof Blob) {
+        try {
+          const text = await err.response.data.text();
+          const parsed = JSON.parse(text);
+          errMsg = parsed.detail || errMsg;
+        } catch {}
+      } else if (err.response?.data?.detail) {
+        errMsg = err.response.data.detail;
+      }
+      toast.error(`Lỗi khi xuất file ${format.toUpperCase()}: ${errMsg}`);
+    } finally {
+      setExportingKey(null);
+    }
+  };
 
   // 1. Exam General Info
   const [title, setTitle] = useState('');
@@ -1039,6 +1096,70 @@ export function ExamCreator() {
                                 >
                                   <Eye className="w-4 h-4" />
                                 </button>
+
+                                {/* Export Word / PDF Dropdown */}
+                                <div className="relative inline-block export-dropdown-box">
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setExportMenuExamId(exportMenuExamId === exam.id ? null : exam.id);
+                                    }}
+                                    className="p-2 text-slate-500 hover:text-indigo-600 hover:bg-indigo-50 rounded-xl transition cursor-pointer"
+                                    title="Xuất file Word / PDF"
+                                  >
+                                    <FileDown className="w-4 h-4" />
+                                  </button>
+
+                                  {exportMenuExamId === exam.id && (
+                                    <div className="absolute right-0 mt-1 w-52 bg-white rounded-xl shadow-lg border border-slate-200 py-1.5 z-40 text-left animate-in fade-in zoom-in-95">
+                                      <div className="px-3 py-1 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                                        Xuất Word (.docx)
+                                      </div>
+                                      <button
+                                        type="button"
+                                        disabled={exportingKey === `${exam.id}_docx_noans`}
+                                        onClick={() => handleExportExam(exam.id, exam.title, 'docx', false)}
+                                        className="w-full text-left px-3 py-1.5 text-xs text-slate-700 hover:bg-slate-50 flex items-center space-x-2 transition disabled:opacity-50 cursor-pointer"
+                                      >
+                                        <FileDown className="w-3.5 h-3.5 text-indigo-600 shrink-0" />
+                                        <span>Đề bài (không đáp án)</span>
+                                      </button>
+                                      <button
+                                        type="button"
+                                        disabled={exportingKey === `${exam.id}_docx_ans`}
+                                        onClick={() => handleExportExam(exam.id, exam.title, 'docx', true)}
+                                        className="w-full text-left px-3 py-1.5 text-xs text-slate-700 hover:bg-slate-50 flex items-center space-x-2 transition disabled:opacity-50 cursor-pointer"
+                                      >
+                                        <FileDown className="w-3.5 h-3.5 text-indigo-600 shrink-0" />
+                                        <span>Đề kèm đáp án & Lời giải</span>
+                                      </button>
+
+                                      <div className="border-t border-slate-100 my-1" />
+
+                                      <div className="px-3 py-1 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                                        Xuất PDF (.pdf)
+                                      </div>
+                                      <button
+                                        type="button"
+                                        disabled={exportingKey === `${exam.id}_pdf_noans`}
+                                        onClick={() => handleExportExam(exam.id, exam.title, 'pdf', false)}
+                                        className="w-full text-left px-3 py-1.5 text-xs text-slate-700 hover:bg-slate-50 flex items-center space-x-2 transition disabled:opacity-50 cursor-pointer"
+                                      >
+                                        <Download className="w-3.5 h-3.5 text-rose-600 shrink-0" />
+                                        <span>Đề bài (không đáp án)</span>
+                                      </button>
+                                      <button
+                                        type="button"
+                                        disabled={exportingKey === `${exam.id}_pdf_ans`}
+                                        onClick={() => handleExportExam(exam.id, exam.title, 'pdf', true)}
+                                        className="w-full text-left px-3 py-1.5 text-xs text-slate-700 hover:bg-slate-50 flex items-center space-x-2 transition disabled:opacity-50 cursor-pointer"
+                                      >
+                                        <Download className="w-3.5 h-3.5 text-rose-600 shrink-0" />
+                                        <span>Đề kèm đáp án & Lời giải</span>
+                                      </button>
+                                    </div>
+                                  )}
+                                </div>
 
                                 <button
                                   onClick={() => {

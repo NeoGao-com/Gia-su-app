@@ -126,6 +126,7 @@ export function StudentProfile() {
       const res = await api.put('/auth/profile', payload);
       const updatedUser = res.data;
       localStorage.setItem('user', JSON.stringify(updatedUser));
+      window.dispatchEvent(new Event('user-updated'));
       toast.success('Cập nhật thông tin cá nhân thành công!');
     } catch (err) {
       toast.error(err.response?.data?.detail || 'Không thể cập nhật thông tin. Vui lòng thử lại.');
