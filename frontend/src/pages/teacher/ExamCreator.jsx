@@ -2253,7 +2253,7 @@ export function ExamCreator() {
             isOpen={isImportFileModalOpen}
             onClose={() => setIsImportFileModalOpen(false)}
             onSuccess={() => {
-              loadQuestions();
+              fetchQuestions();
             }}
           />
         </main>

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import { 
   LayoutDashboard, BookOpen, Users, Award, 
-  BarChart2, Cpu, FileText, Send, X, UserCheck, Calendar
+  BarChart2, Cpu, FileText, Send, X, UserCheck, Calendar, Sparkles
 } from 'lucide-react';
 
 export function Sidebar({ role }) {
