@@ -5,7 +5,7 @@ import api from '../../api/axios';
 import { 
   BookOpen, CheckCircle, ArrowRight, KeyRound, Users, Clock, 
   Sparkles, Trophy, TrendingUp, FileText, Send, AlertTriangle, 
-  Eye, GraduationCap, Flame
+  Eye, GraduationCap, Flame, Award
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useToast } from '../../context/ToastContext';
