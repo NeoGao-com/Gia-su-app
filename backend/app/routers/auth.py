@@ -208,30 +208,47 @@ async def update_profile(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    if payload.full_name is not None:
-        current_user.full_name = payload.full_name.strip()
-    if payload.phone_number is not None:
-        current_user.phone_number = payload.phone_number.strip()
-    if payload.parent_phone is not None:
-        current_user.parent_phone = payload.parent_phone.strip()
-    if payload.parent_name is not None:
-        current_user.parent_name = payload.parent_name.strip()
-    if payload.date_of_birth is not None:
-        current_user.date_of_birth = payload.date_of_birth.strip()
-    if payload.gender is not None:
-        current_user.gender = payload.gender.strip()
-    if payload.school is not None:
-        current_user.school = payload.school.strip()
-    if payload.student_code is not None:
-        current_user.student_code = payload.student_code.strip()
-    if payload.grade_level is not None:
-        current_user.grade_level = payload.grade_level
-    if payload.notes is not None:
-        current_user.notes = payload.notes.strip()
+    try:
+        user = await db.get(User, current_user.id)
+        if not user or user.is_deleted:
+            raise HTTPException(status_code=404, detail="Không tìm thấy thông tin người dùng")
 
-    await db.commit()
-    await db.refresh(current_user)
-    return current_user
+        if payload.full_name is not None and payload.full_name.strip():
+            user.full_name = payload.full_name.strip()
+        if payload.phone_number is not None:
+            user.phone_number = payload.phone_number.strip() if payload.phone_number else None
+        if payload.parent_phone is not None:
+            user.parent_phone = payload.parent_phone.strip() if payload.parent_phone else None
+        if payload.parent_name is not None:
+            user.parent_name = payload.parent_name.strip() if payload.parent_name else None
+        if payload.date_of_birth is not None:
+            user.date_of_birth = payload.date_of_birth.strip() if payload.date_of_birth else None
+        if payload.gender is not None:
+            user.gender = payload.gender.strip() if payload.gender else None
+        if payload.school is not None:
+            user.school = payload.school.strip() if payload.school else None
+        if payload.student_code is not None:
+            user.student_code = payload.student_code.strip() if payload.student_code else None
+        if payload.grade_level is not None:
+            user.grade_level = payload.grade_level
+        if payload.notes is not None:
+            user.notes = payload.notes.strip() if payload.notes else None
+
+        await db.commit()
+        await db.refresh(user)
+
+        try:
+            await redis_client.delete(f"auth:user:{user.email}")
+        except Exception:
+            pass
+
+        return user
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error updating user profile: {str(e)}", exc_info=True)
+        await db.rollback()
+        raise HTTPException(status_code=500, detail=f"Lỗi khi lưu thông tin người dùng: {str(e)}")
 
 @router.post("/change-password", summary="Đổi mật khẩu tài khoản")
 async def change_password(
@@ -239,12 +256,29 @@ async def change_password(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    if not verify_password(payload.current_password, current_user.hashed_password):
-        raise HTTPException(status_code=400, detail="Mật khẩu hiện tại không chính xác")
+    try:
+        user = await db.get(User, current_user.id)
+        if not user or user.is_deleted:
+            raise HTTPException(status_code=404, detail="Không tìm thấy thông tin người dùng")
 
-    if payload.new_password == payload.current_password:
-        raise HTTPException(status_code=400, detail="Mật khẩu mới không được trùng với mật khẩu cũ")
+        if not verify_password(payload.current_password, user.hashed_password):
+            raise HTTPException(status_code=400, detail="Mật khẩu hiện tại không chính xác")
 
-    current_user.hashed_password = get_password_hash(payload.new_password)
-    await db.commit()
-    return {"message": "Đổi mật khẩu thành công"}
+        if payload.new_password == payload.current_password:
+            raise HTTPException(status_code=400, detail="Mật khẩu mới không được trùng với mật khẩu cũ")
+
+        user.hashed_password = get_password_hash(payload.new_password)
+        await db.commit()
+
+        try:
+            await redis_client.delete(f"auth:user:{user.email}")
+        except Exception:
+            pass
+
+        return {"message": "Đổi mật khẩu thành công"}
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error changing password: {str(e)}", exc_info=True)
+        await db.rollback()
+        raise HTTPException(status_code=500, detail=f"Lỗi khi đổi mật khẩu: {str(e)}")

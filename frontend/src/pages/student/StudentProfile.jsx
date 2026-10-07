@@ -107,16 +107,16 @@ export function StudentProfile() {
     setSavingInfo(true);
     try {
       const payload = {
-        full_name: profile.full_name.trim(),
-        phone_number: profile.phone_number.trim() || null,
-        parent_phone: profile.parent_phone.trim() || null,
-        parent_name: profile.parent_name.trim() || null,
+        full_name: (profile.full_name || '').trim(),
+        phone_number: (profile.phone_number || '').trim() || null,
+        parent_phone: (profile.parent_phone || '').trim() || null,
+        parent_name: (profile.parent_name || '').trim() || null,
         date_of_birth: profile.date_of_birth || null,
         gender: profile.gender || null,
-        school: profile.school.trim() || null,
-        student_code: profile.student_code.trim() || null,
+        school: (profile.school || '').trim() || null,
+        student_code: (profile.student_code || '').trim() || null,
         grade_level: profile.grade_level ? parseInt(profile.grade_level, 10) : null,
-        notes: profile.notes.trim() || null,
+        notes: (profile.notes || '').trim() || null,
       };
 
       const res = await api.put('/auth/profile', payload);
