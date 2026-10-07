@@ -79,8 +79,8 @@ class ExamUpdate(BaseModel):
 class ExamResponse(ExamBase):
     model_config = ConfigDict(from_attributes=True)
     id: int
-    created_at: datetime
-    created_by_id: int
+    created_at: Optional[datetime] = None
+    created_by_id: Optional[int] = None
     subject: Optional[str] = None
     grade_level: Optional[int] = None
     question_count: Optional[int] = None
@@ -114,11 +114,11 @@ class ExamSubmissionResponse(BaseModel):
     id: int
     exam_id: int
     user_id: int
-    score: Optional[float]
+    score: Optional[float] = None
     auto_score: Optional[float] = None
     essay_score: Optional[float] = None
-    submitted_at: datetime
-    grading_status: str
+    submitted_at: Optional[datetime] = None
+    grading_status: Optional[str] = "PENDING"
     status: Optional[str] = "IN_PROGRESS"
     started_at: Optional[datetime] = None
     last_saved_at: Optional[datetime] = None

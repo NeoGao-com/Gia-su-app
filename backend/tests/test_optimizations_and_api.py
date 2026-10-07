@@ -371,6 +371,71 @@ def test_grade_ai_route_exists():
     assert res.status_code in (401, 403, 404)
 
 
+def test_exam_and_classroom_schemas_null_safe():
+    from app.schemas.exam import ExamResponse, ExamSubmissionResponse
+    from app.schemas.classroom import ClassroomResponse
+
+    class MockExam:
+        id = 10
+        title = "Đề thi kiểm tra"
+        duration_minutes = 45
+        pass_score = 5.0
+        is_published = True
+        show_answers_after_submit = True
+        max_attempts = 1
+        exam_type = "EXAM"
+        created_at = None
+        created_by_id = None
+        subject = None
+        grade_level = None
+        question_count = None
+        submissions_count = None
+
+    e = ExamResponse.model_validate(MockExam())
+    assert e.id == 10
+    assert e.created_by_id is None
+    assert e.created_at is None
+
+    class MockSubmission:
+        id = 20
+        exam_id = 10
+        user_id = 99
+        score = None
+        auto_score = None
+        essay_score = None
+        submitted_at = None
+        grading_status = None
+        status = "IN_PROGRESS"
+        started_at = None
+        last_saved_at = None
+        attempt_number = 1
+        version = 1
+        tab_switches = 0
+
+    s = ExamSubmissionResponse.model_validate(MockSubmission())
+    assert s.id == 20
+    assert s.submitted_at is None
+    assert s.score is None
+
+    class MockClassroom:
+        id = 30
+        name = "Lớp 10A1"
+        description = None
+        code = None
+        code_expires_at = None
+        instructor_id = None
+        created_at = None
+        instructor = None
+        students = []
+        exams = []
+        assignments = []
+
+    c = ClassroomResponse.model_validate(MockClassroom())
+    assert c.id == 30
+    assert c.code == "" or c.code is None
+
+
+
 
 
 

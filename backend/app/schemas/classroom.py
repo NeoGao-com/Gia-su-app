@@ -23,7 +23,7 @@ from app.schemas.assignment import AssignmentResponse as AssignmentSchemaRespons
 class ClassroomResponse(ClassroomBase):
     model_config = ConfigDict(from_attributes=True)
     id: int
-    code: str
+    code: Optional[str] = ""
     code_expires_at: Optional[datetime] = None
     instructor_id: Optional[int] = None
     created_at: Optional[datetime] = None

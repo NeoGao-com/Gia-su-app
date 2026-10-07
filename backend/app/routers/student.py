@@ -694,7 +694,8 @@ async def get_student_dashboard_summary(
         is_in_prog = asgn.exam_id in in_progress_exam_ids
         if not is_done:
             pending_count += 1
-            is_overdue = bool(asgn.due_date and asgn.due_date < now)
+            due_aware = asgn.due_date.replace(tzinfo=timezone.utc) if (asgn.due_date and asgn.due_date.tzinfo is None) else asgn.due_date
+            is_overdue = bool(due_aware and due_aware < now)
             urgent_assignments.append({
                 "assignment_id": asgn.id,
                 "exam_id": exam.id,
@@ -710,7 +711,7 @@ async def get_student_dashboard_summary(
     urgent_assignments.sort(key=lambda x: (
         not x["is_in_progress"],
         x["due_date"] is None,
-        x["due_date"] or datetime.max.replace(tzinfo=timezone.utc)
+        x["due_date"].replace(tzinfo=timezone.utc) if (x["due_date"] and x["due_date"].tzinfo is None) else (x["due_date"] or datetime.max.replace(tzinfo=timezone.utc))
     ))
 
     # Recent 5 submissions
