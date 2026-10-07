@@ -1,6 +1,7 @@
 import { StrictMode, Suspense } from 'react'
 import { createRoot } from 'react-dom/client'
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+import { Analytics as VercelAnalytics } from '@vercel/analytics/react'
 import './index.css'
 import { ProtectedRoute } from './components/ProtectedRoute'
 import { RootRedirect, PageLoader } from './components/RootRedirect'
@@ -64,6 +65,7 @@ createRoot(document.getElementById('root')).render(
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </Suspense>
+        <VercelAnalytics />
       </BrowserRouter>
       </ToastProvider>
     </ErrorBoundary>
