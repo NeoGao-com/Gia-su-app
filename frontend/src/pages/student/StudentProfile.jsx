@@ -1,10 +1,14 @@
 import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import api from '../../api/axios';
+import { Navbar } from '../../components/Navbar';
+import { Sidebar } from '../../components/Sidebar';
 import { 
   User, Mail, Phone, Calendar, School, 
   Lock, KeyRound, ShieldCheck, CheckCircle2, 
   Save, Eye, EyeOff, Loader2, AlertCircle, 
-  GraduationCap, Sparkles, HeartHandshake, FileText
+  GraduationCap, Sparkles, HeartHandshake, FileText,
+  ArrowLeft
 } from 'lucide-react';
 import { useToast } from '../../context/ToastContext';
 
@@ -170,9 +174,24 @@ export function StudentProfile() {
   const initial = (profile.full_name || profile.email || 'H').charAt(0).toUpperCase();
 
   return (
-    <div className="max-w-5xl mx-auto space-y-6">
-      {/* Top Header Card */}
-      <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200/90 shadow-card relative overflow-hidden">
+    <div className="min-h-screen bg-slate-50 font-sans">
+      <Navbar />
+      <div className="flex">
+        <Sidebar role="student" />
+        <main className="flex-1 p-4 sm:p-6 lg:p-8 max-w-5xl mx-auto w-full space-y-6">
+          {/* Back button to main dashboard */}
+          <div className="flex items-center justify-between">
+            <Link
+              to="/student"
+              className="inline-flex items-center space-x-2 text-xs sm:text-sm font-semibold text-slate-600 hover:text-indigo-600 transition bg-white px-3.5 py-2 rounded-xl border border-slate-200/90 shadow-2xs hover:shadow-xs group"
+            >
+              <ArrowLeft className="w-4 h-4 text-slate-500 group-hover:-translate-x-0.5 transition" />
+              <span>Quay lại trang chính</span>
+            </Link>
+          </div>
+
+          {/* Top Header Card */}
+          <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200/90 shadow-card relative overflow-hidden">
         <div className="absolute -top-16 -right-16 w-48 h-48 bg-indigo-50 rounded-full blur-2xl pointer-events-none" />
 
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-5 relative z-10">
@@ -619,6 +638,8 @@ export function StudentProfile() {
           </form>
         </div>
       )}
+        </main>
+      </div>
     </div>
   );
 }
