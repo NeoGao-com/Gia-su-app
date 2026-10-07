@@ -105,7 +105,7 @@ export function StudentDashboard() {
               <p className="mt-2 text-indigo-100 text-xs sm:text-sm leading-relaxed">
                 {pendingAssignmentsCount > 0 
                   ? `Bạn có ${pendingAssignmentsCount} bài tập cần hoàn thành. Hãy sắp xếp làm bài trước thời hạn nhé!`
-                  : 'Tuyệt vời! Bạn đã hoàn thành tất cả bài tập được giao. Bạn có thể luyện tập tự do để nâng cao kỹ năng!'}
+                  : 'Tuyệt vời! Bạn đã hoàn thành tất cả bài tập được giao. Chúc bạn có một ngày học tập thật tốt!'}
               </p>
             </div>
             <div className="absolute right-0 bottom-0 opacity-10 pointer-events-none transform translate-x-8 translate-y-8">

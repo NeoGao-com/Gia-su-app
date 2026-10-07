@@ -38,7 +38,6 @@ createRoot(document.getElementById('root')).render(
             <Route path="/student/assignments" element={<StudentAssignments />} />
             <Route path="/student/classrooms" element={<StudentClassrooms />} />
             <Route path="/student/schedule" element={<StudentSchedule />} />
-            <Route path="/student/practice" element={<Navigate to="/student" replace />} />
             <Route path="/student/profile" element={<StudentProfile />} />
             <Route path="/profile" element={<StudentProfile />} />
             <Route path="/exams" element={<ExamList />} />
