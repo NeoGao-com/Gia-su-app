@@ -3,11 +3,11 @@ import { Navbar } from '../../components/Navbar';
 import { Sidebar } from '../../components/Sidebar';
 import api from '../../api/axios';
 import { 
-  Plus, Trash2, BookOpen, Save, Sparkles, Layers, CheckCircle, 
-  ArrowRight, Settings, FileText, Folder, FolderOpen, ChevronRight, 
-  ChevronDown, Search, File, Shuffle, Copy, Sliders, Check, 
-  AlertTriangle, Eye, ShieldCheck, Hash, Send, Edit3, CheckCircle2,
-  XCircle, Clock, Award, Archive, Filter, RefreshCw, Upload, Download, FileDown
+  Plus, Trash2, BookOpen, Save, Sparkles, Layers, 
+  FileText, Folder, FolderOpen, ChevronRight, 
+  ChevronDown, Search, File, Shuffle, Sliders, Check, 
+  Eye, Send, Edit3, CheckCircle2,
+  Clock, Archive, Upload, Download, FileDown
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '../../context/ToastContext';
@@ -127,8 +127,6 @@ export function ExamCreator() {
   const [questions, setQuestions] = useState([]);
   const [selectedQuestionIds, setSelectedQuestionIds] = useState([]);
   const [loadingQuestions, setLoadingQuestions] = useState(false);
-  const [manualExpanded, setManualExpanded] = useState(() => new Set());
-  const [manualSearch, setManualSearch] = useState('');
 
   // 3. Matrix creation state
   const [matrices, setMatrices] = useState([]);
@@ -145,7 +143,6 @@ export function ExamCreator() {
   const [pickerSelection, setPickerSelection] = useState(() => new Set());
   const [pickerExpanded, setPickerExpanded] = useState(() => new Set());
   const [pickerSearch, setPickerSearch] = useState('');
-  const [matrixCollapsed, setMatrixCollapsed] = useState(() => new Set());
   const [matrixSearch, setMatrixSearch] = useState('');
   const [deletingMatrixId, setDeletingMatrixId] = useState(null);
 

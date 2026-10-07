@@ -43,7 +43,6 @@ createRoot(document.getElementById('root')).render(
             <Route path="/exams" element={<ExamList />} />
             <Route path="/student/exams" element={<ExamList />} />
             <Route path="/take-exam/:id" element={<TakeExam />} />
-            <Route path="/take-exam/:examId" element={<TakeExam />} />
             <Route path="/student/exams/:id" element={<TakeExam />} />
             <Route path="/history" element={<ExamHistory />} />
             <Route path="/student/history" element={<ExamHistory />} />

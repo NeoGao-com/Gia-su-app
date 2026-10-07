@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { 
-  X, Award, Clock, CheckCircle2, XCircle, AlertCircle, 
-  HelpCircle, Eye, ChevronDown, ChevronUp, Filter, Sparkles, RefreshCw,
-  Wand2, ThumbsUp, AlertTriangle, Lightbulb
+  Award, Clock, CheckCircle2, XCircle, AlertCircle, 
+  Filter, Sparkles, RefreshCw, Wand2, ThumbsUp, AlertTriangle, Lightbulb
 } from 'lucide-react';
 import { Modal } from './Modal';
 import { MathRenderer } from './MathRenderer';
@@ -415,7 +414,13 @@ export function SubmissionReviewModal({ isOpen, onClose, submissionId }) {
                         return (
                           <div 
                             key={sIdx}
-                            className="p-2.5 rounded-xl bg-gray-50 border border-gray-100 flex flex-col sm:flex-row justify-between sm:items-center gap-2 text-xs"
+                            className={`p-2.5 rounded-xl flex flex-col sm:flex-row justify-between sm:items-center gap-2 text-xs border transition-colors ${
+                              isSubCorrect === true
+                                ? 'bg-emerald-50/40 border-emerald-200'
+                                : isSubCorrect === false
+                                  ? 'bg-rose-50/40 border-rose-200'
+                                  : 'bg-gray-50 border-gray-100'
+                            }`}
                           >
                             <div className="flex items-start space-x-2 flex-1">
                               <span className="font-bold text-gray-500 shrink-0">{letter})</span>
