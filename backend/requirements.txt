@@ -18,4 +18,5 @@ redis
 aiosmtplib
 requests
 reportlab
+lxml
 

@@ -3,20 +3,44 @@ import logging
 import os
 import re
 import tempfile
-from docx import Document
-from docx.enum.table import WD_ALIGN_VERTICAL, WD_TABLE_ALIGNMENT
-from docx.enum.text import WD_ALIGN_PARAGRAPH
-from docx.oxml import OxmlElement, parse_xml
-from docx.oxml.ns import qn
-from docx.shared import Inches, Pt, RGBColor
-import latex2mathml.converter
-from lxml import etree
-from reportlab.lib import colors
-from reportlab.lib.pagesizes import A4
-from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
-from reportlab.pdfbase import pdfmetrics
-from reportlab.pdfbase.ttfonts import TTFont
-from reportlab.platypus import HRFlowable, PageBreak, Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle
+try:
+    from docx import Document
+    from docx.enum.table import WD_ALIGN_VERTICAL, WD_TABLE_ALIGNMENT
+    from docx.enum.text import WD_ALIGN_PARAGRAPH
+    from docx.oxml import OxmlElement, parse_xml
+    from docx.oxml.ns import qn
+    from docx.shared import Inches, Pt, RGBColor
+except ImportError as _docx_err:
+    Document = None
+    logger.warning(f"python-docx import warning: {_docx_err}")
+
+try:
+    import latex2mathml.converter
+except ImportError:
+    latex2mathml = None
+
+try:
+    from lxml import etree
+except ImportError:
+    try:
+        import xml.etree.ElementTree as etree
+    except ImportError:
+        etree = None
+
+try:
+    from reportlab.lib import colors
+    from reportlab.lib.pagesizes import A4
+    from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
+    from reportlab.pdfbase import pdfmetrics
+    from reportlab.pdfbase.ttfonts import TTFont
+    from reportlab.platypus import HRFlowable, PageBreak, Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle
+except ImportError as _rl_err:
+    colors = None
+    SimpleDocTemplate = None
+    pdfmetrics = None
+    TTFont = None
+    logger.warning(f"reportlab import warning: {_rl_err}")
+
 import requests
 
 logger = logging.getLogger(__name__)
@@ -99,6 +123,8 @@ def format_sub_questions_short(sub_questions: list) -> str:
 
 def register_vietnamese_pdf_fonts():
     global _font_registered, _primary_font, _primary_font_bold
+    if pdfmetrics is None:
+        return _primary_font, _primary_font_bold
     if _font_registered:
         return _primary_font, _primary_font_bold
 
@@ -654,6 +680,8 @@ class Exporter:
         """
         Xuất đề thi chuẩn sư phạm Việt Nam ra file PDF đẹp mắt với ReportLab và Unicode Font.
         """
+        if SimpleDocTemplate is None:
+            raise RuntimeError("ReportLab chưa được cài đặt trên hệ thống để xuất PDF")
         font_name, font_name_bold = register_vietnamese_pdf_fonts()
 
         pdf_buffer = io.BytesIO()
