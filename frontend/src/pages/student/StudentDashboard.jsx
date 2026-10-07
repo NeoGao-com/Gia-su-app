@@ -5,7 +5,7 @@ import api from '../../api/axios';
 import { 
   BookOpen, CheckCircle, ArrowRight, KeyRound, Users, Clock, 
   Sparkles, Trophy, TrendingUp, FileText, Send, AlertTriangle, 
-  Eye, GraduationCap, Flame, Award
+  Eye, GraduationCap, Flame, Award, Calendar
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useToast } from '../../context/ToastContext';
@@ -216,7 +216,20 @@ export function StudentDashboard() {
               <FileText className="w-4 h-4 text-indigo-600" />
               <span>Lối tắt học tập</span>
             </h3>
-            <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-4 gap-3">
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+              <Link
+                to="/student/schedule"
+                className="p-3.5 sm:p-4 rounded-xl bg-slate-50 hover:bg-white hover:border-indigo-400 border border-slate-200/80 transition group flex flex-col justify-between min-h-[96px]"
+              >
+                <div className="w-8 h-8 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center mb-2 group-hover:scale-105 transition">
+                  <Calendar className="w-4 h-4" />
+                </div>
+                <div>
+                  <div className="font-semibold text-xs sm:text-sm text-slate-800">Thời khóa biểu</div>
+                  <div className="text-[11px] text-slate-500 mt-0.5">Lịch học & phòng học</div>
+                </div>
+              </Link>
+
               <Link
                 to="/student/assignments"
                 className="p-3.5 sm:p-4 rounded-xl bg-slate-50 hover:bg-white hover:border-blue-300 border border-slate-200/80 transition group flex flex-col justify-between min-h-[96px]"

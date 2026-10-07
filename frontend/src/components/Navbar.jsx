@@ -105,16 +105,14 @@ export function Navbar() {
                           <User className="w-3.5 h-3.5" />
                           <span>Bảng điều khiển</span>
                         </Link>
-                        {!isTeacher && (
-                          <Link
-                            to="/student/profile"
-                            onClick={() => setDropdownOpen(false)}
-                            className="flex items-center space-x-2 px-4 py-2 text-xs font-medium text-slate-700 hover:bg-indigo-50 hover:text-indigo-600 transition"
-                          >
-                            <UserCheck className="w-3.5 h-3.5" />
-                            <span>Hồ sơ & Đổi mật khẩu</span>
-                          </Link>
-                        )}
+                        <Link
+                          to={isTeacher ? '/teacher/profile' : '/student/profile'}
+                          onClick={() => setDropdownOpen(false)}
+                          className="flex items-center space-x-2 px-4 py-2 text-xs font-medium text-slate-700 hover:bg-indigo-50 hover:text-indigo-600 transition"
+                        >
+                          <UserCheck className="w-3.5 h-3.5" />
+                          <span>Hồ sơ & Đổi mật khẩu</span>
+                        </Link>
                       </div>
 
                       <div className="border-t border-slate-100 pt-1">

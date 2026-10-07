@@ -4,7 +4,7 @@ import { Sidebar } from '../../components/Sidebar';
 import api from '../../api/axios';
 import { 
   CheckSquare, BookOpen, Users, UserCheck, PlusCircle, 
-  ArrowRight, Sparkles, Copy, Check, Send, Award, Clock
+  ArrowRight, Sparkles, Copy, Check, Send, Award, Clock, Calendar
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useToast } from '../../context/ToastContext';
@@ -151,7 +151,20 @@ export function TeacherDashboard() {
               <span>Lối tắt tác vụ chính</span>
             </h3>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3.5">
+              <Link 
+                to="/teacher/schedule" 
+                className="p-4 rounded-xl bg-slate-50 hover:bg-white border border-slate-200/80 hover:border-indigo-400 shadow-2xs hover:shadow-xs transition-all interactive-btn group flex items-start space-x-3"
+              >
+                <div className="p-2.5 rounded-lg bg-indigo-50 text-indigo-600 group-hover:bg-indigo-600 group-hover:text-white transition-colors">
+                  <Calendar className="w-4 h-4" />
+                </div>
+                <div>
+                  <div className="font-semibold text-xs sm:text-sm text-slate-800">Thời khóa biểu</div>
+                  <div className="text-[11px] text-slate-500 mt-0.5">Xếp lịch dạy & kéo thả</div>
+                </div>
+              </Link>
+
               <Link 
                 to="/teacher/assignments" 
                 className="p-4 rounded-xl bg-slate-50 hover:bg-white border border-slate-200/80 hover:border-indigo-300 shadow-2xs hover:shadow-xs transition-all interactive-btn group flex items-start space-x-3"

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import { 
   LayoutDashboard, BookOpen, Users, Award, 
-  BarChart2, Cpu, FileText, Send, X, UserCheck
+  BarChart2, Cpu, FileText, Send, X, UserCheck, Calendar
 } from 'lucide-react';
 
 export function Sidebar({ role }) {
@@ -37,6 +37,7 @@ export function Sidebar({ role }) {
         {
           title: 'Lớp học & Kết quả',
           items: [
+            { to: '/student/schedule', icon: Calendar, label: 'Thời khóa biểu' },
             { to: '/student/classrooms', icon: Users, label: 'Lớp học của tôi' },
             { to: '/student/history', icon: Award, label: 'Lịch sử & Điểm số' },
           ]
@@ -56,6 +57,7 @@ export function Sidebar({ role }) {
           title: 'Khu vực chính',
           items: [
             { to: '/teacher', icon: LayoutDashboard, label: 'Tổng quan giảng dạy' },
+            { to: '/teacher/schedule', icon: Calendar, label: 'Thời khóa biểu dạy' },
             { to: '/teacher/assignments', icon: Send, label: 'Bài tập đã giao' },
             { to: '/teacher/exams', icon: FileText, label: 'Đề thi trắc nghiệm' },
             { to: '/teacher/questions', icon: BookOpen, label: 'Ngân hàng câu hỏi' },
@@ -73,6 +75,12 @@ export function Sidebar({ role }) {
           title: 'Công cụ hỗ trợ',
           items: [
             { to: '/teacher/ai-config', icon: Cpu, label: 'Trợ lý soạn đề & AI' },
+          ]
+        },
+        {
+          title: 'Tài khoản & Cài đặt',
+          items: [
+            { to: '/teacher/profile', icon: UserCheck, label: 'Hồ sơ & Mật khẩu' },
           ]
         }
       ];

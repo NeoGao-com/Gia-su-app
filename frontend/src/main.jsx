@@ -12,9 +12,10 @@ import { ErrorBoundary } from './components/ErrorBoundary'
 import { ToastProvider } from './context/ToastContext'
 import {
   StudentDashboard, ExamList, TakeExam, ExamHistory,
-  StudentAssignments, StudentClassrooms, StudentProfile,
+  StudentAssignments, StudentClassrooms, StudentSchedule, StudentProfile,
   TeacherDashboard, QuestionBank, ClassroomManagement,
   Gradebook, Analytics, AIConfigManagement, ExamCreator, ExamManagement, AssignmentManagement,
+  TeacherProfile, TeacherSchedule,
 } from './lazyPages'
 
 createRoot(document.getElementById('root')).render(
@@ -36,6 +37,7 @@ createRoot(document.getElementById('root')).render(
             <Route path="/student/dashboard" element={<StudentDashboard />} />
             <Route path="/student/assignments" element={<StudentAssignments />} />
             <Route path="/student/classrooms" element={<StudentClassrooms />} />
+            <Route path="/student/schedule" element={<StudentSchedule />} />
             <Route path="/student/practice" element={<Navigate to="/student" replace />} />
             <Route path="/student/profile" element={<StudentProfile />} />
             <Route path="/profile" element={<StudentProfile />} />
@@ -54,11 +56,13 @@ createRoot(document.getElementById('root')).render(
             <Route path="/teacher/dashboard" element={<TeacherDashboard />} />
             <Route path="/teacher/questions" element={<QuestionBank />} />
             <Route path="/teacher/classrooms" element={<ClassroomManagement />} />
+            <Route path="/teacher/schedule" element={<TeacherSchedule />} />
             <Route path="/teacher/gradebook" element={<Gradebook />} />
             <Route path="/teacher/analytics" element={<Analytics />} />
             <Route path="/teacher/ai-config" element={<AIConfigManagement />} />
             <Route path="/teacher/exams" element={<ExamCreator />} />
             <Route path="/teacher/assignments" element={<AssignmentManagement />} />
+            <Route path="/teacher/profile" element={<TeacherProfile />} />
           </Route>
 
             <Route path="*" element={<Navigate to="/" replace />} />

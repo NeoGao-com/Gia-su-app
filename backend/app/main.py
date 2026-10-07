@@ -6,7 +6,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from app.database import engine, Base, redis_client, AsyncSessionLocal
-from app.routers import rendering, auth, questions, exam, export, student, upload, classroom, analytics, uploads_protected, tasks, ai, notifications, ai_config, oauth
+from app.routers import rendering, auth, questions, exam, export, student, upload, classroom, analytics, uploads_protected, tasks, ai, notifications, ai_config, oauth, schedule
 
 logger = logging.getLogger(__name__)
 
@@ -50,7 +50,32 @@ async def init_db_tables():
                 except Exception:
                     pass
 
-        # 2. Create high-performance composite indexes
+        # 2. Batch add schedule_events table if not exists
+        create_schedule_sql = """
+        CREATE TABLE IF NOT EXISTS schedule_events (
+            id SERIAL PRIMARY KEY,
+            teacher_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+            classroom_id INTEGER REFERENCES classrooms(id) ON DELETE SET NULL,
+            title VARCHAR(255) NOT NULL,
+            description TEXT,
+            day_of_week INTEGER NOT NULL,
+            start_time VARCHAR(10) NOT NULL,
+            end_time VARCHAR(10) NOT NULL,
+            duration_minutes INTEGER DEFAULT 90 NOT NULL,
+            color VARCHAR(30) DEFAULT '#4f46e5' NOT NULL,
+            is_recurring BOOLEAN DEFAULT TRUE,
+            specific_date VARCHAR(20),
+            created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+        );
+        """
+        try:
+            async with engine.begin() as conn:
+                await conn.execute(text(create_schedule_sql))
+        except Exception:
+            pass
+
+        # 3. Create high-performance composite indexes
         indexes = [
             "CREATE INDEX IF NOT EXISTS idx_questions_lookup ON questions (subject, grade_level, chapter, lesson, topic);",
             "CREATE INDEX IF NOT EXISTS idx_questions_creator ON questions (created_by_id, status);",
@@ -62,7 +87,9 @@ async def init_db_tables():
             "CREATE INDEX IF NOT EXISTS idx_exam_submissions_user_exam ON exam_submissions (user_id, exam_id, status);",
             "CREATE INDEX IF NOT EXISTS idx_exam_submissions_exam_user ON exam_submissions (exam_id, user_id, submitted_at DESC);",
             "CREATE INDEX IF NOT EXISTS idx_classroom_students_lookup ON classroom_students (student_id, classroom_id, is_active);",
-            "CREATE INDEX IF NOT EXISTS idx_notifications_user_id ON notifications (user_id);"
+            "CREATE INDEX IF NOT EXISTS idx_notifications_user_id ON notifications (user_id);",
+            "CREATE INDEX IF NOT EXISTS idx_schedule_events_teacher ON schedule_events (teacher_id, day_of_week);",
+            "CREATE INDEX IF NOT EXISTS idx_schedule_events_classroom ON schedule_events (classroom_id, day_of_week);"
         ]
         for idx_sql in indexes:
             try:
@@ -139,6 +166,7 @@ app.include_router(ai.router)
 app.include_router(notifications.router)
 app.include_router(ai_config.router)
 app.include_router(oauth.router)
+app.include_router(schedule.router)
 
 @app.get("/", tags=["Hệ thống"])
 async def read_root():
