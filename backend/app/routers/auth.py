@@ -213,6 +213,7 @@ async def update_profile(
             user = await db.get(User, current_user.id)
         except Exception as e:
             logger.warning(f"Table not ready or columns missing during update_profile ({e}), initializing...")
+            await db.rollback()
             from app.main import init_db_tables
             await init_db_tables()
             user = await db.get(User, current_user.id)
@@ -220,25 +221,25 @@ async def update_profile(
         if not user or user.is_deleted:
             raise HTTPException(status_code=404, detail="Không tìm thấy thông tin người dùng")
 
-        if payload.full_name is not None and payload.full_name.strip():
+        if "full_name" in payload.model_fields_set and payload.full_name and payload.full_name.strip():
             user.full_name = payload.full_name.strip()
-        if payload.phone_number is not None:
+        if "phone_number" in payload.model_fields_set:
             user.phone_number = payload.phone_number.strip() if payload.phone_number else None
-        if payload.parent_phone is not None:
+        if "parent_phone" in payload.model_fields_set:
             user.parent_phone = payload.parent_phone.strip() if payload.parent_phone else None
-        if payload.parent_name is not None:
+        if "parent_name" in payload.model_fields_set:
             user.parent_name = payload.parent_name.strip() if payload.parent_name else None
-        if payload.date_of_birth is not None:
+        if "date_of_birth" in payload.model_fields_set:
             user.date_of_birth = payload.date_of_birth.strip() if payload.date_of_birth else None
-        if payload.gender is not None:
+        if "gender" in payload.model_fields_set:
             user.gender = payload.gender.strip() if payload.gender else None
-        if payload.school is not None:
+        if "school" in payload.model_fields_set:
             user.school = payload.school.strip() if payload.school else None
-        if payload.student_code is not None:
+        if "student_code" in payload.model_fields_set:
             user.student_code = payload.student_code.strip() if payload.student_code else None
-        if payload.grade_level is not None:
+        if "grade_level" in payload.model_fields_set:
             user.grade_level = payload.grade_level
-        if payload.notes is not None:
+        if "notes" in payload.model_fields_set:
             user.notes = payload.notes.strip() if payload.notes else None
 
         if user.is_active is None:

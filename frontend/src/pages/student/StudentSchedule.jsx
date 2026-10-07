@@ -47,6 +47,76 @@ function timeToMins(tStr) {
   return h * 60 + (m || 0);
 }
 
+function computeOverlappingLayout(dayEvents) {
+  if (!dayEvents || dayEvents.length === 0) return [];
+  const sorted = [...dayEvents].sort((a, b) => {
+    const diff = timeToMins(a.start_time) - timeToMins(b.start_time);
+    if (diff !== 0) return diff;
+    return (b.duration_minutes || 90) - (a.duration_minutes || 90);
+  });
+
+  const clusters = [];
+  let currentCluster = [];
+  let clusterEndMins = 0;
+
+  sorted.forEach((ev) => {
+    const startM = timeToMins(ev.start_time);
+    const endM = timeToMins(ev.end_time) || (startM + (ev.duration_minutes || 90));
+
+    if (currentCluster.length === 0) {
+      currentCluster.push(ev);
+      clusterEndMins = endM;
+    } else if (startM < clusterEndMins) {
+      currentCluster.push(ev);
+      clusterEndMins = Math.max(clusterEndMins, endM);
+    } else {
+      clusters.push(currentCluster);
+      currentCluster = [ev];
+      clusterEndMins = endM;
+    }
+  });
+  if (currentCluster.length > 0) {
+    clusters.push(currentCluster);
+  }
+
+  const layoutedEvents = [];
+  clusters.forEach((cluster) => {
+    const columns = [];
+    const eventColMap = new Map();
+
+    cluster.forEach((ev) => {
+      const evStart = timeToMins(ev.start_time);
+      let placed = false;
+      for (let c = 0; c < columns.length; c++) {
+        const lastInCol = columns[c][columns[c].length - 1];
+        const lastEnd = timeToMins(lastInCol.end_time) || (timeToMins(lastInCol.start_time) + (lastInCol.duration_minutes || 90));
+        if (evStart >= lastEnd) {
+          columns[c].push(ev);
+          eventColMap.set(ev.id, c);
+          placed = true;
+          break;
+        }
+      }
+      if (!placed) {
+        columns.push([ev]);
+        eventColMap.set(ev.id, columns.length - 1);
+      }
+    });
+
+    const totalCols = columns.length;
+    cluster.forEach((ev) => {
+      const col = eventColMap.get(ev.id) || 0;
+      layoutedEvents.push({
+        ...ev,
+        colIndex: col,
+        totalCols: totalCols,
+      });
+    });
+  });
+
+  return layoutedEvents;
+}
+
 export function StudentSchedule() {
   const { toast } = useToast();
   const [loading, setLoading] = useState(true);
@@ -258,12 +328,19 @@ export function StudentSchedule() {
                       ))}
 
                       {/* Event Cards in Day */}
-                      {dayEvents.map((ev) => {
+                      {computeOverlappingLayout(dayEvents).map((ev) => {
                         const startM = timeToMins(ev.start_time);
                         const durM = ev.duration_minutes || (timeToMins(ev.end_time) - startM) || 90;
                         const topPx = ((startM - START_HOUR * 60) / 60) * HOUR_HEIGHT;
                         const heightPx = Math.max(36, (durM / 60) * HOUR_HEIGHT);
                         const colorConf = getColorConfig(ev.color);
+
+                        const leftStyle = ev.totalCols > 1
+                          ? `calc(${(ev.colIndex * 100) / ev.totalCols}% + 2px)`
+                          : '4px';
+                        const widthStyle = ev.totalCols > 1
+                          ? `calc(${100 / ev.totalCols}% - 4px)`
+                          : 'calc(100% - 8px)';
 
                         return (
                           <div
@@ -272,9 +349,11 @@ export function StudentSchedule() {
                             style={{
                               top: `${topPx}px`,
                               height: `${heightPx}px`,
-                              zIndex: 10,
+                              left: leftStyle,
+                              width: widthStyle,
+                              zIndex: 10 + (ev.colIndex || 0),
                             }}
-                            className={`absolute left-1 right-1 rounded-xl p-2 border ${colorConf.bg} ${colorConf.border} shadow-2xs hover:shadow-md transition-all cursor-pointer group overflow-hidden flex flex-col justify-between`}
+                            className={`absolute rounded-xl p-2 border ${colorConf.bg} ${colorConf.border} shadow-2xs hover:shadow-md transition-all cursor-pointer group overflow-hidden flex flex-col justify-between`}
                             title="Bấm để xem chi tiết tiết học"
                           >
                             {/* Left highlight strip */}

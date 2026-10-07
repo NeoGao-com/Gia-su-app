@@ -68,6 +68,7 @@ export function SubmissionReviewModal({ isOpen, onClose, submissionId }) {
               ...prev.submission,
               score: res.data.new_score ?? prev.submission.score,
               essay_score: res.data.essay_score ?? prev.submission.essay_score,
+              grading_status: res.data.grading_status ?? 'GRADED',
               graded_answers: res.data.graded_answers ?? prev.submission.graded_answers
             }
           };

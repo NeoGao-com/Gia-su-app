@@ -565,7 +565,7 @@ async def audit_and_fix_batch(
 async def extract_questions_from_file_endpoint(
     file: UploadFile = File(...),
     subject: Optional[str] = Form("Toán"),
-    grade_level: Optional[int] = Form(10),
+    grade_level: Optional[Any] = Form(10),
     chapter: Optional[str] = Form(None),
     use_ai: Optional[bool] = Form(True),
     current_user: User = Depends(get_current_user),
@@ -586,6 +586,13 @@ async def extract_questions_from_file_endpoint(
             detail=f"Định dạng tệp không được hỗ trợ. Vui lòng tải lên tệp: {', '.join(valid_exts)}"
         )
 
+    grade_int = 10
+    if grade_level is not None:
+        try:
+            grade_int = int(str(grade_level).strip())
+        except (ValueError, TypeError):
+            grade_int = 10
+
     try:
         content_bytes = await file.read()
         if len(content_bytes) == 0:
@@ -605,14 +612,14 @@ async def extract_questions_from_file_endpoint(
                 ai_service.extract_questions_from_document,
                 raw_text=raw_text,
                 default_subject=subject or "Toán",
-                default_grade_level=grade_level or 10,
+                default_grade_level=grade_int,
                 default_chapter=chapter
             )
         else:
             questions = parse_questions_with_rules(
                 text=raw_text,
                 default_subject=subject or "Toán",
-                default_grade_level=grade_level or 10,
+                default_grade_level=grade_int,
                 default_chapter=chapter
             )
 

@@ -177,6 +177,7 @@ async def grade_essay_submission_ai(
         "message": "AI Graded successfully",
         "new_score": submission.score,
         "essay_score": submission.essay_score,
+        "grading_status": submission.grading_status,
         "graded_answers": submission.graded_answers,
         "feedback": "\n".join(feedback_notes)
     }

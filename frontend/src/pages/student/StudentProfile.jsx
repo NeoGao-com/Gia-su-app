@@ -147,6 +147,10 @@ export function StudentProfile() {
       setPasswordError('Mật khẩu mới phải có ít nhất 6 ký tự.');
       return;
     }
+    if (newPassword === currentPassword) {
+      setPasswordError('Mật khẩu mới không được trùng với mật khẩu cũ.');
+      return;
+    }
     if (newPassword !== confirmPassword) {
       setPasswordError('Xác nhận mật khẩu mới không trùng khớp.');
       return;

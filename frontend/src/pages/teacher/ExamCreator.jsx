@@ -161,7 +161,7 @@ export function ExamCreator() {
 
   useEffect(() => {
     fetchExams();
-  }, [examPage, examSearch]);
+  }, [examPage, examSearch, examStatusFilter]);
 
   const fetchExams = async () => {
     try {
@@ -171,7 +171,8 @@ export function ExamCreator() {
           page: examPage,
           limit: 10,
           search: examSearch || undefined,
-          exam_type: 'EXAM' // Tách biệt hoàn toàn: Chỉ lấy ĐỀ THI
+          exam_type: 'EXAM', // Tách biệt hoàn toàn: Chỉ lấy ĐỀ THI
+          is_published: examStatusFilter === 'published' ? true : examStatusFilter === 'draft' ? false : undefined
         }
       });
       setExams(res.data.items || res.data || []);
@@ -264,11 +265,7 @@ export function ExamCreator() {
     }
   };
 
-  const filteredExams = exams.filter(ex => {
-    if (examStatusFilter === 'published') return ex.is_published;
-    if (examStatusFilter === 'draft') return !ex.is_published;
-    return true;
-  });
+  const filteredExams = exams;
 
   const fetchStats = async () => {
     try {
@@ -965,7 +962,10 @@ export function ExamCreator() {
                   {/* Status filter */}
                   <select
                     value={examStatusFilter}
-                    onChange={(e) => setExamStatusFilter(e.target.value)}
+                    onChange={(e) => {
+                      setExamStatusFilter(e.target.value);
+                      setExamPage(1);
+                    }}
                     className="px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs font-semibold text-slate-700 focus:outline-none focus:border-indigo-600"
                   >
                     <option value="all">Tất cả trạng thái</option>

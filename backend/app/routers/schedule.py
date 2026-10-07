@@ -230,10 +230,15 @@ async def get_student_schedule(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    # Find all active classrooms for current student
-    stmt_classes = select(ClassroomStudent.classroom_id).filter(
-        ClassroomStudent.student_id == current_user.id,
-        ClassroomStudent.is_active == True
+    # Find all active, non-deleted classrooms for current student
+    stmt_classes = (
+        select(ClassroomStudent.classroom_id)
+        .join(Classroom, Classroom.id == ClassroomStudent.classroom_id)
+        .filter(
+            ClassroomStudent.student_id == current_user.id,
+            ClassroomStudent.is_active == True,
+            Classroom.is_deleted == False
+        )
     )
     res_classes = await db.execute(stmt_classes)
     classroom_ids = res_classes.scalars().all()

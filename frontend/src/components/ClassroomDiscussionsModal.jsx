@@ -20,11 +20,29 @@ export function ClassroomDiscussionsModal({
   const fileInputRef = useRef(null);
   const commentFileInputRef = useRef(null);
 
-  const userStr = localStorage.getItem('user');
-  let currentUser = null;
-  try {
-    currentUser = userStr ? JSON.parse(userStr) : null;
-  } catch {}
+  const [currentUser, setCurrentUser] = useState(() => {
+    try {
+      const userStr = localStorage.getItem('user');
+      return userStr ? JSON.parse(userStr) : null;
+    } catch {
+      return null;
+    }
+  });
+
+  useEffect(() => {
+    const handleUserSync = () => {
+      try {
+        const userStr = localStorage.getItem('user');
+        setCurrentUser(userStr ? JSON.parse(userStr) : null);
+      } catch {}
+    };
+    window.addEventListener('user-updated', handleUserSync);
+    window.addEventListener('storage', handleUserSync);
+    return () => {
+      window.removeEventListener('user-updated', handleUserSync);
+      window.removeEventListener('storage', handleUserSync);
+    };
+  }, []);
 
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(false);

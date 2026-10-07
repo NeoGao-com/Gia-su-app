@@ -54,8 +54,78 @@ function minsToTime(mins) {
   return `${h < 10 ? '0' + h : h}:${m < 10 ? '0' + m : m}`;
 }
 
+function computeOverlappingLayout(dayEvents) {
+  if (!dayEvents || dayEvents.length === 0) return [];
+  const sorted = [...dayEvents].sort((a, b) => {
+    const diff = timeToMins(a.start_time) - timeToMins(b.start_time);
+    if (diff !== 0) return diff;
+    return (b.duration_minutes || 90) - (a.duration_minutes || 90);
+  });
+
+  const clusters = [];
+  let currentCluster = [];
+  let clusterEndMins = 0;
+
+  sorted.forEach((ev) => {
+    const startM = timeToMins(ev.start_time);
+    const endM = timeToMins(ev.end_time) || (startM + (ev.duration_minutes || 90));
+
+    if (currentCluster.length === 0) {
+      currentCluster.push(ev);
+      clusterEndMins = endM;
+    } else if (startM < clusterEndMins) {
+      currentCluster.push(ev);
+      clusterEndMins = Math.max(clusterEndMins, endM);
+    } else {
+      clusters.push(currentCluster);
+      currentCluster = [ev];
+      clusterEndMins = endM;
+    }
+  });
+  if (currentCluster.length > 0) {
+    clusters.push(currentCluster);
+  }
+
+  const layoutedEvents = [];
+  clusters.forEach((cluster) => {
+    const columns = [];
+    const eventColMap = new Map();
+
+    cluster.forEach((ev) => {
+      const evStart = timeToMins(ev.start_time);
+      let placed = false;
+      for (let c = 0; c < columns.length; c++) {
+        const lastInCol = columns[c][columns[c].length - 1];
+        const lastEnd = timeToMins(lastInCol.end_time) || (timeToMins(lastInCol.start_time) + (lastInCol.duration_minutes || 90));
+        if (evStart >= lastEnd) {
+          columns[c].push(ev);
+          eventColMap.set(ev.id, c);
+          placed = true;
+          break;
+        }
+      }
+      if (!placed) {
+        columns.push([ev]);
+        eventColMap.set(ev.id, columns.length - 1);
+      }
+    });
+
+    const totalCols = columns.length;
+    cluster.forEach((ev) => {
+      const col = eventColMap.get(ev.id) || 0;
+      layoutedEvents.push({
+        ...ev,
+        colIndex: col,
+        totalCols: totalCols,
+      });
+    });
+  });
+
+  return layoutedEvents;
+}
+
 export function TeacherSchedule() {
-  const { toast } = useToast();
+  const { toast, confirm } = useToast();
   const [loading, setLoading] = useState(true);
   const [events, setEvents] = useState([]);
   const [classrooms, setClassrooms] = useState([]);
@@ -244,9 +314,14 @@ export function TeacherSchedule() {
 
   // Delete event
   const handleDeleteEvent = async (eventId) => {
-    if (!window.confirm('Bạn có chắc chắn muốn xóa khối sự kiện này khỏi thời khóa biểu?')) {
-      return;
-    }
+    const target = events.find((e) => e.id === eventId);
+    const ok = await confirm({
+      title: 'Xóa sự kiện thời khóa biểu?',
+      message: `Bạn có chắc chắn muốn xóa khối sự kiện "${target?.title || 'này'}" khỏi thời khóa biểu? Thao tác này không thể hoàn tác.`,
+      confirmText: 'Xóa sự kiện',
+      cancelText: 'Hủy',
+    });
+    if (!ok) return;
 
     try {
       await api.delete(`/schedule/events/${eventId}`);
@@ -294,12 +369,15 @@ export function TeacherSchedule() {
     setDraggingEvent(null);
 
     try {
-      await api.put(`/schedule/events/${draggingEvent.id}`, {
+      const res = await api.put(`/schedule/events/${draggingEvent.id}`, {
         day_of_week: targetDayId,
         start_time: newStartTime,
         end_time: newEndTime,
         duration_minutes: dur,
       });
+      if (res.data) {
+        setEvents((prev) => prev.map((item) => (item.id === draggingEvent.id ? res.data : item)));
+      }
       toast.success(`Đã chuyển lịch "${draggingEvent.title}" sang ${DAYS.find(d => d.id === targetDayId)?.name} lúc ${newStartTime}`);
     } catch (err) {
       setEvents(prevEvents);
@@ -349,10 +427,13 @@ export function TeacherSchedule() {
       setResizingEvent(null);
 
       try {
-        await api.put(`/schedule/events/${ev.id}`, {
+        const res = await api.put(`/schedule/events/${ev.id}`, {
           duration_minutes: finalDuration,
           end_time: newEndTime,
         });
+        if (res.data) {
+          setEvents((prev) => prev.map((item) => (item.id === ev.id ? res.data : item)));
+        }
         toast.success(`Đã điều chỉnh thời lượng "${ev.title}" thành ${finalDuration} phút (${newEndTime})`);
       } catch (err) {
         toast.error('Lỗi cập nhật thời lượng');
@@ -536,12 +617,19 @@ export function TeacherSchedule() {
                       ))}
 
                       {/* Event Cards in Day */}
-                      {dayEvents.map((ev) => {
+                      {computeOverlappingLayout(dayEvents).map((ev) => {
                         const startM = timeToMins(ev.start_time);
                         const durM = ev.duration_minutes || (timeToMins(ev.end_time) - startM) || 90;
                         const topPx = ((startM - START_HOUR * 60) / 60) * HOUR_HEIGHT;
                         const heightPx = Math.max(36, (durM / 60) * HOUR_HEIGHT);
                         const colorConf = getColorConfig(ev.color);
+
+                        const leftStyle = ev.totalCols > 1
+                          ? `calc(${(ev.colIndex * 100) / ev.totalCols}% + 2px)`
+                          : '4px';
+                        const widthStyle = ev.totalCols > 1
+                          ? `calc(${100 / ev.totalCols}% - 4px)`
+                          : 'calc(100% - 8px)';
 
                         return (
                           <div
@@ -552,9 +640,11 @@ export function TeacherSchedule() {
                             style={{
                               top: `${topPx}px`,
                               height: `${heightPx}px`,
-                              zIndex: 10,
+                              left: leftStyle,
+                              width: widthStyle,
+                              zIndex: 10 + (ev.colIndex || 0),
                             }}
-                            className={`absolute left-1 right-1 rounded-xl p-2 border ${colorConf.bg} ${colorConf.border} shadow-2xs hover:shadow-md transition-all cursor-grab active:cursor-grabbing group overflow-hidden flex flex-col justify-between`}
+                            className={`absolute rounded-xl p-2 border ${colorConf.bg} ${colorConf.border} shadow-2xs hover:shadow-md transition-all cursor-grab active:cursor-grabbing group overflow-hidden flex flex-col justify-between`}
                           >
                             {/* Left highlight strip */}
                             <div className={`absolute left-0 top-0 bottom-0 w-1 ${colorConf.bar}`} />
@@ -744,6 +834,28 @@ export function TeacherSchedule() {
                   />
                 </div>
               </div>
+
+              {/* Conflict warning */}
+              {(() => {
+                const conflict = events.find((ev) => {
+                  if (editingEventId && ev.id === editingEventId) return false;
+                  if (ev.day_of_week !== parseInt(formData.day_of_week, 10)) return false;
+                  const formStart = timeToMins(formData.start_time);
+                  const formEnd = timeToMins(formData.end_time);
+                  const evStart = timeToMins(ev.start_time);
+                  const evEnd = timeToMins(ev.end_time) || (evStart + (ev.duration_minutes || 90));
+                  return formStart < evEnd && formEnd > evStart;
+                });
+                if (!conflict) return null;
+                return (
+                  <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl text-amber-900 text-xs flex items-center space-x-2">
+                    <AlertCircle className="w-4 h-4 text-amber-600 shrink-0" />
+                    <span>
+                      <strong>Trùng lịch:</strong> Khung giờ này đang trùng với "<strong>{conflict.title}</strong>" ({conflict.start_time} - {conflict.end_time}). Hai tiết học sẽ được xếp song song.
+                    </span>
+                  </div>
+                );
+              })()}
 
               {/* Quick duration buttons */}
               <div>

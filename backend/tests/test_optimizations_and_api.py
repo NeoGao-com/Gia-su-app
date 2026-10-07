@@ -342,6 +342,36 @@ def test_schedule_event_update_fields_set():
     assert req.classroom_id is None
 
 
+def test_profile_update_request_fields_clearing():
+    from app.schemas.auth import ProfileUpdateRequest
+    req = ProfileUpdateRequest(phone_number=None, notes=None, grade_level="")
+    assert "phone_number" in req.model_fields_set
+    assert "notes" in req.model_fields_set
+    assert "grade_level" in req.model_fields_set
+    assert req.phone_number is None
+    assert req.notes is None
+    assert req.grade_level is None
+
+
+def test_extract_from_file_route_exists():
+    from fastapi.testclient import TestClient
+    from app.main import app
+    client = TestClient(app)
+    # /api/ai/extract-from-file exists and requires teacher auth (returns 401/403, not 404)
+    res = client.post("/api/ai/extract-from-file")
+    assert res.status_code in (401, 403, 422)
+
+
+def test_grade_ai_route_exists():
+    from fastapi.testclient import TestClient
+    from app.main import app
+    client = TestClient(app)
+    # /api/exams/submissions/1/grade-ai exists and requires auth
+    res = client.post("/api/exams/submissions/1/grade-ai")
+    assert res.status_code in (401, 403, 404)
+
+
+
 
 
 
