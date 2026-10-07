@@ -2,7 +2,7 @@ import os
 import uuid
 import logging
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Request
-from app.core.security import get_current_teacher
+from app.core.security import get_current_user
 from app.core.rate_limiter import parse_rate_limit
 from app.core.config import settings
 from app.models.user import User
@@ -12,11 +12,11 @@ logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api/upload", tags=["upload"])
 
-@router.post("/image", dependencies=[Depends(parse_rate_limit(settings.UPLOAD_RATE_LIMIT))], summary="Tải lên ảnh câu hỏi")
+@router.post("/image", dependencies=[Depends(parse_rate_limit(settings.UPLOAD_RATE_LIMIT))], summary="Tải lên ảnh câu hỏi hoặc hỏi đáp")
 async def upload_image(
     request: Request,
     file: UploadFile = File(...),
-    current_user: User = Depends(get_current_teacher)
+    current_user: User = Depends(get_current_user)
 ):
     client_ip = request.client.host if request.client else "unknown"
     # Read file content for size and magic bytes inspection

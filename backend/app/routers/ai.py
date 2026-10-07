@@ -32,10 +32,20 @@ class GenerateQuestionsRequest(BaseModel):
     prompt_text: str
     num_questions: int = 3
 
+class GenerateFromTextRequest(BaseModel):
+    text: str
+    subject: Optional[str] = "Toán"
+    grade_level: Optional[int] = 10
+    count: int = 5
+    question_types: Optional[List[str]] = ["MULTIPLE_CHOICE"]
+    difficulty: Optional[str] = "THONG_HIEU"
+    chapter: Optional[str] = None
+
 class GradeEssayRequest(BaseModel):
     question_content: str
     student_answer: str
-    sample_solution: str
+    sample_solution: Optional[str] = ""
+    max_score: Optional[float] = 10.0
 
 
 class VerifyQuestionRequest(BaseModel):
@@ -58,12 +68,50 @@ async def generate_questions(payload: GenerateQuestionsRequest, current_user: Us
         logger.error(f"Error in generate-questions: {str(e)}")
         return {"success": False, "questions": [], "error": str(e)}
 
+@router.post("/generate-from-text", summary="AI tự động soạn câu hỏi từ văn bản hoặc tài liệu")
+async def generate_from_text(
+    payload: GenerateFromTextRequest,
+    current_user: User = Depends(get_current_user),
+    ai_service: AIService = Depends(get_ai_service)
+):
+    if current_user.role != "TEACHER":
+        raise HTTPException(status_code=403, detail="Chỉ giáo viên mới có quyền sử dụng tính năng AI soạn đề.")
+    if not payload.text or not payload.text.strip():
+        raise HTTPException(status_code=400, detail="Vui lòng cung cấp nội dung văn bản hoặc tài liệu để AI phân tích.")
+
+    count = max(1, min(payload.count, 30))
+    try:
+        questions = await asyncio.to_thread(
+            ai_service.generate_questions_from_text,
+            raw_text=payload.text.strip(),
+            subject=payload.subject or "Toán",
+            grade_level=payload.grade_level or 10,
+            count=count,
+            question_types=payload.question_types or ["MULTIPLE_CHOICE"],
+            difficulty=payload.difficulty,
+            chapter=payload.chapter
+        )
+        return {
+            "success": True,
+            "total_questions": len(questions),
+            "questions": questions
+        }
+    except Exception as e:
+        logger.error(f"Error in generate-from-text: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Lỗi khi AI soạn đề: {str(e)}")
+
 @router.post("/grade-essay")
 async def grade_essay(payload: GradeEssayRequest, current_user: User = Depends(get_current_user), ai_service: AIService = Depends(get_ai_service)):
     if current_user.role != "TEACHER":
         raise HTTPException(status_code=403, detail="Chỉ giáo viên mới có quyền sử dụng tính năng AI chấm bài.")
     try:
-        result = await asyncio.to_thread(ai_service.grade_essay, payload.question_content, payload.student_answer, payload.sample_solution)
+        result = await asyncio.to_thread(
+            ai_service.grade_essay,
+            payload.question_content,
+            payload.student_answer,
+            payload.sample_solution or "",
+            payload.max_score or 10.0
+        )
         return {"success": True, **result}
     except Exception as e:
         logger.error(f"Error in grade-essay: {str(e)}")

@@ -50,8 +50,8 @@ async def init_db_tables():
                 except Exception:
                     pass
 
-        # 2. Batch add schedule_events table if not exists
-        create_schedule_sql = """
+        # 2. Batch add schedule_events and classroom discussion tables if not exists
+        create_tables_sql = """
         CREATE TABLE IF NOT EXISTS schedule_events (
             id SERIAL PRIMARY KEY,
             teacher_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
@@ -68,10 +68,32 @@ async def init_db_tables():
             created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
             updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
         );
+
+        CREATE TABLE IF NOT EXISTS classroom_posts (
+            id SERIAL PRIMARY KEY,
+            classroom_id INTEGER NOT NULL REFERENCES classrooms(id) ON DELETE CASCADE,
+            user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+            title VARCHAR(255) NOT NULL,
+            content TEXT NOT NULL,
+            image_url TEXT,
+            is_pinned BOOLEAN DEFAULT FALSE,
+            created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+        );
+
+        CREATE TABLE IF NOT EXISTS classroom_comments (
+            id SERIAL PRIMARY KEY,
+            post_id INTEGER NOT NULL REFERENCES classroom_posts(id) ON DELETE CASCADE,
+            user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+            content TEXT NOT NULL,
+            image_url TEXT,
+            is_teacher_answer BOOLEAN DEFAULT FALSE,
+            created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+        );
         """
         try:
             async with engine.begin() as conn:
-                await conn.execute(text(create_schedule_sql))
+                await conn.execute(text(create_tables_sql))
         except Exception:
             pass
 
@@ -89,7 +111,11 @@ async def init_db_tables():
             "CREATE INDEX IF NOT EXISTS idx_classroom_students_lookup ON classroom_students (student_id, classroom_id, is_active);",
             "CREATE INDEX IF NOT EXISTS idx_notifications_user_id ON notifications (user_id);",
             "CREATE INDEX IF NOT EXISTS idx_schedule_events_teacher ON schedule_events (teacher_id, day_of_week);",
-            "CREATE INDEX IF NOT EXISTS idx_schedule_events_classroom ON schedule_events (classroom_id, day_of_week);"
+            "CREATE INDEX IF NOT EXISTS idx_schedule_events_classroom ON schedule_events (classroom_id, day_of_week);",
+            "CREATE INDEX IF NOT EXISTS idx_classroom_posts_classroom ON classroom_posts (classroom_id, created_at DESC);",
+            "CREATE INDEX IF NOT EXISTS idx_classroom_posts_user ON classroom_posts (user_id);",
+            "CREATE INDEX IF NOT EXISTS idx_classroom_comments_post ON classroom_comments (post_id, created_at ASC);",
+            "CREATE INDEX IF NOT EXISTS idx_classroom_comments_user ON classroom_comments (user_id);"
         ]
         for idx_sql in indexes:
             try:

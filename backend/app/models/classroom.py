@@ -49,6 +49,7 @@ class Classroom(Base):
     )
     exams = relationship("Exam", secondary="classroom_exams", back_populates="classrooms", overlaps="exams")
     assignments = relationship("Assignment", back_populates="classroom", cascade="all, delete-orphan")
+    posts = relationship("ClassroomPost", back_populates="classroom", cascade="all, delete-orphan")
 
 class Assignment(Base):
     __tablename__ = "assignments"
@@ -66,3 +67,34 @@ class Assignment(Base):
 
     exam = relationship("Exam")
     classroom = relationship("Classroom", back_populates="assignments")
+
+class ClassroomPost(Base):
+    __tablename__ = "classroom_posts"
+
+    id = Column(Integer, primary_key=True, index=True)
+    classroom_id = Column(Integer, ForeignKey("classrooms.id", ondelete="CASCADE"), nullable=False, index=True)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+    title = Column(String(255), nullable=False)
+    content = Column(String, nullable=False)
+    image_url = Column(String, nullable=True)
+    is_pinned = Column(Boolean, default=False, index=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+
+    classroom = relationship("Classroom", back_populates="posts")
+    user = relationship("User", backref="classroom_posts")
+    comments = relationship("ClassroomComment", back_populates="post", cascade="all, delete-orphan", order_by="ClassroomComment.created_at.asc()")
+
+class ClassroomComment(Base):
+    __tablename__ = "classroom_comments"
+
+    id = Column(Integer, primary_key=True, index=True)
+    post_id = Column(Integer, ForeignKey("classroom_posts.id", ondelete="CASCADE"), nullable=False, index=True)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+    content = Column(String, nullable=False)
+    image_url = Column(String, nullable=True)
+    is_teacher_answer = Column(Boolean, default=False, index=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+    post = relationship("ClassroomPost", back_populates="comments")
+    user = relationship("User", backref="classroom_comments")

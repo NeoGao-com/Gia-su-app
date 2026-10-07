@@ -65,3 +65,45 @@ class GradebookResponse(BaseModel):
     page: int
     limit: int
 
+class DiscussionAuthor(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    id: int
+    full_name: Optional[str] = None
+    role: Optional[str] = None
+    email: Optional[str] = None
+
+class CommentCreate(BaseModel):
+    content: str
+    image_url: Optional[str] = None
+
+class CommentResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    id: int
+    post_id: int
+    user_id: int
+    content: str
+    image_url: Optional[str] = None
+    is_teacher_answer: bool = False
+    created_at: Optional[datetime] = None
+    author: Optional[DiscussionAuthor] = None
+
+class PostCreate(BaseModel):
+    title: str
+    content: str
+    image_url: Optional[str] = None
+
+class PostResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    id: int
+    classroom_id: int
+    user_id: int
+    title: str
+    content: str
+    image_url: Optional[str] = None
+    is_pinned: bool = False
+    created_at: Optional[datetime] = None
+    updated_at: Optional[datetime] = None
+    author: Optional[DiscussionAuthor] = None
+    comments_count: int = 0
+    comments: Optional[List[CommentResponse]] = []
+

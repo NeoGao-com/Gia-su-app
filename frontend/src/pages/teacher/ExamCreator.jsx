@@ -16,6 +16,7 @@ import { Modal } from '../../components/Modal';
 import { MathRenderer } from '../../components/MathRenderer';
 import { ManualQuestionExplorer } from '../../components/ManualQuestionExplorer';
 import { ImportFileModal } from '../../components/ImportFileModal';
+import { AIGenerateQuizModal } from '../../components/AIGenerateQuizModal';
 
 export function ExamCreator() {
   const navigate = useNavigate();
@@ -44,6 +45,7 @@ export function ExamCreator() {
   const [editTitle, setEditTitle] = useState('');
   const [editDuration, setEditDuration] = useState(45);
   const [isImportFileModalOpen, setIsImportFileModalOpen] = useState(false);
+  const [isAIGenerateModalOpen, setIsAIGenerateModalOpen] = useState(false);
   const [editPassScore, setEditPassScore] = useState(5.0);
   const [editMaxAttempts, setEditMaxAttempts] = useState(1);
   const [editShowAnswers, setEditShowAnswers] = useState(true);
@@ -862,6 +864,15 @@ export function ExamCreator() {
               >
                 <Upload className="w-3.5 h-3.5" />
                 <span>Nhập đề từ File</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setIsAIGenerateModalOpen(true)}
+                className="px-3.5 py-2 rounded-xl text-xs font-bold transition flex items-center space-x-1.5 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white shadow-xs cursor-pointer active:scale-95"
+                title="AI tự động phân tích bài giảng / tài liệu và tạo bộ câu hỏi chất lượng cao"
+              >
+                <Sparkles className="w-3.5 h-3.5 text-amber-300" />
+                <span>AI Soạn đề từ tài liệu</span>
               </button>
             </div>
           </div>
@@ -2252,6 +2263,17 @@ export function ExamCreator() {
           <ImportFileModal
             isOpen={isImportFileModalOpen}
             onClose={() => setIsImportFileModalOpen(false)}
+            onSuccess={() => {
+              fetchQuestions();
+            }}
+          />
+
+          {/* AI Document/Text to Quiz Generator Modal */}
+          <AIGenerateQuizModal
+            isOpen={isAIGenerateModalOpen}
+            onClose={() => setIsAIGenerateModalOpen(false)}
+            defaultSubject={subject || 'Toán'}
+            defaultGrade={gradeLevel ? Number(gradeLevel) : 10}
             onSuccess={() => {
               fetchQuestions();
             }}

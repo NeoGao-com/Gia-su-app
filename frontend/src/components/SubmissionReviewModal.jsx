@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { 
   X, Award, Clock, CheckCircle2, XCircle, AlertCircle, 
-  HelpCircle, Eye, ChevronDown, ChevronUp, Filter, Sparkles, RefreshCw
+  HelpCircle, Eye, ChevronDown, ChevronUp, Filter, Sparkles, RefreshCw,
+  Wand2, ThumbsUp, AlertTriangle, Lightbulb
 } from 'lucide-react';
 import { Modal } from './Modal';
 import { MathRenderer } from './MathRenderer';
 import api, { resolveImageUrl } from '../api/axios';
+import { useToast } from '../context/ToastContext';
 
 const QUESTION_TYPE_LABELS = {
   MULTIPLE_CHOICE: { label: 'Trắc nghiệm', bg: 'bg-indigo-50 text-indigo-700 border-indigo-200' },
@@ -22,9 +24,11 @@ const DIFFICULTY_LABELS = {
 };
 
 export function SubmissionReviewModal({ isOpen, onClose, submissionId }) {
+  const { toast } = useToast();
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [filterType, setFilterType] = useState('all'); // 'all' | 'correct' | 'incorrect'
+  const [gradingId, setGradingId] = useState(null);
 
   const isModalOpen = isOpen !== undefined ? Boolean(isOpen) : Boolean(submissionId);
 
@@ -46,6 +50,35 @@ export function SubmissionReviewModal({ isOpen, onClose, submissionId }) {
         setLoading(false);
       });
   }, [isModalOpen, submissionId]);
+
+  const handleGradeEssayAI = async (questionId) => {
+    if (!submissionId) return;
+    try {
+      setGradingId(questionId);
+      const res = await api.post(`/exams/submissions/${submissionId}/grade-ai`, {
+        question_ids: questionId ? [questionId] : undefined
+      });
+      if (res.data) {
+        toast.success('AI đã chấm bài tự luận và nhận xét thành công!');
+        setData(prev => {
+          if (!prev) return prev;
+          return {
+            ...prev,
+            submission: {
+              ...prev.submission,
+              score: res.data.new_score ?? prev.submission.score,
+              essay_score: res.data.essay_score ?? prev.submission.essay_score,
+              graded_answers: res.data.graded_answers ?? prev.submission.graded_answers
+            }
+          };
+        });
+      }
+    } catch (err) {
+      toast.error(err.response?.data?.detail || 'Lỗi khi gọi AI chấm bài');
+    } finally {
+      setGradingId(null);
+    }
+  };
 
   if (!isModalOpen) return null;
 
@@ -78,6 +111,7 @@ export function SubmissionReviewModal({ isOpen, onClose, submissionId }) {
       ...q,
       originalIndex: idx + 1,
       userAns,
+      gradInfo,
       isCorrect,
       isAnswered,
       earnedPoints
@@ -439,15 +473,18 @@ export function SubmissionReviewModal({ isOpen, onClose, submissionId }) {
                     </div>
                   )}
 
-                  {/* ESSAY display */}
+                  {/* ESSAY display & AI Grading */}
                   {q.question_type === 'ESSAY' && (
-                    <div className="space-y-2 pt-1 text-xs">
+                    <div className="space-y-3 pt-1 text-xs">
+                      {/* Student submission text */}
                       <div className="p-3 bg-gray-50 border border-gray-200 rounded-xl">
-                        <span className="font-bold text-gray-700 block mb-1">Bài làm của bạn:</span>
-                        <div className="whitespace-pre-wrap text-gray-800 font-mono text-[11px]">
+                        <span className="font-bold text-gray-700 block mb-1">Nội dung bài làm:</span>
+                        <div className="whitespace-pre-wrap text-gray-800 font-mono text-[11px] leading-relaxed">
                           {q.userAns || '(Không có nội dung bài làm)'}
                         </div>
                       </div>
+
+                      {/* Sample Solution / Rubric */}
                       {showAnswers && q.sample_solution && (
                         <div className="p-3 bg-indigo-50/50 border border-indigo-100 rounded-xl">
                           <span className="font-bold text-indigo-700 block mb-1">Hướng dẫn chấm / Lời giải mẫu:</span>
@@ -456,6 +493,76 @@ export function SubmissionReviewModal({ isOpen, onClose, submissionId }) {
                           </div>
                         </div>
                       )}
+
+                      {/* AI Grading Card if exists */}
+                      {q.gradInfo && (
+                        <div className="p-3.5 bg-gradient-to-br from-indigo-50/90 via-sky-50/70 to-blue-50/80 border border-indigo-200/90 rounded-2xl space-y-2.5 shadow-2xs">
+                          <div className="flex items-center justify-between">
+                            <span className="font-bold text-indigo-900 flex items-center space-x-1.5">
+                              <Sparkles className="w-4 h-4 text-indigo-600" />
+                              <span>Đánh giá &amp; Điểm số từ AI Trợ giảng</span>
+                            </span>
+                            <span className="px-2.5 py-1 bg-indigo-600 text-white rounded-lg font-extrabold text-xs shadow-2xs">
+                              {q.gradInfo.points_awarded ?? q.gradInfo.points ?? 0} / {q.gradInfo.max_points || 10} điểm
+                            </span>
+                          </div>
+
+                          {q.gradInfo.feedback && (
+                            <div className="text-xs text-slate-800 leading-relaxed bg-white/80 p-2.5 rounded-xl border border-indigo-100/80">
+                              <span className="font-bold text-indigo-800 block mb-0.5">Nhận xét sư phạm:</span>
+                              {q.gradInfo.feedback}
+                            </div>
+                          )}
+
+                          {Array.isArray(q.gradInfo.strengths) && q.gradInfo.strengths.length > 0 && (
+                            <div className="space-y-1">
+                              <span className="font-bold text-emerald-800 flex items-center space-x-1 text-[11px]">
+                                <ThumbsUp className="w-3 h-3 text-emerald-600" />
+                                <span>Ưu điểm đã đạt được:</span>
+                              </span>
+                              <ul className="list-disc list-inside text-[11px] text-emerald-950 pl-1 space-y-0.5">
+                                {q.gradInfo.strengths.map((s, si) => (
+                                  <li key={si}>{s}</li>
+                                ))}
+                              </ul>
+                            </div>
+                          )}
+
+                          {Array.isArray(q.gradInfo.weaknesses) && q.gradInfo.weaknesses.length > 0 && (
+                            <div className="space-y-1">
+                              <span className="font-bold text-amber-800 flex items-center space-x-1 text-[11px]">
+                                <AlertTriangle className="w-3 h-3 text-amber-600" />
+                                <span>Điểm cần hoàn thiện:</span>
+                              </span>
+                              <ul className="list-disc list-inside text-[11px] text-amber-950 pl-1 space-y-0.5">
+                                {q.gradInfo.weaknesses.map((w, wi) => (
+                                  <li key={wi}>{w}</li>
+                                ))}
+                              </ul>
+                            </div>
+                          )}
+
+                          {q.gradInfo.suggested_improvements && (
+                            <div className="text-[11px] text-slate-700 bg-white/70 p-2 rounded-lg border border-slate-200/80 flex items-start space-x-1.5">
+                              <Lightbulb className="w-3.5 h-3.5 text-amber-500 shrink-0 mt-0.5" />
+                              <span><strong>Gợi ý cải thiện:</strong> {q.gradInfo.suggested_improvements}</span>
+                            </div>
+                          )}
+                        </div>
+                      )}
+
+                      {/* Action button to trigger AI grading */}
+                      <div className="flex justify-end pt-1">
+                        <button
+                          type="button"
+                          disabled={gradingId === q.id}
+                          onClick={() => handleGradeEssayAI(q.id)}
+                          className="flex items-center space-x-1.5 px-3.5 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold transition shadow-2xs active:scale-95 disabled:opacity-50 cursor-pointer"
+                        >
+                          {gradingId === q.id ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Wand2 className="w-3.5 h-3.5" />}
+                          <span>{gradingId === q.id ? 'AI đang chấm bài...' : (q.gradInfo ? 'Chấm lại bằng AI' : '🤖 Chấm điểm tự luận bằng AI')}</span>
+                        </button>
+                      </div>
                     </div>
                   )}
 

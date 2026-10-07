@@ -9,6 +9,7 @@ import {
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useToast } from '../../context/ToastContext';
+import { ClassroomDiscussionsModal } from '../../components/ClassroomDiscussionsModal';
 
 export function StudentClassrooms() {
   const { toast } = useToast();
@@ -20,6 +21,8 @@ export function StudentClassrooms() {
   const [copiedCode, setCopiedCode] = useState(null);
   const [contactModalClass, setContactModalClass] = useState(null);
   const [copiedContact, setCopiedContact] = useState(null);
+  const [isDiscussionModalOpen, setIsDiscussionModalOpen] = useState(false);
+  const [discussionModalClass, setDiscussionModalClass] = useState(null);
 
   const cleanPhone = (phone) => (phone || '').replace(/[^0-9]/g, '');
 
@@ -317,14 +320,27 @@ export function StudentClassrooms() {
                         )}
                       </div>
 
+                      {/* Nút mở Kênh Hỏi đáp & Trao đổi */}
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setDiscussionModalClass(c);
+                          setIsDiscussionModalOpen(true);
+                        }}
+                        className="w-full mb-2 py-2 px-3 rounded-xl bg-gradient-to-r from-indigo-50 to-sky-50 hover:from-indigo-100 hover:to-sky-100 text-indigo-700 font-bold text-xs flex items-center justify-center space-x-1.5 transition border border-indigo-200/80 cursor-pointer shadow-2xs group-hover:border-indigo-300"
+                      >
+                        <MessageCircle className="w-3.5 h-3.5 text-indigo-600" />
+                        <span>Kênh Hỏi đáp &amp; Thảo luận</span>
+                      </button>
+
                       {/* Nút mở Modal liên hệ Thầy/Cô chi tiết */}
                       <button
                         type="button"
                         onClick={() => setContactModalClass(c)}
-                        className="w-full mb-3 py-2 px-3 rounded-xl bg-indigo-50/70 hover:bg-indigo-100/80 text-indigo-700 font-bold text-xs flex items-center justify-center space-x-1.5 transition border border-indigo-200/60 cursor-pointer shadow-2xs group-hover:border-indigo-300"
+                        className="w-full mb-3 py-2 px-3 rounded-xl bg-slate-50 hover:bg-slate-100 text-slate-700 font-semibold text-xs flex items-center justify-center space-x-1.5 transition border border-slate-200/80 cursor-pointer shadow-2xs"
                       >
-                        <PhoneCall className="w-3.5 h-3.5 text-indigo-600" />
-                        <span>Liên hệ Thầy/Cô phụ trách</span>
+                        <PhoneCall className="w-3.5 h-3.5 text-slate-500" />
+                        <span>Liên hệ Hotline / Zalo Thầy/Cô</span>
                       </button>
                     </div>
 
@@ -517,6 +533,18 @@ export function StudentClassrooms() {
           </div>
         </div>
       )}
+
+      {/* Classroom Discussions & Q&A Modal */}
+      <ClassroomDiscussionsModal
+        isOpen={isDiscussionModalOpen}
+        onClose={() => {
+          setIsDiscussionModalOpen(false);
+          setDiscussionModalClass(null);
+        }}
+        classroomId={discussionModalClass?.id}
+        classroomName={discussionModalClass?.name}
+        isTeacher={false}
+      />
     </div>
   );
 }

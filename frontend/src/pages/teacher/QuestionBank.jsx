@@ -13,6 +13,7 @@ import { CreateCategoryModal } from '../../components/CreateCategoryModal';
 import { ImportFileModal } from '../../components/ImportFileModal';
 import { ImportJsonModal } from '../../components/ImportJsonModal';
 import { AIAuditFixModal } from '../../components/AIAuditFixModal';
+import { AIGenerateQuizModal } from '../../components/AIGenerateQuizModal';
 import { WinFileExplorerTree } from '../../components/WinFileExplorerTree';
 import { MathRenderer } from '../../components/MathRenderer';
 import { useToast } from '../../context/ToastContext';
@@ -65,6 +66,7 @@ export function QuestionBank() {
   // JSON Import modal
   const [isJsonModalOpen, setIsJsonModalOpen] = useState(false);
   const [isImportFileModalOpen, setIsImportFileModalOpen] = useState(false);
+  const [isAIGenerateModalOpen, setIsAIGenerateModalOpen] = useState(false);
 
   // AI Verification states
   const [verifyingId, setVerifyingId] = useState(null);
@@ -419,6 +421,14 @@ export function QuestionBank() {
               >
                 <FileText className="w-4 h-4 text-emerald-600" />
                 <span>Nhập JSON</span>
+              </button>
+              <button
+                onClick={() => setIsAIGenerateModalOpen(true)}
+                className="flex items-center space-x-1.5 px-3.5 py-2 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white rounded-xl font-bold text-xs shadow-2xs transition active:scale-95 cursor-pointer"
+                title="AI tự động phân tích bài giảng / tài liệu và sinh bộ câu hỏi chất lượng cao"
+              >
+                <Sparkles className="w-4 h-4 text-amber-300" />
+                <span>AI Soạn đề từ tài liệu</span>
               </button>
               <button
                 onClick={() => handleOpenModal()}
@@ -820,6 +830,18 @@ export function QuestionBank() {
               refreshTreeData();
             }}
             toast={toast}
+          />
+
+          {/* AI Document/Text to Quiz Generator Modal */}
+          <AIGenerateQuizModal
+            isOpen={isAIGenerateModalOpen}
+            onClose={() => setIsAIGenerateModalOpen(false)}
+            defaultSubject={selectedCategory?.subject || 'Toán'}
+            defaultGrade={selectedCategory?.grade_level || 10}
+            onSuccess={() => {
+              refreshQuestions();
+              refreshTreeData();
+            }}
           />
         </main>
       </div>

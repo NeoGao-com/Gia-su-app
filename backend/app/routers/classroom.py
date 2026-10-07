@@ -7,11 +7,12 @@ from sqlalchemy import func
 from sqlalchemy.orm import selectinload, joinedload
 from typing import List, Optional
 from app.database import get_db, redis_client
-from app.models.classroom import Classroom, Assignment, ClassroomStudent, ClassroomExam
+from app.models.classroom import Classroom, Assignment, ClassroomStudent, ClassroomExam, ClassroomPost, ClassroomComment
 from app.models.question import Question
 from app.schemas.classroom import (
     ClassroomCreate, ClassroomUpdate, ClassroomResponse,
-    AssignmentCreate, JoinClassroomRequest, GradebookResponse
+    AssignmentCreate, JoinClassroomRequest, GradebookResponse,
+    PostCreate, PostResponse, CommentCreate, CommentResponse, DiscussionAuthor
 )
 from app.schemas.assignment import (
     AssignmentResponse, AssignmentCreateBody,
@@ -1028,4 +1029,306 @@ async def assign_by_lesson(
         select(Assignment).filter(Assignment.id == assignment.id).options(selectinload(Assignment.exam))
     )
     return res.scalars().first()
+
+
+# =========================================================================
+# KÊNH TRAO ĐỔI & HỎI ĐÁP BÀI TẬP THEO LỚP (CLASSROOM DISCUSSIONS / Q&A)
+# =========================================================================
+
+async def verify_classroom_access(db: AsyncSession, classroom_id: int, current_user: User) -> Classroom:
+    classroom = await db.get(Classroom, classroom_id)
+    if not classroom or classroom.is_deleted:
+        raise HTTPException(status_code=404, detail="Không tìm thấy lớp học")
+
+    if current_user.role == "TEACHER":
+        if classroom.instructor_id != current_user.id:
+            raise HTTPException(status_code=403, detail="Chỉ giáo viên phụ trách lớp mới có quyền thực hiện thao tác này")
+        return classroom
+
+    # For student: verify active membership
+    st_res = await db.execute(
+        select(ClassroomStudent).filter(
+            ClassroomStudent.classroom_id == classroom_id,
+            ClassroomStudent.student_id == current_user.id,
+            ClassroomStudent.is_active == True
+        )
+    )
+    if not st_res.scalars().first():
+        raise HTTPException(status_code=403, detail="Bạn chưa tham gia lớp học này")
+    return classroom
+
+
+def _map_post_model(post: ClassroomPost, include_comments: bool = False) -> PostResponse:
+    author = DiscussionAuthor(
+        id=post.user.id,
+        full_name=post.user.full_name or "Người dùng",
+        role=post.user.role or "STUDENT",
+        email=post.user.email
+    ) if post.user else None
+
+    comments_list = []
+    if include_comments and post.comments:
+        for c in post.comments:
+            c_author = DiscussionAuthor(
+                id=c.user.id,
+                full_name=c.user.full_name or "Người dùng",
+                role=c.user.role or "STUDENT",
+                email=c.user.email
+            ) if c.user else None
+            comments_list.append(CommentResponse(
+                id=c.id,
+                post_id=c.post_id,
+                user_id=c.user_id,
+                content=c.content,
+                image_url=c.image_url,
+                is_teacher_answer=bool(c.is_teacher_answer),
+                created_at=c.created_at,
+                author=c_author
+            ))
+
+    return PostResponse(
+        id=post.id,
+        classroom_id=post.classroom_id,
+        user_id=post.user_id,
+        title=post.title,
+        content=post.content,
+        image_url=post.image_url,
+        is_pinned=bool(post.is_pinned),
+        created_at=post.created_at,
+        updated_at=post.updated_at,
+        author=author,
+        comments_count=len(post.comments) if post.comments is not None else 0,
+        comments=comments_list
+    )
+
+
+@router.get("/{classroom_id}/posts", response_model=List[PostResponse], summary="Lấy danh sách bài hỏi đáp / thảo luận của lớp")
+async def get_classroom_posts(
+    classroom_id: int,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    await verify_classroom_access(db, classroom_id, current_user)
+
+    query = (
+        select(ClassroomPost)
+        .filter(ClassroomPost.classroom_id == classroom_id)
+        .options(
+            selectinload(ClassroomPost.user),
+            selectinload(ClassroomPost.comments).selectinload(ClassroomComment.user)
+        )
+        .order_by(ClassroomPost.is_pinned.desc(), ClassroomPost.created_at.desc())
+    )
+    res = await db.execute(query)
+    posts = res.scalars().all()
+    return [_map_post_model(p, include_comments=True) for p in posts]
+
+
+@router.post("/{classroom_id}/posts", response_model=PostResponse, summary="Đăng câu hỏi hoặc thảo luận mới vào lớp")
+async def create_classroom_post(
+    classroom_id: int,
+    payload: PostCreate,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    classroom = await verify_classroom_access(db, classroom_id, current_user)
+
+    if not payload.title.strip() or not payload.content.strip():
+        raise HTTPException(status_code=400, detail="Tiêu đề và nội dung thảo luận không được để trống")
+
+    post = ClassroomPost(
+        classroom_id=classroom_id,
+        user_id=current_user.id,
+        title=payload.title.strip(),
+        content=payload.content.strip(),
+        image_url=payload.image_url.strip() if payload.image_url else None,
+        is_pinned=False
+    )
+    db.add(post)
+    await db.commit()
+    await db.refresh(post)
+
+    # Reload with user
+    res = await db.execute(
+        select(ClassroomPost)
+        .filter(ClassroomPost.id == post.id)
+        .options(
+            selectinload(ClassroomPost.user),
+            selectinload(ClassroomPost.comments)
+        )
+    )
+    loaded_post = res.scalars().first()
+    return _map_post_model(loaded_post, include_comments=True)
+
+
+@router.get("/{classroom_id}/posts/{post_id}", response_model=PostResponse, summary="Chi tiết bài thảo luận kèm bình luận")
+async def get_classroom_post_detail(
+    classroom_id: int,
+    post_id: int,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    await verify_classroom_access(db, classroom_id, current_user)
+
+    query = (
+        select(ClassroomPost)
+        .filter(ClassroomPost.id == post_id, ClassroomPost.classroom_id == classroom_id)
+        .options(
+            selectinload(ClassroomPost.user),
+            selectinload(ClassroomPost.comments).selectinload(ClassroomComment.user)
+        )
+    )
+    res = await db.execute(query)
+    post = res.scalars().first()
+    if not post:
+        raise HTTPException(status_code=404, detail="Không tìm thấy bài thảo luận")
+
+    return _map_post_model(post, include_comments=True)
+
+
+@router.post("/{classroom_id}/posts/{post_id}/comments", response_model=CommentResponse, summary="Trả lời / bình luận vào bài thảo luận")
+async def create_classroom_comment(
+    classroom_id: int,
+    post_id: int,
+    payload: CommentCreate,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    classroom = await verify_classroom_access(db, classroom_id, current_user)
+
+    post_res = await db.execute(
+        select(ClassroomPost).filter(ClassroomPost.id == post_id, ClassroomPost.classroom_id == classroom_id)
+    )
+    post = post_res.scalars().first()
+    if not post:
+        raise HTTPException(status_code=404, detail="Không tìm thấy bài thảo luận")
+
+    if not payload.content.strip():
+        raise HTTPException(status_code=400, detail="Nội dung bình luận không được để trống")
+
+    is_teacher = (current_user.role == "TEACHER" or current_user.id == classroom.instructor_id)
+
+    comment = ClassroomComment(
+        post_id=post_id,
+        user_id=current_user.id,
+        content=payload.content.strip(),
+        image_url=payload.image_url.strip() if payload.image_url else None,
+        is_teacher_answer=is_teacher
+    )
+    db.add(comment)
+    await db.commit()
+    await db.refresh(comment)
+
+    # Reload with user
+    res = await db.execute(
+        select(ClassroomComment).filter(ClassroomComment.id == comment.id).options(selectinload(ClassroomComment.user))
+    )
+    loaded_comment = res.scalars().first()
+
+    author = DiscussionAuthor(
+        id=loaded_comment.user.id,
+        full_name=loaded_comment.user.full_name or "Người dùng",
+        role=loaded_comment.user.role or "STUDENT",
+        email=loaded_comment.user.email
+    ) if loaded_comment.user else None
+
+    return CommentResponse(
+        id=loaded_comment.id,
+        post_id=loaded_comment.post_id,
+        user_id=loaded_comment.user_id,
+        content=loaded_comment.content,
+        image_url=loaded_comment.image_url,
+        is_teacher_answer=bool(loaded_comment.is_teacher_answer),
+        created_at=loaded_comment.created_at,
+        author=author
+    )
+
+
+@router.put("/{classroom_id}/posts/{post_id}/pin", summary="Ghim / Bỏ ghim bài thảo luận (Chỉ giáo viên)")
+async def toggle_pin_post(
+    classroom_id: int,
+    post_id: int,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_teacher)
+):
+    classroom = await verify_classroom_access(db, classroom_id, current_user)
+    post_res = await db.execute(
+        select(ClassroomPost).filter(ClassroomPost.id == post_id, ClassroomPost.classroom_id == classroom_id)
+    )
+    post = post_res.scalars().first()
+    if not post:
+        raise HTTPException(status_code=404, detail="Không tìm thấy bài thảo luận")
+
+    post.is_pinned = not bool(post.is_pinned)
+    await db.commit()
+    return {"success": True, "is_pinned": post.is_pinned, "message": "Đã cập nhật trạng thái ghim"}
+
+
+@router.put("/{classroom_id}/posts/{post_id}/comments/{comment_id}/mark-teacher-answer", summary="Đánh dấu câu trả lời mẫu/giáo viên")
+async def toggle_teacher_answer(
+    classroom_id: int,
+    post_id: int,
+    comment_id: int,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_teacher)
+):
+    await verify_classroom_access(db, classroom_id, current_user)
+    comment_res = await db.execute(
+        select(ClassroomComment).filter(ClassroomComment.id == comment_id, ClassroomComment.post_id == post_id)
+    )
+    comment = comment_res.scalars().first()
+    if not comment:
+        raise HTTPException(status_code=404, detail="Không tìm thấy bình luận")
+
+    comment.is_teacher_answer = not bool(comment.is_teacher_answer)
+    await db.commit()
+    return {"success": True, "is_teacher_answer": comment.is_teacher_answer}
+
+
+@router.delete("/{classroom_id}/posts/{post_id}", summary="Xóa bài thảo luận")
+async def delete_classroom_post(
+    classroom_id: int,
+    post_id: int,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    classroom = await verify_classroom_access(db, classroom_id, current_user)
+    post_res = await db.execute(
+        select(ClassroomPost).filter(ClassroomPost.id == post_id, ClassroomPost.classroom_id == classroom_id)
+    )
+    post = post_res.scalars().first()
+    if not post:
+        raise HTTPException(status_code=404, detail="Không tìm thấy bài thảo luận")
+
+    # Only author or teacher can delete
+    if current_user.role != "TEACHER" and post.user_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Bạn không có quyền xóa bài viết này")
+
+    await db.delete(post)
+    await db.commit()
+    return {"success": True, "message": "Đã xóa bài viết thành công"}
+
+
+@router.delete("/{classroom_id}/posts/{post_id}/comments/{comment_id}", summary="Xóa bình luận")
+async def delete_classroom_comment(
+    classroom_id: int,
+    post_id: int,
+    comment_id: int,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    classroom = await verify_classroom_access(db, classroom_id, current_user)
+    comment_res = await db.execute(
+        select(ClassroomComment).filter(ClassroomComment.id == comment_id, ClassroomComment.post_id == post_id)
+    )
+    comment = comment_res.scalars().first()
+    if not comment:
+        raise HTTPException(status_code=404, detail="Không tìm thấy bình luận")
+
+    if current_user.role != "TEACHER" and comment.user_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Bạn không có quyền xóa bình luận này")
+
+    await db.delete(comment)
+    await db.commit()
+    return {"success": True, "message": "Đã xóa bình luận thành công"}
 

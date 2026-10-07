@@ -59,6 +59,22 @@ async def check_grading_authorization(db: AsyncSession, submission: ExamSubmissi
 
     raise HTTPException(status_code=403, detail="Bạn không có quyền chấm bài nộp này")
 
+async def _get_active_ai_service(db: AsyncSession) -> AIService:
+    try:
+        from app.models.ai_config import AIConfig
+        result = await db.execute(select(AIConfig).filter(AIConfig.is_active == True))
+        config = result.scalars().first()
+        if config:
+            return AIService(db_config={
+                "provider": config.provider,
+                "api_key": config.api_key,
+                "base_url": config.base_url,
+                "model_name": config.model_name
+            })
+    except Exception:
+        pass
+    return AIService()
+
 @router.post("/submissions/{submission_id}/grade-ai", summary="Chấm điểm câu hỏi tự luận bằng AI")
 async def grade_essay_submission_ai(
     request: Request,
@@ -89,6 +105,7 @@ async def grade_essay_submission_ai(
 
     feedback_notes = []
     has_graded_any = False
+    active_ai = await _get_active_ai_service(db)
 
     for q in questions:
         if q.question_type == "ESSAY":
@@ -99,7 +116,7 @@ async def grade_essay_submission_ai(
             student_ans = submission.answers.get(q_id_str) or submission.answers.get(q.id) or ""
 
             try:
-                res = ai_service.grade_essay(q.content, student_ans, q.sample_solution or "")
+                res = active_ai.grade_essay(q.content, student_ans, q.sample_solution or "")
             except Exception as e:
                 logger.error(f"AI grading failed for {submission_id} by {current_user.email} from IP {client_ip}: {str(e)}")
                 raise HTTPException(
@@ -107,21 +124,24 @@ async def grade_essay_submission_ai(
                     detail=f"Chức năng chấm điểm bằng AI hiện không khả dụng hoặc bị lỗi: {str(e)}. Vui lòng cấu hình OPENAI_API_KEY hoặc chấm thủ công."
                 )
 
-            score = res.get("score", 0.0)
+            score = float(res.get("score", 0.0))
             feedback = res.get("feedback", "")
 
-            # Update graded_answers dictionary
+            # Update graded_answers dictionary with rich feedback
             submission.graded_answers[q_id_str] = {
                 "question_id": q.id,
                 "question_type": q.question_type,
                 "student_answer": student_ans,
                 "correct_answer": q.sample_solution,
-                "is_correct": None,
+                "is_correct": score >= 5.0,
                 "points_awarded": score,
-                "max_points": 10.0, # or whatever max points, usually essay is graded out of 10 or scaled
-                "feedback": feedback
+                "max_points": 10.0,
+                "feedback": feedback,
+                "strengths": res.get("strengths", []),
+                "weaknesses": res.get("weaknesses", []),
+                "suggested_improvements": res.get("suggested_improvements", "")
             }
-            feedback_notes.append(f"Câu hỏi {q.id}: {feedback}")
+            feedback_notes.append(f"Câu hỏi {q.id}: {score}/10đ - {feedback}")
             has_graded_any = True
 
     if not has_graded_any and target_question_ids:

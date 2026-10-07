@@ -140,29 +140,211 @@ class AIService:
             logger.error(f"Error calling OpenAI API: {str(e)}")
             return []
 
-    def grade_essay(self, question_content: str, student_answer: str, sample_solution: str) -> dict:
+    def generate_questions_from_text(
+        self,
+        raw_text: str,
+        subject: str = "Toán",
+        grade_level: int = 10,
+        count: int = 5,
+        question_types: list = None,
+        difficulty: str = None,
+        chapter: str = None
+    ) -> list:
         """
-        Grade an essay question and return score (0 to 10) and feedback.
+        Tạo danh sách câu hỏi dựa trên văn bản/tài liệu bài học được giáo viên nhập vào.
+        Hỗ trợ các dạng: MULTIPLE_CHOICE, TRUE_FALSE, SHORT_ANSWER, ESSAY với công thức toán KaTeX.
+        """
+        valid_types = question_types or ["MULTIPLE_CHOICE"]
+        types_str = ", ".join(valid_types)
+        diff_str = difficulty if (difficulty and difficulty != "MIXED") else "phân bổ cân đối từ Nhận biết đến Vận dụng cao"
+
+        if not self.client:
+            # Fallback mockup questions matching structure
+            mock_list = []
+            for i in range(1, min(count + 1, 6)):
+                q_type = valid_types[(i - 1) % len(valid_types)]
+                if q_type == "MULTIPLE_CHOICE":
+                    mock_list.append({
+                        "content": f"Câu hỏi {i} (Môn {subject} - Lớp {grade_level}): Dựa vào nội dung tài liệu, khẳng định nào sau đây là đúng?",
+                        "question_type": "MULTIPLE_CHOICE",
+                        "options": [
+                            f"Phương án A: Giá trị đại lượng $x = {i * 2}$ thỏa mãn phương trình",
+                            f"Phương án B: Đồ thị hàm số đi qua gốc tọa độ $O(0;0)$",
+                            f"Phương án C: Phương trình vô nghiệm trên tập số thực $\\mathbb{{R}}$",
+                            f"Phương án D: Giá trị nhỏ nhất đạt được tại $x = {i}$"
+                        ],
+                        "correct_option": 0,
+                        "subject": subject,
+                        "grade_level": grade_level,
+                        "chapter": chapter or "Kiến thức trọng tâm",
+                        "difficulty": "THONG_HIEU",
+                        "explanation": f"Lời giải chi tiết: Thay $x = {i * 2}$ vào biểu thức ta có đẳng thức đúng. Do đó phương án A chính xác."
+                    })
+                elif q_type == "TRUE_FALSE":
+                    mock_list.append({
+                        "content": f"Câu hỏi {i} (Đúng / Sai): Xét các mệnh đề sau về nội dung tài liệu đã cho:",
+                        "question_type": "TRUE_FALSE",
+                        "sub_questions": [
+                            {"statement": f"Mệnh đề a: Điều kiện xác định là $x > {i}$", "answer": True},
+                            {"statement": f"Mệnh đề b: Hàm số luôn đồng biến trên $\\mathbb{{R}}$", "answer": False},
+                            {"statement": f"Mệnh đề c: Giá trị cực đại bằng ${i * 5}$", "answer": True},
+                            {"statement": f"Mệnh đề d: Đồ thị có tiệm cận ngang $y = 0$", "answer": False}
+                        ],
+                        "subject": subject,
+                        "grade_level": grade_level,
+                        "chapter": chapter or "Kiến thức trọng tâm",
+                        "difficulty": "VAN_DUNG",
+                        "explanation": "Lời giải: Mệnh đề a đúng theo định nghĩa TXĐ; b sai vì đạo hàm đổi dấu; c đúng; d sai vì giới hạn vô cực."
+                    })
+                elif q_type == "SHORT_ANSWER":
+                    mock_list.append({
+                        "content": f"Câu hỏi {i} (Trả lời ngắn): Tính giá trị biểu thức $P = f({i}) + {i * 3}$ theo dữ liệu tài liệu.",
+                        "question_type": "SHORT_ANSWER",
+                        "correct_answer": str(i * 10),
+                        "subject": subject,
+                        "grade_level": grade_level,
+                        "chapter": chapter or "Kiến thức trọng tâm",
+                        "difficulty": "VAN_DUNG",
+                        "explanation": f"Lời giải: Thay số vào ta tìm được kết quả là {i * 10}."
+                    })
+                else: # ESSAY
+                    mock_list.append({
+                        "content": f"Câu hỏi {i} (Tự luận): Hãy trình bày giải pháp và phân tích hiện tượng/bài toán được nêu trong tài liệu.",
+                        "question_type": "ESSAY",
+                        "sample_solution": f"Hướng dẫn chấm:\n- Bước 1: Nêu đúng giả thiết và công thức cần áp dụng (1.0 điểm)\n- Bước 2: Biến đổi biểu thức và tính toán chính xác (2.0 điểm)\n- Bước 3: Biện luận và kết luận đáp số (1.0 điểm)",
+                        "subject": subject,
+                        "grade_level": grade_level,
+                        "chapter": chapter or "Kiến thức trọng tâm",
+                        "difficulty": "VAN_DUNG_CAO",
+                        "explanation": "Tiêu chí chấm điểm chi tiết theo thang điểm bài thi."
+                    })
+            return mock_list
+
+        system_prompt = (
+            "Bạn là chuyên gia sư phạm và khảo thí giàu kinh nghiệm biên soạn đề thi. "
+            "Nhiệm vụ: Đọc kỹ tài liệu/văn bản người dùng cung cấp và tự động tạo ra bộ câu hỏi chuẩn xác, có tính phân loại cao.\n"
+            f"Yêu cầu:\n"
+            f"- Số lượng: đúng {count} câu hỏi.\n"
+            f"- Môn học: {subject}, Khối lớp: {grade_level}, Chương: {chapter or 'Chung'}.\n"
+            f"- Các dạng câu hỏi được dùng: {types_str}.\n"
+            f"- Mức độ khó: {diff_str}.\n"
+            f"- Công thức Toán học, Vật lý, Hóa học phải được định dạng KaTeX chuẩn ($...$ cho inline và $$...$$ cho block).\n"
+            "Cấu trúc JSON đầu ra:\n"
+            "{\n"
+            "  \"questions\": [\n"
+            "    {\n"
+            "      \"content\": \"Nội dung câu hỏi (có LaTeX nếu là môn tự nhiên)\",\n"
+            "      \"question_type\": \"MULTIPLE_CHOICE\" | \"TRUE_FALSE\" | \"SHORT_ANSWER\" | \"ESSAY\",\n"
+            "      \"options\": [\"Phương án A\", \"Phương án B\", \"Phương án C\", \"Phương án D\"] (chỉ cho MULTIPLE_CHOICE),\n"
+            "      \"correct_option\": 0 (chỉ số đáp án đúng 0-3 cho MULTIPLE_CHOICE),\n"
+            "      \"sub_questions\": [{\"statement\": \"...\", \"answer\": true/false}] (4 ý cho TRUE_FALSE),\n"
+            "      \"correct_answer\": \"đáp án dạng chuỗi/số\" (cho SHORT_ANSWER),\n"
+            "      \"sample_solution\": \"hướng dẫn chấm và lời giải mẫu\" (cho ESSAY),\n"
+            "      \"explanation\": \"Lời giải chi tiết từng bước có giải thích rõ ràng\",\n"
+            "      \"subject\": \"Tên môn\",\n"
+            "      \"grade_level\": 10,\n"
+            "      \"chapter\": \"Tên chương\",\n"
+            "      \"difficulty\": \"NHAN_BIET\" | \"THONG_HIEU\" | \"VAN_DUNG\" | \"VAN_DUNG_CAO\"\n"
+            "    }\n"
+            "  ]\n"
+            "}"
+        )
+
+        user_prompt = f"Nội dung văn bản / tài liệu tham khảo:\n\n{raw_text[:14000]}"
+
+        try:
+            try:
+                response = self.client.chat.completions.create(
+                    model=self.model_name,
+                    messages=[
+                        {"role": "system", "content": system_prompt},
+                        {"role": "user", "content": user_prompt}
+                    ],
+                    response_format={"type": "json_object"}
+                )
+            except Exception:
+                response = self.client.chat.completions.create(
+                    model=self.model_name,
+                    messages=[
+                        {"role": "system", "content": system_prompt + ' Chỉ trả về JSON thuần { "questions": [...] }.'},
+                        {"role": "user", "content": user_prompt}
+                    ]
+                )
+            data = _parse_json_response(response.choices[0].message.content)
+            questions = []
+            if isinstance(data, dict):
+                if "questions" in data and isinstance(data["questions"], list):
+                    questions = data["questions"]
+                else:
+                    for v in data.values():
+                        if isinstance(v, list):
+                            questions = v
+                            break
+            elif isinstance(data, list):
+                questions = data
+
+            # Normalization
+            for q in questions:
+                if "subject" not in q or not q["subject"]:
+                    q["subject"] = subject
+                if "grade_level" not in q or not q["grade_level"]:
+                    q["grade_level"] = grade_level
+                if "chapter" not in q or not q["chapter"]:
+                    q["chapter"] = chapter or "Kiến thức chung"
+                if "difficulty" not in q or not q["difficulty"]:
+                    q["difficulty"] = "THONG_HIEU"
+
+            return questions
+        except Exception as e:
+            logger.error(f"Error in generate_questions_from_text: {str(e)}")
+            raise e
+
+    def grade_essay(
+        self,
+        question_content: str,
+        student_answer: str,
+        sample_solution: str = "",
+        max_score: float = 10.0
+    ) -> dict:
+        """
+        Chấm điểm bài thi tự luận bằng AI với nhận xét chi tiết sư phạm,
+        chỉ ra ưu điểm, nhược điểm và đề xuất cải thiện.
         """
         if not self.client:
             return {
-                "score": 8.5,
-                "feedback": "Bài làm tương đối chính xác, bám sát các ý chính trong hướng dẫn chấm. Cần trình bày chi tiết và rõ ràng hơn một số bước lập luận."
+                "score": round(max_score * 0.85, 2),
+                "max_score": max_score,
+                "feedback": "Bài làm tương đối chính xác, bám sát các ý chính trong hướng dẫn chấm. Cần trình bày chi tiết và rõ ràng hơn một số bước lập luận.",
+                "strengths": [
+                    "Nêu đúng các công thức và kiến thức trọng tâm",
+                    "Các bước biến đổi toán học/lập luận mạch lạc"
+                ],
+                "weaknesses": [
+                    "Chưa lập luận đầy đủ điều kiện bài toán",
+                    "Cần thêm kết luận rõ ràng cho đáp số"
+                ],
+                "suggested_improvements": "Nên ghi rõ giả thiết, lập bảng biến thiên hoặc giải thích chi tiết hơn ở bước cuối cùng."
             }
 
         system_prompt = (
-            "Bạn là giám khảo chấm thi tự luận. Hãy đánh giá bài làm của học sinh dựa trên câu hỏi và đáp án mẫu. "
-            "Hãy trả về kết quả dưới dạng JSON có cấu trúc:\n"
+            "Bạn là giám khảo chấm thi tự luận chuyên nghiệp và giàu kinh nghiệm sư phạm. "
+            "Nhiệm vụ: Đánh giá bài làm của học sinh dựa trên câu hỏi và đáp án mẫu/hướng dẫn chấm. "
+            f"Thang điểm tối đa: {max_score}.\n"
+            "Hãy trả về kết quả dưới dạng JSON có cấu trúc chính xác:\n"
             "{\n"
-            "  \"score\": 8.5 (điểm số từ 0.0 đến 10.0),\n"
-            "  \"feedback\": \"Nhận xét chi tiết ưu điểm và nhược điểm của bài làm.\"\n"
+            f"  \"score\": float (từ 0.0 đến {max_score}, làm tròn đến 0.25),\n"
+            f"  \"max_score\": {max_score},\n"
+            "  \"feedback\": \"Nhận xét sư phạm tổng thể khách quan, chân thực và khích lệ\",\n"
+            "  \"strengths\": [\"Ưu điểm 1 của bài làm\", \"Ưu điểm 2...\"],\n"
+            "  \"weaknesses\": [\"Lỗi sai hoặc ý còn thiếu 1\", \"Ý còn thiếu 2...\"],\n"
+            "  \"suggested_improvements\": \"Hướng dẫn học sinh cách khắc phục để đạt điểm tối đa\"\n"
             "}"
         )
 
         user_prompt = (
-            f"Câu hỏi: {question_content}\n"
-            f"Đáp án mẫu: {sample_solution}\n"
-            f"Bài làm của học sinh: {student_answer}"
+            f"Câu hỏi: {question_content}\n\n"
+            f"Đáp án mẫu / Hướng dẫn chấm:\n{sample_solution or '(Không có đáp án mẫu, hãy tự giải và đánh giá bài làm)'}\n\n"
+            f"Bài làm của học sinh:\n{student_answer or '(Học sinh để trống bài làm)'}"
         )
 
         try:
@@ -183,12 +365,23 @@ class AIService:
                         {"role": "user", "content": user_prompt}
                     ],
                 )
-            return _parse_json_response(response.choices[0].message.content)
+            parsed = _parse_json_response(response.choices[0].message.content)
+            if "score" in parsed:
+                try:
+                    parsed["score"] = min(float(parsed["score"]), max_score)
+                except Exception:
+                    parsed["score"] = round(max_score * 0.7, 2)
+            parsed["max_score"] = max_score
+            return parsed
         except Exception as e:
             logger.error(f"Error calling AI in grade_essay: {str(e)}")
             return {
-                "score": 7.0,
-                "feedback": f"Không thể nhận phản hồi từ AI ({self.provider}): {str(e)}. Vui lòng chấm điểm thủ công hoặc kiểm tra cấu hình AI."
+                "score": round(max_score * 0.7, 2),
+                "max_score": max_score,
+                "feedback": f"Không thể nhận phản hồi từ AI ({self.provider}): {str(e)}. Vui lòng chấm điểm thủ công hoặc kiểm tra cấu hình AI.",
+                "strengths": [],
+                "weaknesses": ["Lỗi kết nối AI khi chấm điểm"],
+                "suggested_improvements": "Vui lòng xem lại bài làm thủ công."
             }
 
     def verify_question(self, content: str, question_type: str, options: list = None,

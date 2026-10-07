@@ -5,10 +5,12 @@ import api, { clearApiCache } from '../../api/axios';
 import {
   Plus, Trash2, UserPlus, CheckSquare, Square, Search,
   Copy, Check, Users, UserMinus, Edit3, Phone, School,
-  Calendar, HeartHandshake, KeyRound, Pencil, GraduationCap, FileText
+  Calendar, HeartHandshake, KeyRound, Pencil, GraduationCap, FileText,
+  MessageCircle
 } from 'lucide-react';
 import { Modal } from '../../components/Modal';
 import { EditAssignmentModal } from '../../components/EditAssignmentModal';
+import { ClassroomDiscussionsModal } from '../../components/ClassroomDiscussionsModal';
 import { useToast } from '../../context/ToastContext';
 
 export function ClassroomManagement() {
@@ -18,6 +20,8 @@ export function ClassroomManagement() {
   const [selectedClass, setSelectedClass] = useState(null);
   const [studentsInClass, setStudentsInClass] = useState([]);
   const [allStudents, setAllStudents] = useState([]);
+  const [isDiscussionModalOpen, setIsDiscussionModalOpen] = useState(false);
+  const [discussionModalClass, setDiscussionModalClass] = useState(null);
   
   const [isClassModalOpen, setIsClassModalOpen] = useState(false);
   const [isStudentModalOpen, setIsStudentModalOpen] = useState(false);
@@ -526,13 +530,26 @@ export function ClassroomManagement() {
                             <h3 className="text-base font-bold text-slate-900 group-hover:text-indigo-600 transition">{c.name}</h3>
                             <span className="text-xs text-slate-500 mt-0.5 block">{c.description || 'Chưa có ghi chú lịch học'}</span>
                           </div>
-                          <button
-                            onClick={(e) => handleDeleteClassroom(c.id, e)}
-                            className="text-slate-400 hover:text-rose-600 p-1.5 rounded-lg transition"
-                            title="Xóa lớp học này"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
+                          <div className="flex items-center space-x-1">
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setDiscussionModalClass(c);
+                                setIsDiscussionModalOpen(true);
+                              }}
+                              className="text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 p-1.5 rounded-lg transition"
+                              title="Mở kênh hỏi đáp của lớp"
+                            >
+                              <MessageCircle className="w-4 h-4" />
+                            </button>
+                            <button
+                              onClick={(e) => handleDeleteClassroom(c.id, e)}
+                              className="text-slate-400 hover:text-rose-600 p-1.5 rounded-lg transition"
+                              title="Xóa lớp học này"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </div>
                         </div>
                         <div className="flex items-center justify-between text-xs text-slate-500 pt-3 border-t border-slate-100 mt-3">
                           <span className="inline-flex items-center space-x-1 font-semibold text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200/60">
@@ -567,8 +584,21 @@ export function ClassroomManagement() {
                         )}
                       </div>
 
-                      {/* Prominent Invite Code with Copy */}
-                      <div className="bg-slate-50 p-3.5 rounded-xl border border-slate-200 flex items-center space-x-3">
+                      <div className="flex flex-wrap items-center gap-3">
+                        <button
+                          onClick={() => {
+                            setDiscussionModalClass(selectedClass);
+                            setIsDiscussionModalOpen(true);
+                          }}
+                          className="flex items-center space-x-1.5 px-4 py-2.5 bg-gradient-to-r from-indigo-600 to-sky-600 hover:from-indigo-700 hover:to-sky-700 text-white rounded-xl font-bold text-xs shadow-2xs transition active:scale-95 cursor-pointer"
+                          title="Kênh trao đổi & giải đáp thắc mắc cho học sinh trong lớp"
+                        >
+                          <MessageCircle className="w-4 h-4" />
+                          <span>Kênh Hỏi đáp ({selectedClass.name})</span>
+                        </button>
+
+                        {/* Prominent Invite Code with Copy */}
+                        <div className="bg-slate-50 p-3.5 rounded-xl border border-slate-200 flex items-center space-x-3">
                         <div>
                           <div className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Mã tham gia lớp</div>
                           <div className="text-base font-mono font-extrabold text-indigo-700 tracking-wider">
@@ -588,6 +618,7 @@ export function ClassroomManagement() {
                         </button>
                       </div>
                     </div>
+                  </div>
 
                     {/* Students in this Group Section */}
                     <div className="flex justify-between items-center mb-4">
@@ -1529,6 +1560,17 @@ export function ClassroomManagement() {
               const updated = updatedClassrooms.find(c => c.id === selectedClass?.id);
               if (updated) setSelectedClass(updated);
             }}
+          />
+
+          <ClassroomDiscussionsModal
+            isOpen={isDiscussionModalOpen}
+            onClose={() => {
+              setIsDiscussionModalOpen(false);
+              setDiscussionModalClass(null);
+            }}
+            classroomId={discussionModalClass?.id}
+            classroomName={discussionModalClass?.name}
+            isTeacher={true}
           />
         </main>
       </div>
