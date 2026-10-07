@@ -1,4 +1,5 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+import asyncio
+from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from sqlalchemy.orm import selectinload
@@ -120,7 +121,10 @@ async def start_exam(
 @router.get("/exams", response_model=List[StudentExamResponse], summary="Lấy danh sách bài thi của học sinh")
 async def get_student_exams(
     page: int = 1,
-    limit: int = 20,
+    limit: int = 50,
+    subject: Optional[str] = Query(None),
+    grade_level: Optional[int] = Query(None),
+    search: Optional[str] = Query(None),
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
@@ -144,7 +148,7 @@ async def get_student_exams(
     )
     assigned_union = assigned_subq_1.union(assigned_subq_2).subquery()
 
-    cache_key = f"student:exams:{current_user.id}:{page}:{limit}"
+    cache_key = f"student:exams:{current_user.id}:{page}:{limit}:{subject}:{grade_level}:{search}"
     try:
         cached = await redis_client.get(cache_key)
         if cached:
@@ -153,7 +157,7 @@ async def get_student_exams(
         pass
 
     offset = (page - 1) * limit
-    result = await db.execute(
+    base_query = (
         select(Exam)
         .options(selectinload(Exam.questions))
         .filter(
@@ -163,6 +167,25 @@ async def get_student_exams(
                 Exam.id.in_(select(assigned_union.c.exam_id)),
             )
         )
+    )
+
+    if search:
+        s_term = f"%{search.strip()}%"
+        base_query = base_query.filter(or_(Exam.title.ilike(s_term), Exam.description.ilike(s_term)))
+
+    if subject or grade_level:
+        q_filter = (
+            select(exam_questions.c.exam_id)
+            .join(Question, Question.id == exam_questions.c.question_id)
+        )
+        if subject:
+            q_filter = q_filter.filter(Question.subject.ilike(f"%{subject.strip()}%"))
+        if grade_level:
+            q_filter = q_filter.filter(Question.grade_level == grade_level)
+        base_query = base_query.filter(Exam.id.in_(q_filter))
+
+    result = await db.execute(
+        base_query
         .distinct()
         .offset(offset)
         .limit(limit)
@@ -794,29 +817,49 @@ async def get_practice_questions(
     grade_level: Optional[int] = None,
     chapter: Optional[str] = None,
     difficulty: Optional[str] = None,
-    limit: int = 10,
+    count: Optional[int] = None,
+    limit: Optional[int] = None,
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    query = select(Question).filter(Question.status == "PUBLISHED")
+    safe_limit = count or limit or 10
+    query = select(Question).filter((Question.status == "PUBLISHED") | (Question.status.is_(None)))
     if subject:
-        query = query.filter(Question.subject == subject)
+        query = query.filter(Question.subject.ilike(f"%{subject}%"))
     if grade_level:
         query = query.filter(Question.grade_level == grade_level)
     if chapter:
-        query = query.filter(Question.chapter == chapter)
-    if difficulty and difficulty != "ALL":
-        query = query.filter(Question.difficulty == difficulty)
+        query = query.filter(Question.chapter.ilike(f"%{chapter}%"))
+
+    if difficulty and difficulty.upper() != "ALL":
+        d_upper = difficulty.upper()
+        if d_upper in ("EASY", "NHAN_BIET"):
+            query = query.filter(Question.difficulty.in_(["NHAN_BIET", "easy", "EASY"]))
+        elif d_upper in ("MEDIUM", "THONG_HIEU"):
+            query = query.filter(Question.difficulty.in_(["THONG_HIEU", "medium", "MEDIUM"]))
+        elif d_upper in ("HARD", "VAN_DUNG", "VAN_DUNG_CAO"):
+            query = query.filter(Question.difficulty.in_(["VAN_DUNG", "VAN_DUNG_CAO", "hard", "HARD"]))
+        else:
+            query = query.filter(Question.difficulty == difficulty)
         
-    query = query.order_by(func.random()).limit(min(limit, 30))
+    query = query.order_by(func.random()).limit(min(safe_limit, 40))
     res = await db.execute(query)
     questions = res.scalars().all()
 
-    return [
+    # Fallback if specific difficulty had no questions
+    if not questions and difficulty and difficulty.upper() != "ALL":
+        fb_query = select(Question).filter((Question.status == "PUBLISHED") | (Question.status.is_(None)))
+        if subject: fb_query = fb_query.filter(Question.subject.ilike(f"%{subject}%"))
+        if grade_level: fb_query = fb_query.filter(Question.grade_level == grade_level)
+        fb_query = fb_query.order_by(func.random()).limit(min(safe_limit, 40))
+        fb_res = await db.execute(fb_query)
+        questions = fb_res.scalars().all()
+
+    q_list = [
         {
             "id": q.id,
             "content": q.content,
-            "question_type": q.question_type,
+            "question_type": q.question_type or "MULTIPLE_CHOICE",
             "options": q.options,
             "sub_questions": [{"statement": s.get("statement", "")} if isinstance(s, dict) else {"statement": str(s)} for s in (q.sub_questions or [])],
             "blanks": q.blanks,
@@ -829,6 +872,11 @@ async def get_practice_questions(
         }
         for q in questions
     ]
+
+    return {
+        "questions": q_list,
+        "count": len(q_list)
+    }
 
 
 @router.post("/practice/grade", summary="Chấm điểm bài tự luyện kèm lời giải chi tiết")
@@ -847,19 +895,31 @@ async def grade_practice_session(
     score, correct_count, graded_answers = grader.grade(questions, payload.answers)
 
     detailed_questions = []
+    graded_questions = []
     for q in questions:
-        detailed_questions.append({
+        g_info = graded_answers.get(str(q.id), graded_answers.get(q.id, {}))
+        std_ans = payload.answers.get(str(q.id), payload.answers.get(q.id))
+        is_corr = bool(g_info.get("is_correct", False))
+
+        item_data = {
             "id": q.id,
             "content": q.content,
-            "question_type": q.question_type,
+            "question_type": q.question_type or "MULTIPLE_CHOICE",
             "options": q.options,
             "correct_option": q.correct_option,
             "correct_answer": q.correct_answer,
             "sub_questions": q.sub_questions,
             "explanation": q.explanation,
             "sample_solution": q.sample_solution,
-            "difficulty": q.difficulty
-        })
+            "difficulty": q.difficulty,
+            "chapter": q.chapter,
+            "subject": q.subject,
+            "student_answer": std_ans,
+            "is_correct": is_corr,
+            "points_awarded": g_info.get("points_awarded", 1.0 if is_corr else 0.0)
+        }
+        detailed_questions.append(item_data)
+        graded_questions.append(item_data)
 
     return {
         "score": score,
@@ -867,5 +927,124 @@ async def grade_practice_session(
         "total_questions": len(questions),
         "graded_answers": graded_answers,
         "questions": detailed_questions,
+        "graded_questions": graded_questions,
         "time_spent": payload.time_spent
+    }
+
+
+@router.get("/practice/recommendations", summary="Gợi ý bài luyện tập thông minh dựa trên điểm yếu học sinh")
+async def get_practice_recommendations(
+    subject: Optional[str] = Query("Toán học"),
+    grade_level: Optional[int] = Query(12),
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    from app.services.ai_service import AIService
+    from app.models.ai_config import AIConfig
+
+    ai_config_res = await db.execute(select(AIConfig).filter(AIConfig.is_active == True))
+    ai_cfg = ai_config_res.scalars().first()
+    ai_svc = AIService(db_config={
+        "provider": ai_cfg.provider,
+        "api_key": ai_cfg.api_key,
+        "base_url": ai_cfg.base_url,
+        "model_name": ai_cfg.model_name
+    } if ai_cfg else None)
+
+    # 1. Fetch student's recent submissions
+    subs_res = await db.execute(
+        select(ExamSubmission)
+        .filter(ExamSubmission.user_id == current_user.id, ExamSubmission.status != "IN_PROGRESS")
+        .order_by(ExamSubmission.submitted_at.desc())
+        .limit(15)
+    )
+    submissions = subs_res.scalars().all()
+
+    # 2. Extract accuracy grouped by chapter
+    topic_stats = {}
+    total_answers = 0
+    total_correct = 0
+
+    if submissions:
+        sub_exam_ids = list({s.exam_id for s in submissions})
+        q_res = await db.execute(
+            select(Question)
+            .join(exam_questions, Question.id == exam_questions.c.question_id)
+            .filter(exam_questions.c.exam_id.in_(sub_exam_ids))
+        )
+        questions_by_id = {q.id: q for q in q_res.scalars().all()}
+
+        for s in submissions:
+            g_ans = s.graded_answers or {}
+            for q_id_str, g_item in g_ans.items():
+                try:
+                    qid = int(q_id_str)
+                except ValueError:
+                    continue
+                q = questions_by_id.get(qid)
+                if not q and s.question_snapshot and isinstance(s.question_snapshot, list):
+                    snap = next((it for it in s.question_snapshot if isinstance(it, dict) and it.get("id") == qid), None)
+                    if snap:
+                        q = type("SnapQ", (), snap)()
+                if not q:
+                    continue
+
+                # Filter by requested subject if applicable
+                if subject and getattr(q, 'subject', None):
+                    sub_str = str(q.subject).strip().lower()
+                    req_sub = str(subject).strip().lower()
+                    if req_sub not in sub_str and sub_str not in req_sub:
+                        continue
+
+                chap = getattr(q, 'chapter', None) or "Kiến thức chung"
+                if chap not in topic_stats:
+                    topic_stats[chap] = {
+                        "chapter": chap,
+                        "subject": getattr(q, 'subject', None) or subject,
+                        "grade_level": getattr(q, 'grade_level', None) or grade_level,
+                        "total_count": 0,
+                        "correct_count": 0,
+                        "wrong_count": 0
+                    }
+
+                is_c = bool(g_item.get("is_correct"))
+                topic_stats[chap]["total_count"] += 1
+                total_answers += 1
+                if is_c:
+                    topic_stats[chap]["correct_count"] += 1
+                    total_correct += 1
+                else:
+                    topic_stats[chap]["wrong_count"] += 1
+
+    weak_topics = []
+    for chap, data in topic_stats.items():
+        if data["total_count"] > 0:
+            data["accuracy"] = (data["correct_count"] / data["total_count"]) * 100
+            if data["accuracy"] < 70 or data["wrong_count"] > 0:
+                weak_topics.append(data)
+
+    # Sort weak topics: lowest accuracy and highest wrong count first
+    weak_topics.sort(key=lambda x: (x["accuracy"], -x["wrong_count"]))
+
+    has_history = len(submissions) > 0 and total_answers > 0
+    overall_accuracy = (total_correct / max(total_answers, 1)) * 100 if total_answers > 0 else 0.0
+    student_name = current_user.full_name or "Học sinh"
+
+    rec = await asyncio.to_thread(
+        ai_svc.recommend_smart_practice,
+        student_name=student_name,
+        weak_topics=weak_topics,
+        overall_accuracy=overall_accuracy,
+        preferred_subject=subject or "Toán học",
+        preferred_grade=grade_level or 12,
+        has_history=has_history
+    )
+
+    return {
+        "success": True,
+        "has_history": has_history,
+        "overall_accuracy": overall_accuracy,
+        "total_scanned_submissions": len(submissions),
+        "weak_topics": weak_topics[:5],
+        "recommendation": rec
     }

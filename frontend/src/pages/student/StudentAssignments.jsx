@@ -17,6 +17,7 @@ export function StudentAssignments() {
   const [activeTab, setActiveTab] = useState('all'); // 'all' | 'urgent' | 'pending' | 'completed'
   const [classroomFilter, setClassroomFilter] = useState('');
   const [subjectFilter, setSubjectFilter] = useState('');
+  const [gradeFilter, setGradeFilter] = useState('');
   const [reviewSubmissionId, setReviewSubmissionId] = useState(null);
 
   const loadAssignments = () => {
@@ -38,12 +39,21 @@ export function StudentAssignments() {
     loadAssignments();
   }, []);
 
+  const STANDARD_SUBJECTS = ['Toán học', 'Vật lý', 'Hóa học', 'Sinh học', 'Tiếng Anh', 'Ngữ văn', 'Lịch sử', 'Địa lý', 'Tin học', 'GDCD'];
+  const STANDARD_GRADES = [6, 7, 8, 9, 10, 11, 12];
+
   const classrooms = useMemo(() => {
     return [...new Set(assignments.map(a => a.classroom_name).filter(Boolean))];
   }, [assignments]);
 
   const subjects = useMemo(() => {
-    return [...new Set(assignments.map(a => a.subject).filter(Boolean))];
+    const fromAssignments = assignments.map(a => a.subject).filter(Boolean);
+    return [...new Set([...STANDARD_SUBJECTS, ...fromAssignments])];
+  }, [assignments]);
+
+  const gradeLevels = useMemo(() => {
+    const fromAssignments = assignments.map(a => a.grade_level).filter(Boolean).map(Number);
+    return [...new Set([...STANDARD_GRADES, ...fromAssignments])].sort((a, b) => a - b);
   }, [assignments]);
 
   const now = new Date();
@@ -65,6 +75,9 @@ export function StudentAssignments() {
       // Subject filter
       if (subjectFilter && item.subject !== subjectFilter) return false;
 
+      // Grade level filter
+      if (gradeFilter && String(item.grade_level) !== String(gradeFilter)) return false;
+
       const isCompleted = item.latest_status && item.latest_status !== 'IN_PROGRESS' && item.latest_status !== 'NOT_STARTED';
       const isOverdue = item.due_date && new Date(item.due_date) < now;
       const isUrgent = item.due_date && !isCompleted && (new Date(item.due_date) - now < 24 * 3600 * 1000);
@@ -76,7 +89,7 @@ export function StudentAssignments() {
 
       return true;
     });
-  }, [assignments, search, classroomFilter, subjectFilter, activeTab, now]);
+  }, [assignments, search, classroomFilter, subjectFilter, gradeFilter, activeTab, now]);
 
   const pendingCount = assignments.filter(a => a.latest_status === 'NOT_STARTED' || a.latest_status === 'IN_PROGRESS').length;
   const completedCount = assignments.filter(a => a.latest_status && a.latest_status !== 'IN_PROGRESS' && a.latest_status !== 'NOT_STARTED').length;
@@ -195,22 +208,29 @@ export function StudentAssignments() {
                   </select>
                 )}
 
-                {subjects.length > 0 && (
-                  <select
-                    value={subjectFilter}
-                    onChange={e => setSubjectFilter(e.target.value)}
-                    className="p-2 bg-white border border-slate-300 rounded-xl text-xs font-bold text-slate-700 focus:outline-none focus:border-indigo-600"
-                  >
-                    <option value="">Tất cả môn</option>
-                    {subjects.map(s => <option key={s} value={s}>{s}</option>)}
-                  </select>
-                )}
+                <select
+                  value={subjectFilter}
+                  onChange={e => setSubjectFilter(e.target.value)}
+                  className="p-2 bg-white border border-slate-300 rounded-xl text-xs font-bold text-slate-700 focus:outline-none focus:border-indigo-600"
+                >
+                  <option value="">Tất cả môn</option>
+                  {subjects.map(s => <option key={s} value={s}>{s}</option>)}
+                </select>
 
-                {(search || classroomFilter || subjectFilter) && (
+                <select
+                  value={gradeFilter}
+                  onChange={e => setGradeFilter(e.target.value)}
+                  className="p-2 bg-white border border-slate-300 rounded-xl text-xs font-bold text-slate-700 focus:outline-none focus:border-indigo-600"
+                >
+                  <option value="">Tất cả khối lớp</option>
+                  {gradeLevels.map(g => <option key={g} value={g}>Khối {g}</option>)}
+                </select>
+
+                {(search || classroomFilter || subjectFilter || gradeFilter) && (
                   <button
                     type="button"
-                    onClick={() => { setSearch(''); setClassroomFilter(''); setSubjectFilter(''); }}
-                    className="px-3 py-1.5 text-xs font-bold text-slate-500 hover:text-slate-800"
+                    onClick={() => { setSearch(''); setClassroomFilter(''); setSubjectFilter(''); setGradeFilter(''); }}
+                    className="px-3 py-1.5 text-xs font-bold text-slate-500 hover:text-slate-800 cursor-pointer"
                   >
                     Xóa lọc
                   </button>

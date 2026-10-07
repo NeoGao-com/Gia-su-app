@@ -81,6 +81,10 @@ class ExamResponse(ExamBase):
     id: int
     created_at: datetime
     created_by_id: int
+    subject: Optional[str] = None
+    grade_level: Optional[int] = None
+    question_count: Optional[int] = None
+    submissions_count: Optional[int] = None
 
 class StudentExamResponse(ExamResponse):
     attempts_taken: int = 0

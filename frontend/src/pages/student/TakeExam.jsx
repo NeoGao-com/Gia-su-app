@@ -3,7 +3,8 @@ import { useParams, useNavigate } from 'react-router-dom';
 import api, { resolveImageUrl } from '../../api/axios';
 import { 
   Clock, AlertCircle, Bookmark, ChevronLeft, ChevronRight, 
-  CheckCircle2, Cloud, Send, Flag, Sparkles, X, Check
+  CheckCircle2, Cloud, Send, Flag, Sparkles, X, Check,
+  Layers, LayoutGrid
 } from 'lucide-react';
 import { MathRenderer } from '../../components/MathRenderer';
 import { useToast } from '../../context/ToastContext';
@@ -26,6 +27,8 @@ export function TakeExam() {
   const [saveStatus, setSaveStatus] = useState('saved'); // 'saving' | 'saved'
   const [conflictModal, setConflictModal] = useState(false);
   const [serverAnswers, setServerAnswers] = useState({});
+  const [paletteDrawerOpen, setPaletteDrawerOpen] = useState(false);
+  const [paletteTab, setPaletteTab] = useState('ALL'); // 'ALL' | 'ANSWERED' | 'UNANSWERED' | 'BOOKMARKED'
 
   useEffect(() => {
     if (!examId) return;
@@ -206,46 +209,49 @@ export function TakeExam() {
   const isWarning = timeLeft < 300 && !isUrgent;
 
   return (
-    <div className="min-h-screen bg-slate-50 pb-16 font-sans">
+    <div className="min-h-screen bg-slate-50 pb-28 lg:pb-16 font-sans">
       {/* Sticky Exam Top Bar */}
-      <header className="bg-white/95 backdrop-blur-md border-b border-slate-200 shadow-xs sticky top-0 z-40 px-4 sm:px-8 py-3 flex justify-between items-center transition">
-        <div className="flex items-center space-x-3 truncate">
-          <div className="w-9 h-9 rounded-xl bg-indigo-50 border border-indigo-100 flex items-center justify-center text-indigo-600 shrink-0">
+      <header className="bg-white/95 backdrop-blur-md border-b border-slate-200 shadow-xs sticky top-0 z-40 px-3 sm:px-8 py-2.5 sm:py-3 flex justify-between items-center transition">
+        <div className="flex items-center space-x-2.5 sm:space-x-3 truncate">
+          <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-indigo-50 border border-indigo-100 flex items-center justify-center text-indigo-600 shrink-0">
             <Sparkles className="w-4 h-4" />
           </div>
           <div className="truncate">
-            <h1 className="text-base sm:text-lg font-bold text-slate-900 truncate">{exam.title}</h1>
-            <div className="flex items-center space-x-2 text-xs text-slate-500 mt-0.5">
-              <span>Đã trả lời <strong className="text-slate-900 font-semibold tabular-nums">{answeredCount}/{questions.length}</strong> câu</span>
+            <h1 className="text-sm sm:text-lg font-bold text-slate-900 truncate max-w-[140px] xs:max-w-[220px] sm:max-w-md" title={exam.title}>
+              {exam.title}
+            </h1>
+            <div className="flex items-center space-x-2 text-[11px] sm:text-xs text-slate-500 mt-0.5">
+              <span>Đã làm <strong className="text-slate-900 font-semibold tabular-nums">{answeredCount}/{questions.length}</strong></span>
               <span>•</span>
               <span className="inline-flex items-center space-x-1 text-emerald-600 font-medium">
-                <Cloud className="w-3.5 h-3.5" />
-                <span>{saveStatus === 'saving' ? 'Đang lưu...' : 'Tự động lưu'}</span>
+                <Cloud className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
+                <span>{saveStatus === 'saving' ? 'Đang lưu…' : 'Đã lưu'}</span>
               </span>
             </div>
           </div>
         </div>
 
-        {/* Dynamic Countdown Timer */}
-        <div className="flex items-center space-x-3 shrink-0">
-          <div className={`flex items-center space-x-2 px-3.5 py-1.5 sm:px-4 sm:py-2 rounded-xl font-mono tabular-nums text-sm sm:text-base font-bold transition ${
+        {/* Dynamic Countdown Timer & Actions */}
+        <div className="flex items-center space-x-2 sm:space-x-3 shrink-0">
+          <div className={`flex items-center space-x-1.5 sm:space-x-2 px-2.5 py-1.5 sm:px-4 sm:py-2 rounded-xl font-mono tabular-nums text-xs sm:text-base font-bold transition shadow-2xs ${
             isUrgent 
               ? 'bg-rose-50 text-rose-700 border border-rose-300 animate-pulse' 
               : isWarning 
               ? 'bg-amber-50 text-amber-700 border border-amber-300 animate-pulse' 
               : 'bg-indigo-50 text-indigo-700 border border-indigo-200'
           }`}>
-            <Clock className={`w-4 h-4 sm:w-5 sm:h-5 ${isUrgent ? 'animate-bounce' : ''}`} />
+            <Clock className={`w-3.5 h-3.5 sm:w-5 sm:h-5 ${isUrgent ? 'animate-bounce' : ''}`} />
             <span>{formatTime(timeLeft)}</span>
           </div>
 
           <button
             onClick={() => handleSubmit(false)}
             disabled={submitting}
-            className="flex items-center space-x-1.5 px-4 sm:px-5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-xs sm:text-sm rounded-xl transition shadow-xs disabled:opacity-50 cursor-pointer"
+            className="flex items-center space-x-1 sm:space-x-1.5 px-3 sm:px-5 py-2 bg-indigo-600 hover:bg-indigo-700 active:scale-95 text-white font-semibold text-xs sm:text-sm rounded-xl transition shadow-xs disabled:opacity-50 cursor-pointer min-h-[38px] sm:min-h-[44px]"
           >
-            <Send className="w-4 h-4" />
-            <span>{submitting ? 'Đang nộp...' : 'Nộp bài'}</span>
+            <Send className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+            <span className="hidden xs:inline">{submitting ? 'Đang nộp...' : 'Nộp bài'}</span>
+            <span className="xs:hidden">Nộp</span>
           </button>
         </div>
       </header>
@@ -344,16 +350,16 @@ export function TakeExam() {
                     return (
                       <label
                         key={idx}
-                        className={`flex items-start space-x-3.5 p-4 rounded-xl border-2 cursor-pointer transition-all ${
+                        className={`flex items-start space-x-3.5 p-4 rounded-xl border-2 cursor-pointer transition-all min-h-[52px] select-none ${
                           isSelected
-                            ? 'border-indigo-600 bg-indigo-50/60 text-slate-900 shadow-2xs ring-1 ring-indigo-500/20'
-                            : 'border-slate-200/90 hover:border-indigo-300 hover:bg-slate-50/70 text-slate-700'
+                            ? 'border-indigo-600 bg-indigo-50/70 text-slate-900 shadow-2xs ring-2 ring-indigo-500/20'
+                            : 'border-slate-200/90 hover:border-indigo-300 hover:bg-slate-50/70 text-slate-700 active:bg-slate-100'
                         }`}
                       >
-                        <div className={`w-8 h-8 rounded-lg font-bold flex items-center justify-center text-sm shrink-0 transition ${
+                        <div className={`w-9 h-9 sm:w-8 sm:h-8 rounded-xl font-bold flex items-center justify-center text-sm shrink-0 transition ${
                           isSelected 
-                            ? 'bg-indigo-600 text-white shadow-xs' 
-                            : 'bg-slate-100 text-slate-600'
+                            ? 'bg-indigo-600 text-white shadow-xs scale-105' 
+                            : 'bg-slate-100 text-slate-700'
                         }`}>
                           {letter}
                         </div>
@@ -364,7 +370,7 @@ export function TakeExam() {
                           onChange={() => handleAnswerChange(currentQ.id, optValue)}
                           className="sr-only"
                         />
-                        <div className="flex-1 pt-1 text-sm sm:text-base leading-relaxed text-slate-800">
+                        <div className="flex-1 pt-1 text-sm sm:text-base leading-relaxed text-slate-800 break-words">
                           <MathRenderer content={optContent} />
                         </div>
                       </label>
@@ -390,13 +396,13 @@ export function TakeExam() {
                                 const newSub = { ...currentSubAnswers, [sqId]: true };
                                 handleAnswerChange(currentQ.id, newSub);
                               }}
-                              className={`flex items-center space-x-1.5 px-4 py-2 rounded-xl text-xs font-bold transition cursor-pointer ${
+                              className={`min-h-[44px] min-w-[76px] flex items-center justify-center space-x-1.5 px-4 py-2.5 rounded-xl text-xs font-bold transition cursor-pointer active:scale-95 ${
                                 subVal === true 
                                   ? 'bg-emerald-600 text-white shadow-xs' 
                                   : 'bg-white border border-slate-200 text-slate-700 hover:bg-emerald-50'
                               }`}
                             >
-                              <Check className="w-3.5 h-3.5" />
+                              <Check className="w-4 h-4" />
                               <span>Đúng</span>
                             </button>
                             <button
@@ -405,13 +411,13 @@ export function TakeExam() {
                                 const newSub = { ...currentSubAnswers, [sqId]: false };
                                 handleAnswerChange(currentQ.id, newSub);
                               }}
-                              className={`flex items-center space-x-1.5 px-4 py-2 rounded-xl text-xs font-bold transition cursor-pointer ${
+                              className={`min-h-[44px] min-w-[76px] flex items-center justify-center space-x-1.5 px-4 py-2.5 rounded-xl text-xs font-bold transition cursor-pointer active:scale-95 ${
                                 subVal === false 
                                   ? 'bg-rose-600 text-white shadow-xs' 
                                   : 'bg-white border border-slate-200 text-slate-700 hover:bg-rose-50'
                               }`}
                             >
-                              <X className="w-3.5 h-3.5" />
+                              <X className="w-4 h-4" />
                               <span>Sai</span>
                             </button>
                           </div>
@@ -419,13 +425,29 @@ export function TakeExam() {
                       );
                     })}
                   </div>
-                ) : currentQ.question_type === 'SHORT_ANSWER' && !currentQ.content.includes('/key') ? (
+                ) : currentQ.question_type === 'ESSAY' ? (
+                  <div className="space-y-2">
+                    <label className="block text-xs font-semibold text-slate-500">
+                      Bài làm tự luận:
+                    </label>
+                    <textarea
+                      rows={6}
+                      value={typeof answers[currentQ.id] === 'string' ? answers[currentQ.id] : ''}
+                      onChange={(e) => handleAnswerChange(currentQ.id, e.target.value)}
+                      placeholder="Nhập phần giải thích, lập luận và bài làm tự luận của bạn tại đây..."
+                      className="w-full p-4 min-h-[140px] rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-600 text-slate-900 bg-white text-base leading-relaxed resize-y"
+                    />
+                    <div className="text-right text-[11px] text-slate-400">
+                      {(typeof answers[currentQ.id] === 'string' ? answers[currentQ.id].length : 0)} ký tự
+                    </div>
+                  </div>
+                ) : (currentQ.question_type === 'FILL_IN_BLANK' || currentQ.question_type === 'SHORT_ANSWER') && !currentQ.content?.includes('/key') ? (
                   <input
                     type="text"
                     value={typeof answers[currentQ.id] === 'string' ? answers[currentQ.id] : ''}
                     onChange={(e) => handleAnswerChange(currentQ.id, e.target.value)}
                     placeholder="Nhập câu trả lời của bạn..."
-                    className="w-full p-4 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-600 text-slate-900 bg-white"
+                    className="w-full p-4 min-h-[52px] rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-600 text-slate-900 bg-white text-base"
                   />
                 ) : null}
               </div>
@@ -436,7 +458,7 @@ export function TakeExam() {
                   type="button"
                   onClick={() => setCurrentIndex(prev => Math.max(0, prev - 1))}
                   disabled={currentIndex === 0}
-                  className="flex items-center space-x-1.5 px-5 py-2.5 rounded-xl border border-slate-200 text-xs font-semibold text-slate-700 bg-white hover:bg-slate-50 disabled:opacity-40 transition shadow-2xs cursor-pointer"
+                  className="min-h-[44px] flex items-center space-x-1.5 px-5 py-2.5 rounded-xl border border-slate-200 text-xs font-semibold text-slate-700 bg-white hover:bg-slate-50 disabled:opacity-40 transition shadow-2xs cursor-pointer active:scale-95"
                 >
                   <ChevronLeft className="w-4 h-4" />
                   <span>Câu trước</span>
@@ -446,7 +468,7 @@ export function TakeExam() {
                     type="button"
                     onClick={() => handleSubmit(false)}
                     disabled={submitting}
-                    className="flex items-center space-x-1.5 px-6 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-xs sm:text-sm font-bold text-white transition shadow-xs disabled:opacity-50 cursor-pointer"
+                    className="min-h-[44px] flex items-center space-x-1.5 px-6 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-xs sm:text-sm font-bold text-white transition shadow-xs disabled:opacity-50 cursor-pointer active:scale-95"
                   >
                     <Send className="w-4 h-4" />
                     <span>{submitting ? 'Đang nộp...' : 'Nộp bài'}</span>
@@ -455,7 +477,7 @@ export function TakeExam() {
                   <button
                     type="button"
                     onClick={() => setCurrentIndex(prev => Math.min(questions.length - 1, prev + 1))}
-                    className="flex items-center space-x-1.5 px-5 py-2.5 rounded-xl bg-indigo-600 text-xs font-semibold text-white hover:bg-indigo-700 transition shadow-xs cursor-pointer"
+                    className="min-h-[44px] flex items-center space-x-1.5 px-5 py-2.5 rounded-xl bg-indigo-600 text-xs font-semibold text-white hover:bg-indigo-700 transition shadow-xs cursor-pointer active:scale-95"
                   >
                     <span>Câu sau</span>
                     <ChevronRight className="w-4 h-4" />
@@ -470,10 +492,13 @@ export function TakeExam() {
           )}
         </main>
 
-        {/* Question Palette Sidebar */}
-        <aside className="bg-white rounded-2xl p-5 border border-slate-200/90 shadow-xs h-fit space-y-4">
+        {/* Desktop Question Palette Sidebar (Hidden on mobile) */}
+        <aside className="hidden lg:block bg-white rounded-2xl p-5 border border-slate-200/90 shadow-xs h-fit space-y-4 sticky top-20">
           <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-            <h3 className="font-bold text-slate-900 text-xs uppercase tracking-wider">Bảng câu hỏi</h3>
+            <h3 className="font-bold text-slate-900 text-xs uppercase tracking-wider flex items-center space-x-1.5">
+              <LayoutGrid className="w-4 h-4 text-indigo-600" />
+              <span>Bảng câu hỏi</span>
+            </h3>
             <span className="text-xs font-bold text-indigo-700 bg-indigo-50 border border-indigo-100 px-2.5 py-0.5 rounded-full tabular-nums">
               {answeredCount}/{questions.length}
             </span>
@@ -490,7 +515,7 @@ export function TakeExam() {
                 <button
                   key={q.id || idx}
                   onClick={() => setCurrentIndex(idx)}
-                  className={`h-11 rounded-xl font-bold text-xs transition flex flex-col items-center justify-center relative cursor-pointer tabular-nums shadow-2xs ${
+                  className={`h-11 rounded-xl font-bold text-xs transition flex flex-col items-center justify-center relative cursor-pointer tabular-nums shadow-2xs active:scale-95 ${
                     isCurrent
                       ? 'ring-2 ring-indigo-500 bg-indigo-600 text-white shadow-xs'
                       : isAnswered
@@ -511,7 +536,7 @@ export function TakeExam() {
           <div className="mt-4 pt-4 border-t border-slate-100 space-y-2 text-xs text-slate-500 font-medium">
             <div className="flex items-center space-x-2">
               <span className="w-3.5 h-3.5 rounded-md bg-emerald-50 border border-emerald-300"></span>
-              <span>Đã trả lời ({answeredCount})</span>
+              <span>Đã làm ({answeredCount})</span>
             </div>
             <div className="flex items-center space-x-2">
               <span className="w-3.5 h-3.5 rounded-md bg-slate-50 border border-slate-200"></span>
@@ -524,6 +549,219 @@ export function TakeExam() {
           </div>
         </aside>
       </div>
+
+      {/* Mobile Sticky Quick Navigation Bar (Screen width < lg) */}
+      <div className="fixed bottom-0 inset-x-0 bg-white/95 backdrop-blur-md border-t border-slate-200/90 shadow-lg px-3 py-2 z-40 lg:hidden flex items-center justify-between gap-2 safe-area-bottom">
+        {/* Prev Question Button */}
+        <button
+          type="button"
+          onClick={() => setCurrentIndex(prev => Math.max(0, prev - 1))}
+          disabled={currentIndex === 0}
+          className="min-w-[44px] min-h-[44px] px-3 rounded-xl border border-slate-200 text-slate-700 bg-white hover:bg-slate-50 disabled:opacity-30 flex items-center justify-center font-bold text-xs transition cursor-pointer active:scale-95 shadow-2xs"
+          aria-label="Câu trước"
+        >
+          <ChevronLeft className="w-5 h-5" />
+          <span className="hidden xs:inline ml-0.5">Trước</span>
+        </button>
+
+        {/* Center: Open Question Palette Drawer Trigger Button */}
+        <button
+          type="button"
+          onClick={() => setPaletteDrawerOpen(true)}
+          className="flex-1 min-h-[44px] px-2.5 py-1.5 bg-indigo-50 hover:bg-indigo-100/70 border border-indigo-200/80 rounded-xl text-indigo-900 flex items-center justify-center space-x-1.5 font-bold text-xs transition active:scale-95 cursor-pointer shadow-2xs"
+        >
+          <Layers className="w-4 h-4 text-indigo-600 shrink-0" />
+          <span className="truncate">Câu {currentIndex + 1}/{questions.length}</span>
+          <span className="bg-indigo-600 text-white text-[10px] px-2 py-0.5 rounded-full font-bold tabular-nums shrink-0">
+            {answeredCount}/{questions.length}
+          </span>
+        </button>
+
+        {/* Quick Bookmark Toggle Button */}
+        {currentQ && (
+          <button
+            type="button"
+            onClick={() => toggleBookmark(currentQ.id)}
+            className={`min-w-[44px] min-h-[44px] rounded-xl border transition active:scale-95 flex items-center justify-center cursor-pointer shadow-2xs ${
+              bookmarked[currentQ.id]
+                ? 'bg-amber-50 border-amber-300 text-amber-700'
+                : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'
+            }`}
+            title="Đánh dấu câu hỏi này"
+            aria-label="Đánh dấu câu hỏi này"
+          >
+            <Bookmark className={`w-5 h-5 ${bookmarked[currentQ.id] ? 'fill-amber-500 text-amber-500' : ''}`} />
+          </button>
+        )}
+
+        {/* Next / Submit Button */}
+        {currentIndex === questions.length - 1 ? (
+          <button
+            type="button"
+            onClick={() => handleSubmit(false)}
+            disabled={submitting}
+            className="min-w-[44px] min-h-[44px] px-3.5 bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white rounded-xl flex items-center justify-center font-bold text-xs transition cursor-pointer shadow-xs whitespace-nowrap"
+          >
+            <Send className="w-4 h-4 mr-1" />
+            <span>Nộp</span>
+          </button>
+        ) : (
+          <button
+            type="button"
+            onClick={() => setCurrentIndex(prev => Math.min(questions.length - 1, prev + 1))}
+            className="min-w-[44px] min-h-[44px] px-3 bg-indigo-600 hover:bg-indigo-700 active:scale-95 text-white rounded-xl flex items-center justify-center font-bold text-xs transition cursor-pointer shadow-xs"
+            aria-label="Câu sau"
+          >
+            <span className="hidden xs:inline mr-0.5">Sau</span>
+            <ChevronRight className="w-5 h-5" />
+          </button>
+        )}
+      </div>
+
+      {/* Mobile Question Palette Bottom Sheet Drawer */}
+      {paletteDrawerOpen && (
+        <div className="fixed inset-0 z-50 lg:hidden flex flex-col justify-end">
+          {/* Backdrop */}
+          <div 
+            className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs transition-opacity"
+            onClick={() => setPaletteDrawerOpen(false)}
+          />
+          {/* Sheet Container */}
+          <div className="relative bg-white rounded-t-3xl border-t border-slate-200/90 shadow-2xl p-5 max-h-[82vh] flex flex-col z-10 transition-transform">
+            {/* Grab indicator bar */}
+            <div className="w-12 h-1.5 bg-slate-300 rounded-full mx-auto mb-3" />
+
+            {/* Header */}
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+              <div className="flex items-center space-x-2">
+                <h3 className="font-extrabold text-slate-900 text-sm sm:text-base flex items-center space-x-1.5">
+                  <LayoutGrid className="w-4 h-4 text-indigo-600" />
+                  <span>Bảng câu hỏi bài thi</span>
+                </h3>
+                <span className="text-xs font-bold text-indigo-700 bg-indigo-50 border border-indigo-100 px-2.5 py-0.5 rounded-full tabular-nums">
+                  {answeredCount}/{questions.length}
+                </span>
+              </div>
+              <button
+                type="button"
+                onClick={() => setPaletteDrawerOpen(false)}
+                className="w-10 h-10 rounded-xl text-slate-500 hover:text-slate-800 hover:bg-slate-100 flex items-center justify-center cursor-pointer transition"
+                aria-label="Đóng bảng câu hỏi"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Filter Tabs in Drawer */}
+            <div className="flex items-center gap-1.5 py-2.5 overflow-x-auto border-b border-slate-100 text-xs font-semibold">
+              <button
+                type="button"
+                onClick={() => setPaletteTab('ALL')}
+                className={`px-3 py-1.5 rounded-xl transition cursor-pointer tabular-nums whitespace-nowrap ${
+                  paletteTab === 'ALL'
+                    ? 'bg-indigo-600 text-white shadow-2xs font-bold'
+                    : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                }`}
+              >
+                Tất cả ({questions.length})
+              </button>
+              <button
+                type="button"
+                onClick={() => setPaletteTab('ANSWERED')}
+                className={`px-3 py-1.5 rounded-xl transition cursor-pointer tabular-nums whitespace-nowrap ${
+                  paletteTab === 'ANSWERED'
+                    ? 'bg-emerald-600 text-white shadow-2xs font-bold'
+                    : 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100'
+                }`}
+              >
+                Đã làm ({answeredCount})
+              </button>
+              <button
+                type="button"
+                onClick={() => setPaletteTab('UNANSWERED')}
+                className={`px-3 py-1.5 rounded-xl transition cursor-pointer tabular-nums whitespace-nowrap ${
+                  paletteTab === 'UNANSWERED'
+                    ? 'bg-slate-700 text-white shadow-2xs font-bold'
+                    : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                }`}
+              >
+                Chưa làm ({Math.max(0, questions.length - answeredCount)})
+              </button>
+              <button
+                type="button"
+                onClick={() => setPaletteTab('BOOKMARKED')}
+                className={`px-3 py-1.5 rounded-xl transition cursor-pointer tabular-nums whitespace-nowrap ${
+                  paletteTab === 'BOOKMARKED'
+                    ? 'bg-amber-600 text-white shadow-2xs font-bold'
+                    : 'bg-amber-50 text-amber-700 hover:bg-amber-100'
+                }`}
+              >
+                Đánh dấu ({Object.values(bookmarked).filter(Boolean).length})
+              </button>
+            </div>
+
+            {/* Question Grid (Touch targets >= 44x44px) */}
+            <div className="grid grid-cols-5 gap-2.5 overflow-y-auto py-3.5 pr-1 flex-1">
+              {questions
+                .map((q, idx) => ({ q, idx }))
+                .filter(({ q, idx }) => {
+                  const isAnswered = answers[q.id] !== undefined && answers[q.id] !== '' && answers[q.id] !== null && 
+                    (typeof answers[q.id] !== 'object' || Object.keys(answers[q.id]).length > 0);
+                  const isMarked = bookmarked[q.id];
+
+                  if (paletteTab === 'ANSWERED') return isAnswered;
+                  if (paletteTab === 'UNANSWERED') return !isAnswered;
+                  if (paletteTab === 'BOOKMARKED') return isMarked;
+                  return true;
+                })
+                .map(({ q, idx }) => {
+                  const isAnswered = answers[q.id] !== undefined && answers[q.id] !== '' && answers[q.id] !== null && 
+                    (typeof answers[q.id] !== 'object' || Object.keys(answers[q.id]).length > 0);
+                  const isCurrent = idx === currentIndex;
+                  const isMarked = bookmarked[q.id];
+
+                  return (
+                    <button
+                      key={q.id || idx}
+                      onClick={() => {
+                        setCurrentIndex(idx);
+                        setPaletteDrawerOpen(false);
+                      }}
+                      className={`min-h-[46px] rounded-xl font-bold text-xs transition flex flex-col items-center justify-center relative cursor-pointer tabular-nums shadow-2xs active:scale-95 ${
+                        isCurrent
+                          ? 'ring-2 ring-indigo-500 bg-indigo-600 text-white shadow-xs'
+                          : isAnswered
+                          ? 'bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100'
+                          : 'bg-slate-50 text-slate-700 border border-slate-200 hover:bg-slate-100'
+                      }`}
+                    >
+                      <span>{idx + 1}</span>
+                      {isMarked && (
+                        <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-amber-500 ring-2 ring-white"></span>
+                      )}
+                    </button>
+                  );
+                })}
+            </div>
+
+            {/* Legend inside Drawer */}
+            <div className="pt-3 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-500 font-medium">
+              <div className="flex items-center space-x-1.5">
+                <span className="w-3 h-3 rounded-md bg-emerald-100 border border-emerald-300"></span>
+                <span>Đã làm</span>
+              </div>
+              <div className="flex items-center space-x-1.5">
+                <span className="w-3 h-3 rounded-md bg-slate-100 border border-slate-300"></span>
+                <span>Chưa làm</span>
+              </div>
+              <div className="flex items-center space-x-1.5">
+                <span className="w-2.5 h-2.5 rounded-full bg-amber-500"></span>
+                <span>Đã đánh dấu</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Conflict Modal */}
       {conflictModal && (
@@ -538,14 +776,14 @@ export function TakeExam() {
               <button 
                 type="button"
                 onClick={() => setConflictModal(false)} 
-                className="px-4 py-2 border border-slate-200 rounded-xl text-sm font-semibold text-slate-600 hover:bg-slate-50 cursor-pointer"
+                className="min-h-[44px] px-4 py-2 border border-slate-200 rounded-xl text-sm font-semibold text-slate-600 hover:bg-slate-50 cursor-pointer"
               >
                 Đóng
               </button>
               <button 
                 type="button"
                 onClick={() => { setAnswers(serverAnswers); setConflictModal(false); }} 
-                className="px-4 py-2 bg-indigo-600 text-white rounded-xl text-sm font-semibold hover:bg-indigo-700 cursor-pointer shadow-xs"
+                className="min-h-[44px] px-4 py-2 bg-indigo-600 text-white rounded-xl text-sm font-semibold hover:bg-indigo-700 cursor-pointer shadow-xs"
               >
                 Đồng bộ lại
               </button>
@@ -556,3 +794,4 @@ export function TakeExam() {
     </div>
   );
 }
+

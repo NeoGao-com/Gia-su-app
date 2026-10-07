@@ -581,3 +581,172 @@ async def extract_questions_from_file_endpoint(
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Lỗi khi xử lý tệp: {str(e)}")
 
+
+class AnalyzeDifficultyRequest(BaseModel):
+    question_id: Optional[int] = None
+    content: Optional[str] = None
+    question_type: Optional[str] = "MULTIPLE_CHOICE"
+    options: Optional[List[Any]] = None
+    subject: Optional[str] = "Toán"
+    grade_level: Optional[int] = 10
+    chapter: Optional[str] = None
+    auto_apply: bool = False
+
+@router.post("/analyze-difficulty", summary="Tự động phân tích độ khó câu hỏi bằng AI")
+async def analyze_difficulty_endpoint(
+    payload: AnalyzeDifficultyRequest,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+    ai_service: AIService = Depends(get_ai_service)
+):
+    from app.models.question import Question
+
+    target_q = None
+    if payload.question_id:
+        target_q = await db.get(Question, payload.question_id)
+        if not target_q:
+            raise HTTPException(status_code=404, detail="Không tìm thấy câu hỏi")
+
+    content = target_q.content if target_q else payload.content
+    if not content:
+        raise HTTPException(status_code=400, detail="Thiếu nội dung câu hỏi")
+
+    q_type = target_q.question_type if target_q else payload.question_type
+    options = target_q.options if target_q else payload.options
+    subject = (target_q.subject if target_q else payload.subject) or "Toán"
+    grade_level = (target_q.grade_level if target_q else payload.grade_level) or 10
+    chapter = (target_q.chapter if target_q else payload.chapter)
+
+    try:
+        res = await asyncio.to_thread(
+            ai_service.analyze_question_difficulty,
+            content=content,
+            question_type=q_type or "MULTIPLE_CHOICE",
+            options=options,
+            subject=subject,
+            grade_level=grade_level,
+            chapter=chapter
+        )
+
+        old_difficulty = target_q.difficulty if target_q else None
+        new_difficulty = res.get("difficulty", "THONG_HIEU")
+
+        if target_q and payload.auto_apply:
+            if current_user.role != "TEACHER":
+                raise HTTPException(status_code=403, detail="Chỉ giáo viên mới có quyền tự động lưu độ khó vào ngân hàng câu hỏi.")
+            target_q.difficulty = new_difficulty
+            await db.commit()
+            await db.refresh(target_q)
+
+        return {
+            "success": True,
+            "question_id": target_q.id if target_q else None,
+            "old_difficulty": old_difficulty,
+            "difficulty": new_difficulty,
+            "confidence": res.get("confidence", 0.85),
+            "reasoning": res.get("reasoning", ""),
+            "cognitive_skills": res.get("cognitive_skills", []),
+            "estimated_time_minutes": res.get("estimated_time_minutes", 2),
+            "applied": bool(target_q and payload.auto_apply)
+        }
+    except Exception as e:
+        logger.error(f"Error in analyze-difficulty endpoint: {e}")
+        return {
+            "success": False,
+            "difficulty": "THONG_HIEU",
+            "error": str(e)
+        }
+
+
+class AnalyzeDifficultyBatchRequest(BaseModel):
+    subject: Optional[str] = None
+    grade_level: Optional[int] = None
+    chapter: Optional[str] = None
+    limit: int = 15
+    auto_apply: bool = True
+
+@router.post("/analyze-difficulty-batch", summary="Phân tích và gán độ khó hàng loạt câu hỏi")
+async def analyze_difficulty_batch_endpoint(
+    payload: AnalyzeDifficultyBatchRequest,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+    ai_service: AIService = Depends(get_ai_service)
+):
+    if current_user.role != "TEACHER":
+        raise HTTPException(status_code=403, detail="Chỉ giáo viên mới có quyền thực hiện thao tác này.")
+
+    from app.models.question import Question
+
+    query = select(Question).filter((Question.status != "EXAM_CLONE") | (Question.status.is_(None)))
+    if payload.subject:
+        query = query.filter(Question.subject == payload.subject)
+    if payload.grade_level:
+        query = query.filter(Question.grade_level == payload.grade_level)
+    if payload.chapter:
+        query = query.filter(Question.chapter == payload.chapter)
+
+    safe_limit = min(payload.limit or 15, 30)
+    query = query.order_by(Question.id.asc()).limit(safe_limit)
+    res = await db.execute(query)
+    questions = res.scalars().all()
+
+    if not questions:
+        return {"success": True, "total": 0, "results": []}
+
+    sem = asyncio.Semaphore(3)
+
+    async def analyze_one(q):
+        async with sem:
+            try:
+                r = await asyncio.to_thread(
+                    ai_service.analyze_question_difficulty,
+                    content=q.content,
+                    question_type=q.question_type or "MULTIPLE_CHOICE",
+                    options=q.options,
+                    subject=q.subject or "Toán",
+                    grade_level=q.grade_level or 10,
+                    chapter=q.chapter
+                )
+                return q, r, None
+            except Exception as e:
+                return q, None, str(e)
+
+    items = await asyncio.gather(*(analyze_one(q) for q in questions))
+    results = []
+
+    for q, res_ai, err in items:
+        if err or not res_ai:
+            results.append({
+                "question_id": q.id,
+                "code": q.code,
+                "success": False,
+                "error": err
+            })
+            continue
+
+        pred_diff = res_ai.get("difficulty", "THONG_HIEU")
+        old_diff = q.difficulty
+
+        if payload.auto_apply:
+            q.difficulty = pred_diff
+
+        results.append({
+            "question_id": q.id,
+            "code": q.code,
+            "old_difficulty": old_diff,
+            "difficulty": pred_diff,
+            "confidence": res_ai.get("confidence", 0.85),
+            "reasoning": res_ai.get("reasoning", ""),
+            "success": True
+        })
+
+    if payload.auto_apply:
+        await db.commit()
+
+    return {
+        "success": True,
+        "total": len(questions),
+        "applied": payload.auto_apply,
+        "results": results
+    }
+

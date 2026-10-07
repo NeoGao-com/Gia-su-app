@@ -163,11 +163,14 @@ async def get_exams(
     limit: int = 20,
     search: Optional[str] = None,
     exam_type: Optional[str] = None,
+    subject: Optional[str] = None,
+    grade_level: Optional[int] = None,
+    is_published: Optional[bool] = None,
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
     offset = (page - 1) * limit
-    cache_key = f"exams:list:user={current_user.id}:role={current_user.role}:page={page}:limit={limit}:search={search}:type={exam_type}"
+    cache_key = f"exams:list:user={current_user.id}:role={current_user.role}:page={page}:limit={limit}:search={search}:type={exam_type}:sub={subject}:grd={grade_level}:pub={is_published}"
     try:
         cached_data = await redis_client.get(cache_key)
         if cached_data:
@@ -180,6 +183,9 @@ async def get_exams(
     if exam_type:
         query = query.filter(Exam.exam_type == exam_type)
 
+    if is_published is not None:
+        query = query.filter(Exam.is_published == is_published)
+
     if search:
         term = f"%{search.strip()}%"
         query = query.filter(
@@ -188,6 +194,17 @@ async def get_exams(
                 Exam.description.ilike(term)
             )
         )
+
+    if subject or grade_level:
+        q_subfilter = (
+            select(exam_questions.c.exam_id)
+            .join(Question, Question.id == exam_questions.c.question_id)
+        )
+        if subject:
+            q_subfilter = q_subfilter.filter(Question.subject.ilike(f"%{subject}%"))
+        if grade_level:
+            q_subfilter = q_subfilter.filter(Question.grade_level == grade_level)
+        query = query.filter(Exam.id.in_(q_subfilter))
 
     # Order by newest first
     query = query.order_by(Exam.created_at.desc())
@@ -219,10 +236,28 @@ async def get_exams(
         )
         sub_counts = {row[0]: row[1] for row in sub_cnt_res.all()}
 
+        # Batch load question subjects and grade levels
+        q_meta_res = await db.execute(
+            select(exam_questions.c.exam_id, Question.subject, Question.grade_level)
+            .join(Question, Question.id == exam_questions.c.question_id)
+            .where(exam_questions.c.exam_id.in_(exam_ids))
+        )
+        q_meta_map = {}
+        for eid, q_sub, q_grd in q_meta_res.all():
+            if eid not in q_meta_map:
+                q_meta_map[eid] = {"subjects": set(), "grades": set()}
+            if q_sub:
+                q_meta_map[eid]["subjects"].add(q_sub)
+            if q_grd:
+                q_meta_map[eid]["grades"].add(q_grd)
+
         for e in exams:
             ex = ExamResponse.model_validate(e).model_dump(mode="json")
             ex["question_count"] = q_counts.get(e.id, 0)
             ex["submissions_count"] = sub_counts.get(e.id, 0)
+            meta = q_meta_map.get(e.id, {"subjects": set(), "grades": set()})
+            ex["subject"] = ", ".join(sorted(meta["subjects"])) if meta["subjects"] else None
+            ex["grade_level"] = list(meta["grades"])[0] if meta["grades"] else None
             exams_response.append(ex)
 
     response_data = {

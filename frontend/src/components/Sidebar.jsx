@@ -30,6 +30,7 @@ export function Sidebar({ role }) {
           title: 'Học tập & Rèn luyện',
           items: [
             { to: '/student', icon: LayoutDashboard, label: 'Tổng quan học tập' },
+            { to: '/student/practice', icon: Sparkles, label: 'Tự luyện thông minh AI' },
             { to: '/student/assignments', icon: Send, label: 'Bài tập cần nộp' },
             { to: '/student/exams', icon: FileText, label: 'Đề thi & Kiểm tra' },
           ]

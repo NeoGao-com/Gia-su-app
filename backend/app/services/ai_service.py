@@ -1,5 +1,6 @@
 from __future__ import annotations
 import os
+import re
 import json
 import logging
 from typing import Optional, List, Dict, Any
@@ -539,4 +540,314 @@ class AIService:
         except Exception as e:
             logger.error(f"Lỗi khi trích xuất câu hỏi bằng AI: {str(e)}, chuyển sang rule-based fallback.")
             return parse_questions_with_rules(raw_text, default_subject, default_grade_level, default_chapter)
+
+    def analyze_question_difficulty(
+        self,
+        content: str,
+        question_type: str = "MULTIPLE_CHOICE",
+        options: list = None,
+        subject: str = "Toán",
+        grade_level: int = 10,
+        chapter: Optional[str] = None
+    ) -> dict:
+        """
+        Tự động phân tích độ khó câu hỏi theo chuẩn ma trận đề 4 mức độ của Bộ Giáo dục & Đào tạo:
+        - NHAN_BIET (Nhận biết): Nhận dạng định nghĩa, công thức trực tiếp, đọc đồ thị cơ bản (1 bước).
+        - THONG_HIEU (Thông hiểu): Hiểu bản chất định lý, giải thích, tính toán 1-2 bước quen thuộc.
+        - VAN_DUNG (Vận dụng): Kết hợp kiến thức, bài toán định lượng biến đổi tổng hợp (3-4 bước).
+        - VAN_DUNG_CAO (Vận dụng cao): Phân loại học sinh giỏi (điểm 9-10), bài toán cực trị phức tạp, thực tế.
+        """
+        text_lower = (content or "").lower()
+
+        # Multi-subject heuristic evaluator fallback (for offline or demo mode)
+        def heuristic_analysis():
+            # 1. Math keywords
+            math_vdc = [
+                "giá trị lớn nhất", "giá trị nhỏ nhất", "cực trị", "tham số m", "nghiệm nguyên",
+                "bất đẳng thức", "thực tế", "tối ưu", "min", "max", "tiếp xúc", "đồng biến trên r",
+                "nghịch biến trên r", "chứa đúng", "mọi giá trị", "biện luận"
+            ]
+            math_vd = [
+                "thể tích", "diện tích", "khoảng cách", "góc giữa", "xác suất", "tích phân",
+                "nguyên hàm", "phương trình mặt phẳng", "tiếp tuyến", "tọa độ", "số phức",
+                "hệ phương trình", "phương trình", "bất phương trình"
+            ]
+            math_nb = [
+                "công thức nào", "định nghĩa", "khẳng định nào đúng", "tập xác định", "đạo hàm của",
+                "nguyên hàm của hàm số", "vectơ", "tọa độ điểm", "tiệm cận đứng", "tiệm cận ngang",
+                "mệnh đề nào sau đây đúng", "nghiệm của phương trình"
+            ]
+
+            # 2. Physics & Chemistry keywords
+            sci_vdc = [
+                "dao động tắt dần", "cộng hưởng", "mạch rlc", "công suất cực đại", "độ lệch pha",
+                "quang điện", "hỗn hợp x", "nung m gam", "este đa chức", "peptit", "điện phân", "đồ thị biểu diễn"
+            ]
+            sci_vd = [
+                "chu kỳ", "tần số", "bước sóng", "vận tốc", "gia tốc", "động năng", "thế năng",
+                "hiệu điện thế", "cường độ", "khối lượng mol", "nồng độ", "số mol", "đồng phân", "hiệu suất"
+            ]
+            sci_nb = [
+                "đơn vị của", "hệ thức nào", "định luật nào", "hiện tượng nào", "sóng điện từ là",
+                "công thức phân tử", "chất nào sau đây", "kim loại nào", "tính chất hóa học", "quỳ tím", "polime nào"
+            ]
+
+            # 3. English, Biology & Humanities keywords
+            hum_vdc = [
+                "reading comprehension", "inferred from", "tone of the passage", "phả hệ", "quần thể ngẫu phối",
+                "đột biến cấu trúc", "liên hệ thực tiễn", "bài học kinh nghiệm", "nguyên nhân sâu xa"
+            ]
+            hum_vd = [
+                "conditional sentence", "relative clause", "reported speech", "passive voice",
+                "nguyên phân", "giảm phân", "mã di truyền", "phiên mã", "phân tích", "so sánh", "chứng minh"
+            ]
+            hum_nb = [
+                "pronounced", "stress", "synonym", "antonym", "opposite in meaning", "closest in meaning",
+                "bào quan nào", "đơn phân của", "quang hợp diễn ra", "tác giả của", "năm nào", "chiến dịch nào", "thủ đô"
+            ]
+
+            vdc_hits = sum(1 for kw in (math_vdc + sci_vdc + hum_vdc) if kw in text_lower)
+            vd_hits = sum(1 for kw in (math_vd + sci_vd + hum_vd) if kw in text_lower)
+            nb_hits = sum(1 for kw in (math_nb + sci_nb + hum_nb) if kw in text_lower)
+
+            math_symbols = len(re.findall(r'[\$\^\_\{\}\\\+\-\*\/\=]', content or ""))
+            is_essay = (question_type or "").upper() == "ESSAY"
+
+            if is_essay and len(text_lower) > 150:
+                return {
+                    "difficulty": "VAN_DUNG_CAO" if vdc_hits >= 1 or len(text_lower) > 300 else "VAN_DUNG",
+                    "confidence": 0.86,
+                    "reasoning": "Câu hỏi tự luận yêu cầu trình bày tổng hợp, lập luận logic và vận dụng kiến thức sâu sắc.",
+                    "cognitive_skills": ["Tư duy phản biện", "Kỹ năng lập luận", "Tổng hợp kiến thức"],
+                    "estimated_time_minutes": 8 if vdc_hits >= 1 else 5
+                }
+
+            if vdc_hits >= 2 or (vdc_hits >= 1 and math_symbols > 20):
+                return {
+                    "difficulty": "VAN_DUNG_CAO",
+                    "confidence": 0.88,
+                    "reasoning": "Câu hỏi chứa bài toán cực trị, tham số hoặc phân loại sâu, đòi hỏi kỹ năng tư duy độc lập và kết hợp nhiều công thức.",
+                    "cognitive_skills": ["Tư duy trừu tượng", "Biến đổi đại số nâng cao", "Phân tích điều kiện tham số"],
+                    "estimated_time_minutes": 4
+                }
+            elif vd_hits >= 1 or math_symbols > 15:
+                return {
+                    "difficulty": "VAN_DUNG",
+                    "confidence": 0.85,
+                    "reasoning": "Câu hỏi đòi hỏi vận dụng liên hoàn các công thức và giải thuật từ 2 đến 3 bước trung gian.",
+                    "cognitive_skills": ["Vận dụng công thức", "Tính toán định lượng", "Tổng hợp kiến thức"],
+                    "estimated_time_minutes": 3
+                }
+            elif nb_hits >= 1 and math_symbols <= 8:
+                return {
+                    "difficulty": "NHAN_BIET",
+                    "confidence": 0.90,
+                    "reasoning": "Câu hỏi kiểm tra nhận diện trực tiếp định nghĩa, công thức hoặc hình học cơ bản mà không đòi hỏi biến đổi phức tạp.",
+                    "cognitive_skills": ["Ghi nhớ công thức", "Nhận dạng khái niệm"],
+                    "estimated_time_minutes": 1
+                }
+            else:
+                return {
+                    "difficulty": "THONG_HIEU",
+                    "confidence": 0.82,
+                    "reasoning": "Câu hỏi đòi hỏi hiểu bản chất và thực hiện 1-2 bước suy luận hoặc biến đổi thông thường.",
+                    "cognitive_skills": ["Thông hiểu kiến thức", "Áp dụng định lý"],
+                    "estimated_time_minutes": 2
+                }
+
+        if not self.client:
+            return heuristic_analysis()
+
+        system_prompt = (
+            "Bạn là chuyên gia thẩm định và xây dựng ma trận đề thi chuẩn của Bộ Giáo dục & Đào tạo Việt Nam. "
+            "Nhiệm vụ: Phân tích nội dung câu hỏi và phân loại chính xác độ khó thành một trong 4 mức độ nhận thức:\n"
+            "1. \"NHAN_BIET\": Nhận biết (học sinh chỉ cần nhớ công thức, nhận dạng định nghĩa, đồ thị/khái niệm cơ bản 1 bước).\n"
+            "2. \"THONG_HIEU\": Thông hiểu (học sinh hiểu bản chất, giải thích được hiện tượng, giải qua 1-2 bước tính toán cơ bản).\n"
+            "3. \"VAN_DUNG\": Vận dụng (kết hợp các kiến thức, bài toán định lượng ở mức độ trung bình-khá, 2-3 bước lập luận).\n"
+            "4. \"VAN_DUNG_CAO\": Vận dụng cao (bài toán phân loại học sinh khá-giỏi, câu hỏi điểm 9-10, cực trị phức tạp, thực tế).\n\n"
+            "Trả về JSON duy nhất với cấu trúc:\n"
+            "{\n"
+            "  \"difficulty\": \"NHAN_BIET\" | \"THONG_HIEU\" | \"VAN_DUNG\" | \"VAN_DUNG_CAO\",\n"
+            "  \"confidence\": 0.0 - 1.0,\n"
+            "  \"reasoning\": \"Giải thích ngắn gọn lý do phân loại dựa trên bản chất kiến thức và số bước tư duy\",\n"
+            "  \"cognitive_skills\": [\"Kỹ năng 1\", \"Kỹ năng 2\"],\n"
+            "  \"estimated_time_minutes\": 2\n"
+            "}"
+        )
+
+        user_prompt = (
+            f"Môn học: {subject}, Khối lớp: {grade_level}, Chuyên đề: {chapter or 'Tổng hợp'}\n"
+            f"Loại câu hỏi: {question_type}\n"
+            f"Nội dung câu hỏi: {content}\n"
+        )
+        if options:
+            user_prompt += "Các lựa chọn: " + ", ".join(f"{chr(65+i)}: {opt}" for i, opt in enumerate(options))
+
+        try:
+            try:
+                response = self.client.chat.completions.create(
+                    model=self.model_name,
+                    messages=[
+                        {"role": "system", "content": system_prompt},
+                        {"role": "user", "content": user_prompt}
+                    ],
+                    response_format={"type": "json_object"}
+                )
+            except Exception:
+                response = self.client.chat.completions.create(
+                    model=self.model_name,
+                    messages=[
+                        {"role": "system", "content": system_prompt + ' Chỉ trả về duy nhất chuỗi JSON thuần.'},
+                        {"role": "user", "content": user_prompt}
+                    ]
+                )
+            parsed = _parse_json_response(response.choices[0].message.content)
+            if isinstance(parsed, dict) and parsed.get("difficulty") in ("NHAN_BIET", "THONG_HIEU", "VAN_DUNG", "VAN_DUNG_CAO"):
+                return {
+                    "difficulty": parsed.get("difficulty"),
+                    "confidence": float(parsed.get("confidence", 0.9)),
+                    "reasoning": parsed.get("reasoning", "Phân loại dựa trên độ sâu tư duy và cấu trúc đề."),
+                    "cognitive_skills": parsed.get("cognitive_skills", ["Tư duy logic"]),
+                    "estimated_time_minutes": int(parsed.get("estimated_time_minutes", 2))
+                }
+            return heuristic_analysis()
+        except Exception as e:
+            logger.error(f"Error calling AI in analyze_question_difficulty: {e}")
+            return heuristic_analysis()
+
+    def recommend_smart_practice(
+        self,
+        student_name: str,
+        weak_topics: list,
+        overall_accuracy: float,
+        preferred_subject: str = "Toán học",
+        preferred_grade: int = 12,
+        has_history: bool = True
+    ) -> dict:
+        """
+        Tạo lời khuyên gia sư AI và cấu hình bài luyện tập thông minh dựa trên dữ liệu học sinh.
+        Hỗ trợ phân biệt học sinh mới chưa có bài nộp và học sinh đã có lịch sử làm bài.
+        """
+        # Case A: Học sinh mới, chưa có dữ liệu nộp bài
+        if not has_history:
+            return {
+                "ai_tutor_message": f"Chào {student_name}! Hệ thống chưa ghi nhận lịch sử bài làm nào của em để phân tích điểm mạnh - điểm yếu. Thầy/cô AI khuyên em nên bắt đầu với một bài tự luyện cơ bản (Nhận biết - Thông hiểu) 10 câu môn {preferred_subject} để AI có cơ sở xây dựng lộ trình cá nhân hóa tốt nhất cho em nhé!",
+                "suggested_config": {
+                    "subject": preferred_subject,
+                    "grade_level": preferred_grade,
+                    "chapter": "",
+                    "difficulty": "medium",
+                    "count": 10
+                },
+                "focus_points": [
+                    f"Khởi động với bài luyện chẩn đoán năng lực môn {preferred_subject}",
+                    "Làm quen với các dạng câu hỏi trắc nghiệm chuẩn ma trận",
+                    "Tạo dữ liệu ban đầu để AI trợ giảng phân tích chuyên sâu"
+                ]
+            }
+
+        # Case B: Học sinh đã làm bài và không có chuyên đề nào yếu (< 70%)
+        if not weak_topics:
+            return {
+                "ai_tutor_message": f"Chào {student_name}! Kết quả học tập các bài thi gần đây của em rất ấn tượng (độ chính xác {overall_accuracy:.0f}%). Để duy trì phong độ xuất sắc và bứt phá điểm 9-10, thầy/cô gợi ý em thử thách với các câu hỏi Vận dụng cao phân loại học sinh giỏi nhé!",
+                "suggested_config": {
+                    "subject": preferred_subject,
+                    "grade_level": preferred_grade,
+                    "chapter": "",
+                    "difficulty": "hard",
+                    "count": 10
+                },
+                "focus_points": [
+                    "Rèn luyện tốc độ làm bài và xử lý bẫy đề thi",
+                    "Luyện phản xạ các câu hỏi phân loại 9+ và cực trị thực tế",
+                    "Tối ưu chiến thuật phân bổ thời gian phòng thi"
+                ]
+            }
+
+        # Case C: Học sinh có chuyên đề yếu cần củng cố
+        top_weak = weak_topics[0]
+        chapter_name = top_weak.get("chapter") or "Chuyên đề trọng tâm"
+        acc = top_weak.get("accuracy", 0.0)
+
+        recommended_diff = "easy" if acc < 40 else "medium"
+        advice = f"Chào {student_name}! Qua các bài thi gần đây, AI phát hiện em còn hay nhầm lẫn ở '{chapter_name}' (độ chính xác {acc:.0f}%). Em nên củng cố lại phần lý thuyết và làm ngay bài tự luyện 10 câu mức độ {('Cơ bản' if recommended_diff == 'easy' else 'Thông hiểu')} để lấy lại tự tin nhé!"
+
+        if not self.client:
+            return {
+                "ai_tutor_message": advice,
+                "suggested_config": {
+                    "subject": top_weak.get("subject") or preferred_subject,
+                    "grade_level": top_weak.get("grade_level") or preferred_grade,
+                    "chapter": chapter_name,
+                    "difficulty": recommended_diff,
+                    "count": 10
+                },
+                "focus_points": [
+                    f"Ôn tập kiến thức nền tảng '{chapter_name}'",
+                    "Đọc kỹ lời giải chi tiết cho các câu làm sai",
+                    "Tập trung làm chắc các câu nhận biết và thông hiểu"
+                ]
+            }
+
+        system_prompt = (
+            "Bạn là AI Trợ giảng cá nhân hóa (AI Tutor) tận tâm và am hiểu sư phạm. "
+            "Nhiệm vụ: Dựa trên điểm yếu của học sinh, hãy đưa ra nhận xét động viên mang tính sư phạm và "
+            "gợi ý kế hoạch luyện tập ngắn gọn, thiết thực nhất dưới dạng JSON:\n"
+            "{\n"
+            "  \"ai_tutor_message\": \"Lời khuyên ngắn gọn, ân cần, chỉ rõ điểm cần khắc phục và khích lệ học sinh\",\n"
+            "  \"suggested_config\": {\n"
+            "    \"subject\": \"Môn học\",\n"
+            "    \"grade_level\": 12,\n"
+            "    \"chapter\": \"Tên chuyên đề\",\n"
+            "    \"difficulty\": \"easy\" | \"medium\" | \"hard\",\n"
+            "    \"count\": 10\n"
+            "  },\n"
+            "  \"focus_points\": [\"Trọng tâm 1\", \"Trọng tâm 2\"]\n"
+            "}"
+        )
+
+        user_prompt = (
+            f"Học sinh: {student_name}\n"
+            f"Môn học quan tâm: {preferred_subject}, Khối {preferred_grade}\n"
+            f"Độ chính xác trung bình: {overall_accuracy:.1f}%\n"
+            f"Các chuyên đề yếu nhất:\n"
+        )
+        for wt in weak_topics[:3]:
+            user_prompt += f"- {wt.get('chapter', 'Chưa rõ')}: độ chính xác {wt.get('accuracy', 0):.1f}% (sai {wt.get('wrong_count', 0)}/{wt.get('total_count', 0)} câu)\n"
+
+        try:
+            response = self.client.chat.completions.create(
+                model=self.model_name,
+                messages=[
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user", "content": user_prompt}
+                ],
+                response_format={"type": "json_object"}
+            )
+            parsed = _parse_json_response(response.choices[0].message.content)
+            if isinstance(parsed, dict) and "ai_tutor_message" in parsed:
+                return parsed
+            return {
+                "ai_tutor_message": advice,
+                "suggested_config": {
+                    "subject": top_weak.get("subject") or preferred_subject,
+                    "grade_level": top_weak.get("grade_level") or preferred_grade,
+                    "chapter": chapter_name,
+                    "difficulty": recommended_diff,
+                    "count": 10
+                },
+                "focus_points": [f"Tập trung cải thiện '{chapter_name}'"]
+            }
+        except Exception:
+            return {
+                "ai_tutor_message": advice,
+                "suggested_config": {
+                    "subject": top_weak.get("subject") or preferred_subject,
+                    "grade_level": top_weak.get("grade_level") or preferred_grade,
+                    "chapter": chapter_name,
+                    "difficulty": recommended_diff,
+                    "count": 10
+                },
+                "focus_points": [f"Tập trung cải thiện '{chapter_name}'"]
+            }
 

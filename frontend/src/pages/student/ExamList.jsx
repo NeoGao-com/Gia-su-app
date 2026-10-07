@@ -5,17 +5,22 @@ import api from '../../api/axios';
 import { Link } from 'react-router-dom';
 import { 
   Clock, Search, BookOpen, FileText, Sparkles, ArrowRight, 
-  Award, Filter, CheckCircle2, RotateCcw, Eye, AlertCircle, ShieldAlert
+  Award, Filter, CheckCircle2, RotateCcw, Eye, AlertCircle, ShieldAlert,
+  Download, FileDown
 } from 'lucide-react';
 import { SubmissionReviewModal } from '../../components/SubmissionReviewModal';
+import { useToast } from '../../context/ToastContext';
 
 export function ExamList() {
+  const { toast } = useToast();
   const [exams, setExams] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [subjectFilter, setSubjectFilter] = useState('');
+  const [gradeFilter, setGradeFilter] = useState('');
   const [statusFilter, setStatusFilter] = useState('ALL'); // 'ALL' | 'PENDING' | 'COMPLETED'
   const [selectedSubmissionId, setSelectedSubmissionId] = useState(null);
+  const [downloadingId, setDownloadingId] = useState(null);
 
   useEffect(() => {
     api.get('/student/exams')
@@ -24,9 +29,17 @@ export function ExamList() {
       .finally(() => setLoading(false));
   }, []);
 
+  const STANDARD_SUBJECTS = ['Toán học', 'Vật lý', 'Hóa học', 'Sinh học', 'Tiếng Anh', 'Ngữ văn', 'Lịch sử', 'Địa lý', 'Tin học', 'GDCD'];
+  const STANDARD_GRADES = [6, 7, 8, 9, 10, 11, 12];
+
   const subjects = useMemo(() => {
-    const s = [...new Set(exams.map(e => e.subject).filter(Boolean))];
-    return s;
+    const fromExams = exams.map(e => e.subject).filter(Boolean);
+    return [...new Set([...STANDARD_SUBJECTS, ...fromExams])];
+  }, [exams]);
+
+  const gradeLevels = useMemo(() => {
+    const fromExams = exams.map(e => e.grade_level).filter(Boolean).map(Number);
+    return [...new Set([...STANDARD_GRADES, ...fromExams])].sort((a, b) => a - b);
   }, [exams]);
 
   // Formal exams: exams where exam_type === 'EXAM' or not set to 'ASSIGNMENT'
@@ -38,6 +51,7 @@ export function ExamList() {
     return formalExams.filter(e => {
       if (search && !(e.title || '').toLowerCase().includes(search.toLowerCase()) && !(e.description || '').toLowerCase().includes(search.toLowerCase())) return false;
       if (subjectFilter && e.subject !== subjectFilter) return false;
+      if (gradeFilter && String(e.grade_level) !== String(gradeFilter)) return false;
 
       const attemptsTaken = e.attempts_taken || 0;
       if (statusFilter === 'PENDING' && attemptsTaken > 0) return false;
@@ -45,7 +59,36 @@ export function ExamList() {
 
       return true;
     });
-  }, [formalExams, search, subjectFilter, statusFilter]);
+  }, [formalExams, search, subjectFilter, gradeFilter, statusFilter]);
+
+  const handleDownloadExam = async (examId, examTitle, format = 'docx') => {
+    try {
+      setDownloadingId(`${examId}_${format}`);
+      const res = await api.get(`/export/exam/${examId}/${format}?include_answers=false`, {
+        responseType: 'blob',
+        headers: { 'Cache-Control': 'no-cache' }
+      });
+      const mime = format === 'pdf' 
+        ? 'application/pdf' 
+        : 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+      const blob = new Blob([res.data], { type: mime });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      const cleanTitle = (examTitle || `de_thi_${examId}`).replace(/[\\/:*?"<>|]/g, '_');
+      a.setAttribute('download', `${cleanTitle}.${format}`);
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(url);
+      toast.success(`Đã tải đề thi ${format.toUpperCase()} thành công!`);
+    } catch (err) {
+      console.error(err);
+      toast.error(`Không thể tải đề thi ${format.toUpperCase()}. Vui lòng thử lại sau.`);
+    } finally {
+      setDownloadingId(null);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-slate-50">
@@ -116,6 +159,16 @@ export function ExamList() {
                   {subjects.map(s => <option key={s} value={s}>{s}</option>)}
                 </select>
 
+                {/* Grade Level filter */}
+                <select
+                  value={gradeFilter}
+                  onChange={e => setGradeFilter(e.target.value)}
+                  className="px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 focus:outline-none focus:border-indigo-500 transition"
+                >
+                  <option value="">Tất cả khối lớp</option>
+                  {gradeLevels.map(g => <option key={g} value={g}>Khối {g}</option>)}
+                </select>
+
                 {/* Status filter */}
                 <select
                   value={statusFilter}
@@ -127,9 +180,9 @@ export function ExamList() {
                   <option value="COMPLETED">Đã thi</option>
                 </select>
 
-                {(search || subjectFilter || statusFilter !== 'ALL') && (
+                {(search || subjectFilter || gradeFilter || statusFilter !== 'ALL') && (
                   <button
-                    onClick={() => { setSearch(''); setSubjectFilter(''); setStatusFilter('ALL'); }}
+                    onClick={() => { setSearch(''); setSubjectFilter(''); setGradeFilter(''); setStatusFilter('ALL'); }}
                     className="px-3 py-2 text-xs font-semibold text-slate-500 hover:text-slate-800 cursor-pointer"
                   >
                     Xóa lọc
@@ -232,32 +285,58 @@ export function ExamList() {
                     </div>
 
                     {/* Footer Actions */}
-                    <div className="pt-2 flex items-center gap-2">
-                      {/* If user took exam and has latest submission, provide review button */}
-                      {hasTaken && exam.latest_submission_id && (
+                    <div className="pt-2 flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+                      <div className="flex items-center gap-1.5 shrink-0">
+                        {/* Word Download */}
                         <button
                           type="button"
-                          onClick={() => setSelectedSubmissionId(exam.latest_submission_id)}
-                          className="px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-xs rounded-xl transition flex items-center justify-center space-x-1 cursor-pointer"
-                          title="Xem lại bài làm & lời giải"
+                          onClick={() => handleDownloadExam(exam.id, exam.title, 'docx')}
+                          disabled={downloadingId === `${exam.id}_docx`}
+                          className="min-h-[44px] px-2.5 py-2 bg-slate-100 hover:bg-indigo-50 hover:text-indigo-600 text-slate-600 font-semibold text-xs rounded-xl transition flex items-center justify-center space-x-1 cursor-pointer disabled:opacity-50"
+                          title="Tải đề thi dạng Word (.docx)"
                         >
-                          <Eye className="w-3.5 h-3.5" />
-                          <span>Xem giải</span>
+                          <FileDown className="w-4 h-4 text-indigo-600" />
+                          <span className="text-[11px]">Word</span>
                         </button>
-                      )}
+
+                        {/* PDF Download */}
+                        <button
+                          type="button"
+                          onClick={() => handleDownloadExam(exam.id, exam.title, 'pdf')}
+                          disabled={downloadingId === `${exam.id}_pdf`}
+                          className="min-h-[44px] px-2.5 py-2 bg-slate-100 hover:bg-rose-50 hover:text-rose-600 text-slate-600 font-semibold text-xs rounded-xl transition flex items-center justify-center space-x-1 cursor-pointer disabled:opacity-50"
+                          title="Tải đề thi dạng PDF (.pdf)"
+                        >
+                          <Download className="w-4 h-4 text-rose-600" />
+                          <span className="text-[11px]">PDF</span>
+                        </button>
+
+                        {/* If user took exam and has latest submission, provide review button */}
+                        {hasTaken && exam.latest_submission_id && (
+                          <button
+                            type="button"
+                            onClick={() => setSelectedSubmissionId(exam.latest_submission_id)}
+                            className="min-h-[44px] px-2.5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-xs rounded-xl transition flex items-center justify-center space-x-1 cursor-pointer"
+                            title="Xem lại bài làm & lời giải"
+                          >
+                            <Eye className="w-3.5 h-3.5" />
+                            <span className="text-[11px]">Giải</span>
+                          </button>
+                        )}
+                      </div>
 
                       {/* Main Action Button */}
                       {isExhausted ? (
                         <Link
                           to="/student/history"
-                          className="flex-1 py-2 bg-slate-100 text-slate-700 text-center text-xs font-semibold rounded-xl hover:bg-slate-200 transition shadow-2xs flex items-center justify-center space-x-1"
+                          className="flex-1 min-h-[44px] px-4 py-2 bg-slate-100 text-slate-700 text-center text-xs font-semibold rounded-xl hover:bg-slate-200 transition shadow-2xs flex items-center justify-center space-x-1"
                         >
                           <span>Xem lịch sử thi</span>
                         </Link>
                       ) : (
                         <Link
                           to={`/take-exam/${exam.id}`}
-                          className="flex-1 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-center text-xs font-semibold rounded-xl transition shadow-xs flex items-center justify-center space-x-1.5"
+                          className="flex-1 min-h-[44px] px-4 py-2 bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 text-white text-center text-xs font-semibold rounded-xl transition shadow-xs flex items-center justify-center space-x-1.5"
                         >
                           <span>{hasTaken ? `Thi lại (${attemptsTaken}/${maxAttempts})` : 'Vào phòng thi'}</span>
                           <ArrowRight className="w-3.5 h-3.5" />

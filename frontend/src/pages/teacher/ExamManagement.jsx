@@ -1,9 +1,12 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Navbar } from '../../components/Navbar';
 import { Sidebar } from '../../components/Sidebar';
 import api, { clearApiCache } from '../../api/axios';
 import { AssignmentModal } from '../../components/AssignmentModal';
-import { Plus, Search, Edit3, Trash2, Send, CheckCircle2, XCircle } from 'lucide-react';
+import { 
+  Plus, Search, Edit3, Trash2, Send, CheckCircle2, XCircle, 
+  Download, FileDown, ChevronDown 
+} from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '../../context/ToastContext';
 
@@ -13,9 +16,16 @@ export function ExamManagement() {
   const [exams, setExams] = useState([]);
   const [loading, setLoading] = useState(false);
   const [search, setSearch] = useState('');
+  const [subjectFilter, setSubjectFilter] = useState('');
+  const [gradeFilter, setGradeFilter] = useState('');
+  const [statusFilter, setStatusFilter] = useState('all'); // 'all' | 'published' | 'draft'
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [total, setTotal] = useState(0);
+
+  // Export State
+  const [exportMenuExamId, setExportMenuExamId] = useState(null);
+  const [exportingKey, setExportingKey] = useState(null);
 
   const [assignmentModalOpen, setAssignmentModalOpen] = useState(false);
   const [selectedExamForAssign, setSelectedExamForAssign] = useState(null);
@@ -33,13 +43,30 @@ export function ExamManagement() {
 
   useEffect(() => {
     fetchExams();
-  }, [page, search]);
+  }, [page, search, subjectFilter, gradeFilter, statusFilter]);
+
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (!e.target.closest('.export-dropdown-box')) {
+        setExportMenuExamId(null);
+      }
+    };
+    document.addEventListener('click', handleClickOutside);
+    return () => document.removeEventListener('click', handleClickOutside);
+  }, []);
 
   const fetchExams = async () => {
     try {
       setLoading(true);
       const res = await api.get('/exams', {
-        params: { page, limit: 10, search: search || undefined }
+        params: { 
+          page, 
+          limit: 10, 
+          search: search || undefined,
+          subject: subjectFilter || undefined,
+          grade_level: gradeFilter ? Number(gradeFilter) : undefined,
+          is_published: statusFilter === 'published' ? true : statusFilter === 'draft' ? false : undefined
+        }
       });
       setExams(res.data.items || res.data || []);
       setTotal(res.data.total || (res.data.items ? res.data.items.length : 0));
@@ -48,6 +75,62 @@ export function ExamManagement() {
       console.error('Error fetching exams:', err);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleSubjectChange = (val) => {
+    setSubjectFilter(val);
+    setPage(1);
+  };
+
+  const handleGradeChange = (val) => {
+    setGradeFilter(val);
+    setPage(1);
+  };
+
+  const handleStatusChange = (val) => {
+    setStatusFilter(val);
+    setPage(1);
+  };
+
+  const handleResetFilters = () => {
+    setSearch('');
+    setSubjectFilter('');
+    setGradeFilter('');
+    setStatusFilter('all');
+    setPage(1);
+  };
+
+  const handleExport = async (examId, examTitle, format, includeAnswers) => {
+    const key = `${examId}_${format}_${includeAnswers ? 'ans' : 'noans'}`;
+    try {
+      setExportingKey(key);
+      const res = await api.get(`/export/exam/${examId}/${format}`, {
+        params: { include_answers: includeAnswers },
+        responseType: 'blob',
+        headers: { 'Cache-Control': 'no-cache' }
+      });
+      const mime = format === 'pdf' 
+        ? 'application/pdf' 
+        : 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+      const blob = new Blob([res.data], { type: mime });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      const cleanTitle = (examTitle || `de_thi_${examId}`).replace(/[\\/:*?"<>|]/g, '_');
+      const suffix = includeAnswers ? '_co_dap_an' : '_de_bai';
+      a.setAttribute('download', `${cleanTitle}${suffix}.${format}`);
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(url);
+      toast.success(`Đã xuất file ${format.toUpperCase()} (${includeAnswers ? 'có đáp án' : 'đề bài'}) thành công!`);
+      setExportMenuExamId(null);
+    } catch (err) {
+      console.error(err);
+      toast.error(`Lỗi khi xuất file ${format.toUpperCase()}: ` + (err.response?.data?.detail || err.message));
+    } finally {
+      setExportingKey(null);
     }
   };
 
@@ -157,17 +240,64 @@ export function ExamManagement() {
             </button>
           </div>
 
-          <div className="bg-white rounded-2xl shadow-sm border border-slate-200/90 p-5 mb-6">
-            <div className="flex items-center space-x-4">
+          {/* Filter Bar */}
+          <div className="bg-white rounded-2xl shadow-xs border border-slate-200/90 p-4 sm:p-5 mb-6 space-y-3">
+            <div className="flex flex-col md:flex-row gap-3 items-stretch md:items-center justify-between">
               <div className="relative flex-1">
-                <Search className="w-5 h-5 text-slate-400 absolute left-4 top-3" />
+                <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-3" />
                 <input
                   type="text"
                   placeholder="Tìm kiếm theo tiêu đề đề thi..."
                   value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                  className="w-full pl-11 pr-4 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-sm focus:outline-none focus:border-indigo-600 focus:ring-2 focus:ring-indigo-100"
+                  onChange={(e) => { setSearch(e.target.value); setPage(1); }}
+                  className="w-full pl-10 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm focus:outline-none focus:border-indigo-600 focus:bg-white text-slate-800 transition"
                 />
+              </div>
+
+              <div className="flex flex-wrap items-center gap-2">
+                {/* Subject filter */}
+                <select
+                  value={subjectFilter}
+                  onChange={(e) => handleSubjectChange(e.target.value)}
+                  className="px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 focus:outline-none focus:border-indigo-600 transition"
+                >
+                  <option value="">Tất cả môn học</option>
+                  {['Toán học', 'Vật lý', 'Hóa học', 'Sinh học', 'Tiếng Anh', 'Ngữ văn', 'Lịch sử', 'Địa lý', 'Tin học', 'GDCD'].map(s => (
+                    <option key={s} value={s}>{s}</option>
+                  ))}
+                </select>
+
+                {/* Grade Level filter */}
+                <select
+                  value={gradeFilter}
+                  onChange={(e) => handleGradeChange(e.target.value)}
+                  className="px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 focus:outline-none focus:border-indigo-600 transition"
+                >
+                  <option value="">Tất cả khối lớp</option>
+                  {[6, 7, 8, 9, 10, 11, 12].map(g => (
+                    <option key={g} value={g}>Khối {g}</option>
+                  ))}
+                </select>
+
+                {/* Status filter */}
+                <select
+                  value={statusFilter}
+                  onChange={(e) => handleStatusChange(e.target.value)}
+                  className="px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 focus:outline-none focus:border-indigo-600 transition"
+                >
+                  <option value="all">Tất cả trạng thái</option>
+                  <option value="published">Đã xuất bản</option>
+                  <option value="draft">Bản nháp</option>
+                </select>
+
+                {(search || subjectFilter || gradeFilter || statusFilter !== 'all') && (
+                  <button
+                    onClick={handleResetFilters}
+                    className="px-3 py-2 text-xs font-semibold text-slate-500 hover:text-slate-800 cursor-pointer"
+                  >
+                    Xóa lọc
+                  </button>
+                )}
               </div>
             </div>
           </div>
@@ -198,7 +328,11 @@ export function ExamManagement() {
                       <tr key={exam.id} className="hover:bg-slate-50/80 transition">
                         <td className="py-4 px-6">
                           <div className="font-bold text-slate-900">{exam.title}</div>
-                          <div className="text-xs text-slate-400 mt-0.5">ID: #{exam.id} | Ngày tạo: {exam.created_at ? new Date(exam.created_at).toLocaleDateString('vi-VN') : 'N/A'}</div>
+                          <div className="text-xs text-slate-400 mt-0.5">
+                            ID: #{exam.id} | Ngày tạo: {exam.created_at ? new Date(exam.created_at).toLocaleDateString('vi-VN') : 'N/A'}
+                            {exam.subject && <span> | Môn: {exam.subject}</span>}
+                            {exam.grade_level && <span> | Khối {exam.grade_level}</span>}
+                          </div>
                         </td>
                         <td className="py-4 px-6 text-slate-700 font-semibold tabular-nums">{exam.duration_minutes} phút</td>
                         <td className="py-4 px-6 text-slate-700">
@@ -227,6 +361,74 @@ export function ExamManagement() {
                             <Send className="w-3.5 h-3.5" />
                             <span>Giao bài</span>
                           </button>
+
+                          {/* Export Word / PDF Dropdown */}
+                          <div className="relative inline-block text-left export-dropdown-box">
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setExportMenuExamId(exportMenuExamId === exam.id ? null : exam.id);
+                              }}
+                              className="inline-flex items-center space-x-1 px-3 py-1.5 bg-blue-50 border border-blue-200/70 text-blue-700 rounded-lg text-xs font-bold hover:bg-blue-100 transition cursor-pointer"
+                              title="Tải đề thi dạng Word hoặc PDF"
+                            >
+                              <Download className="w-3.5 h-3.5" />
+                              <span>Xuất đề</span>
+                              <ChevronDown className="w-3 h-3 ml-0.5" />
+                            </button>
+
+                            {exportMenuExamId === exam.id && (
+                              <div className="absolute right-0 mt-1 w-56 bg-white rounded-xl shadow-lg border border-slate-200 py-1.5 z-40 text-left animate-in fade-in zoom-in-95">
+                                <div className="px-3 py-1 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                                  Xuất Word (.docx)
+                                </div>
+                                <button
+                                  type="button"
+                                  disabled={exportingKey === `${exam.id}_docx_noans`}
+                                  onClick={() => handleExport(exam.id, exam.title, 'docx', false)}
+                                  className="w-full text-left px-3 py-1.5 text-xs text-slate-700 hover:bg-slate-50 flex items-center space-x-2 transition disabled:opacity-50 cursor-pointer"
+                                >
+                                  <FileDown className="w-3.5 h-3.5 text-indigo-600 shrink-0" />
+                                  <span>Đề bài (không đáp án)</span>
+                                </button>
+                                <button
+                                  type="button"
+                                  disabled={exportingKey === `${exam.id}_docx_ans`}
+                                  onClick={() => handleExport(exam.id, exam.title, 'docx', true)}
+                                  className="w-full text-left px-3 py-1.5 text-xs text-slate-700 hover:bg-slate-50 flex items-center space-x-2 transition disabled:opacity-50 cursor-pointer"
+                                >
+                                  <FileDown className="w-3.5 h-3.5 text-indigo-600 shrink-0" />
+                                  <span>Đề kèm đáp án & Lời giải</span>
+                                </button>
+
+                                <div className="border-t border-slate-100 my-1" />
+
+                                <div className="px-3 py-1 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                                  Xuất PDF (.pdf)
+                                </div>
+                                <button
+                                  type="button"
+                                  disabled={exportingKey === `${exam.id}_pdf_noans`}
+                                  onClick={() => handleExport(exam.id, exam.title, 'pdf', false)}
+                                  className="w-full text-left px-3 py-1.5 text-xs text-slate-700 hover:bg-slate-50 flex items-center space-x-2 transition disabled:opacity-50 cursor-pointer"
+                                >
+                                  <Download className="w-3.5 h-3.5 text-rose-600 shrink-0" />
+                                  <span>Đề bài (không đáp án)</span>
+                                </button>
+                                <button
+                                  type="button"
+                                  disabled={exportingKey === `${exam.id}_pdf_ans`}
+                                  onClick={() => handleExport(exam.id, exam.title, 'pdf', true)}
+                                  className="w-full text-left px-3 py-1.5 text-xs text-slate-700 hover:bg-slate-50 flex items-center space-x-2 transition disabled:opacity-50 cursor-pointer"
+                                >
+                                  <Download className="w-3.5 h-3.5 text-rose-600 shrink-0" />
+                                  <span>Đề kèm đáp án & Lời giải</span>
+                                </button>
+                              </div>
+                            )}
+                          </div>
+
                           <button
                             onClick={() => openEditModal(exam)}
                             className="inline-flex items-center space-x-1 px-3 py-1.5 bg-slate-100 border border-slate-200 text-slate-700 rounded-lg text-xs font-bold hover:bg-slate-200 transition"

@@ -17,4 +17,5 @@ openai
 redis
 aiosmtplib
 requests
+reportlab
 

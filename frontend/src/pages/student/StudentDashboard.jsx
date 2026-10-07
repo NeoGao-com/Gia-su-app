@@ -91,15 +91,15 @@ export function StudentDashboard() {
       <Navbar />
       <div className="flex">
         <Sidebar role="student" />
-        <main className="flex-1 p-5 sm:p-6 lg:p-8 max-w-7xl mx-auto w-full">
+        <main className="flex-1 p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto w-full">
           {/* Welcome Banner */}
-          <div className="bg-gradient-to-r from-indigo-700 via-indigo-600 to-blue-600 text-white p-6 sm:p-7 rounded-2xl shadow-xs mb-6 relative overflow-hidden">
+          <div className="bg-gradient-to-r from-indigo-700 via-indigo-600 to-blue-600 text-white p-5 sm:p-7 rounded-2xl shadow-xs mb-5 sm:mb-6 relative overflow-hidden">
             <div className="relative z-10 max-w-2xl">
               <div className="inline-flex items-center space-x-2 bg-white/15 backdrop-blur-md px-3 py-1 rounded-full text-xs font-semibold mb-3 border border-white/20">
                 <Sparkles className="w-3.5 h-3.5 text-amber-300" />
                 <span>Không gian Học tập & Rèn luyện TutorQuiz</span>
               </div>
-              <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight">
+              <h1 className="text-xl sm:text-3xl font-extrabold tracking-tight">
                 Xin chào, {studentName}! 👋
               </h1>
               <p className="mt-2 text-indigo-100 text-xs sm:text-sm leading-relaxed">
@@ -115,9 +115,9 @@ export function StudentDashboard() {
 
           {/* Urgent Homework Callout (if any urgent) */}
           {urgentCount > 0 && (
-            <div className="bg-rose-50 border border-rose-200 p-4 sm:p-5 rounded-xl shadow-2xs mb-6 flex items-center justify-between gap-4 animate-in fade-in">
+            <div className="bg-rose-50 border border-rose-200 p-4 sm:p-5 rounded-xl shadow-2xs mb-5 sm:mb-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 animate-in fade-in">
               <div className="flex items-center space-x-3.5">
-                <div className="p-2.5 bg-rose-600 text-white rounded-xl shadow-xs">
+                <div className="p-2.5 bg-rose-600 text-white rounded-xl shadow-xs shrink-0">
                   <Flame className="w-5 h-5" />
                 </div>
                 <div>
@@ -131,7 +131,7 @@ export function StudentDashboard() {
               </div>
               <Link
                 to="/student/assignments"
-                className="px-3.5 py-2 bg-rose-600 hover:bg-rose-700 text-white font-semibold text-xs rounded-lg transition shadow-2xs whitespace-nowrap flex items-center space-x-1.5"
+                className="w-full sm:w-auto min-h-[44px] px-4 py-2.5 bg-rose-600 hover:bg-rose-700 active:bg-rose-800 text-white font-semibold text-xs rounded-xl transition shadow-2xs whitespace-nowrap flex items-center justify-center space-x-1.5"
               >
                 <span>Làm ngay</span>
                 <ArrowRight className="w-3.5 h-3.5" />
@@ -140,17 +140,17 @@ export function StudentDashboard() {
           )}
 
           {/* KPI Stats Grid */}
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5 mb-6">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-5 mb-5 sm:mb-6">
             {/* Card 1: Pending Assignments */}
             <Link
               to="/student/assignments"
-              className="bg-white p-5 rounded-2xl border border-slate-200/90 shadow-xs hover:border-indigo-300 transition group interactive-card"
+              className="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200/90 shadow-xs hover:border-indigo-300 transition group interactive-card"
             >
               <div className="flex items-center space-x-3 mb-2.5">
-                <div className="bg-blue-50 text-blue-600 p-2.5 rounded-xl group-hover:scale-105 transition">
+                <div className="bg-blue-50 text-blue-600 p-2 sm:p-2.5 rounded-xl group-hover:scale-105 transition">
                   <Send className="w-4 h-4" />
                 </div>
-                <span className="text-xs sm:text-sm text-slate-500 font-medium">Bài tập cần nộp</span>
+                <span className="text-xs sm:text-sm text-slate-500 font-medium">Bài cần nộp</span>
               </div>
               <h3 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tabular-nums">{pendingAssignmentsCount}</h3>
               <p className="text-[11px] text-slate-400 mt-1 flex items-center space-x-1">
@@ -162,10 +162,10 @@ export function StudentDashboard() {
             {/* Card 2: Completed Exams */}
             <Link
               to="/student/history"
-              className="bg-white p-5 rounded-2xl border border-slate-200/90 shadow-xs hover:border-emerald-300 transition group interactive-card"
+              className="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200/90 shadow-xs hover:border-emerald-300 transition group interactive-card"
             >
               <div className="flex items-center space-x-3 mb-2.5">
-                <div className="bg-emerald-50 text-emerald-600 p-2.5 rounded-xl group-hover:scale-105 transition">
+                <div className="bg-emerald-50 text-emerald-600 p-2 sm:p-2.5 rounded-xl group-hover:scale-105 transition">
                   <CheckCircle className="w-4 h-4" />
                 </div>
                 <span className="text-xs sm:text-sm text-slate-500 font-medium">Đã hoàn thành</span>
@@ -175,9 +175,9 @@ export function StudentDashboard() {
             </Link>
 
             {/* Card 3: GPA */}
-            <div className="bg-white p-5 rounded-2xl border border-slate-200/90 shadow-xs interactive-card">
+            <div className="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200/90 shadow-xs interactive-card">
               <div className="flex items-center space-x-3 mb-2.5">
-                <div className="bg-amber-50 text-amber-600 p-2.5 rounded-xl">
+                <div className="bg-amber-50 text-amber-600 p-2 sm:p-2.5 rounded-xl">
                   <Trophy className="w-4 h-4" />
                 </div>
                 <span className="text-xs sm:text-sm text-slate-500 font-medium">Điểm trung bình</span>
@@ -194,13 +194,13 @@ export function StudentDashboard() {
             {/* Card 4: Classrooms */}
             <Link
               to="/student/classrooms"
-              className="bg-white p-5 rounded-2xl border border-slate-200/90 shadow-xs hover:border-blue-300 transition group interactive-card"
+              className="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200/90 shadow-xs hover:border-blue-300 transition group interactive-card"
             >
               <div className="flex items-center space-x-3 mb-2.5">
-                <div className="bg-indigo-50 text-indigo-600 p-2.5 rounded-xl group-hover:scale-105 transition">
+                <div className="bg-indigo-50 text-indigo-600 p-2 sm:p-2.5 rounded-xl group-hover:scale-105 transition">
                   <Users className="w-4 h-4" />
                 </div>
-                <span className="text-xs sm:text-sm text-slate-500 font-medium">Lớp đang theo học</span>
+                <span className="text-xs sm:text-sm text-slate-500 font-medium">Lớp theo học</span>
               </div>
               <h3 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tabular-nums">{summary?.classrooms_count ?? myClassrooms.length}</h3>
               <p className="text-[11px] text-slate-400 mt-1 flex items-center space-x-1">
@@ -211,15 +211,34 @@ export function StudentDashboard() {
           </div>
 
           {/* Quick Actions Bar */}
-          <div className="bg-white p-5 sm:p-6 rounded-2xl border border-slate-200/90 shadow-xs mb-6">
+          <div className="bg-white p-4 sm:p-6 rounded-2xl border border-slate-200/90 shadow-xs mb-5 sm:mb-6">
             <h3 className="font-bold text-slate-900 text-sm sm:text-base mb-4 flex items-center space-x-2">
               <Sparkles className="w-4 h-4 text-indigo-600" />
-              <span>Lối tắt học tập</span>
+              <span>Lối tắt học tập & Tự luyện</span>
             </h3>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3.5">
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+              {/* Shortcut: Smart Practice (AI Highlight) */}
+              <Link
+                to="/student/practice"
+                className="p-3.5 sm:p-4 rounded-xl bg-gradient-to-br from-violet-50 to-indigo-50 hover:from-violet-100 hover:to-indigo-100 border border-violet-200/90 transition group flex flex-col justify-between min-h-[96px] relative"
+              >
+                <div className="flex items-center justify-between mb-2">
+                  <div className="w-8 h-8 rounded-lg bg-violet-600 text-white flex items-center justify-center group-hover:scale-105 transition shadow-2xs">
+                    <Sparkles className="w-4 h-4 text-amber-200" />
+                  </div>
+                  <span className="text-[9px] font-extrabold bg-violet-600 text-white px-1.5 py-0.5 rounded-full uppercase tracking-wider">
+                    AI Tutor
+                  </span>
+                </div>
+                <div>
+                  <div className="font-bold text-xs sm:text-sm text-violet-950">Tự luyện AI</div>
+                  <div className="text-[11px] text-violet-700/80 mt-0.5">Ôn theo điểm yếu</div>
+                </div>
+              </Link>
+
               <Link
                 to="/student/assignments"
-                className="p-4 rounded-xl bg-slate-50 hover:bg-white hover:border-blue-300 border border-slate-200/80 transition group flex flex-col justify-between"
+                className="p-3.5 sm:p-4 rounded-xl bg-slate-50 hover:bg-white hover:border-blue-300 border border-slate-200/80 transition group flex flex-col justify-between min-h-[96px]"
               >
                 <div className="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center mb-2 group-hover:scale-105 transition">
                   <Send className="w-4 h-4" />
@@ -232,7 +251,7 @@ export function StudentDashboard() {
 
               <Link
                 to="/student/exams"
-                className="p-4 rounded-xl bg-slate-50 hover:bg-white hover:border-indigo-300 border border-slate-200/80 transition group flex flex-col justify-between"
+                className="p-3.5 sm:p-4 rounded-xl bg-slate-50 hover:bg-white hover:border-indigo-300 border border-slate-200/80 transition group flex flex-col justify-between min-h-[96px]"
               >
                 <div className="w-8 h-8 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center mb-2 group-hover:scale-105 transition">
                   <FileText className="w-4 h-4" />
@@ -245,37 +264,37 @@ export function StudentDashboard() {
 
               <Link
                 to="/student/history"
-                className="p-4 rounded-xl bg-slate-50 hover:bg-white hover:border-amber-300 border border-slate-200/80 transition group flex flex-col justify-between"
+                className="p-3.5 sm:p-4 rounded-xl bg-slate-50 hover:bg-white hover:border-amber-300 border border-slate-200/80 transition group flex flex-col justify-between min-h-[96px]"
               >
                 <div className="w-8 h-8 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center mb-2 group-hover:scale-105 transition">
                   <Award className="w-4 h-4" />
                 </div>
                 <div>
                   <div className="font-semibold text-xs sm:text-sm text-slate-800">Sổ điểm & Lịch sử</div>
-                  <div className="text-[11px] text-slate-500 mt-0.5">Tiến độ & kết quả thi</div>
+                  <div className="text-[11px] text-slate-500 mt-0.5">Tiến độ & kết quả</div>
                 </div>
               </Link>
 
               <Link
                 to="/student/classrooms"
-                className="p-4 rounded-xl bg-slate-50 hover:bg-white hover:border-emerald-300 border border-slate-200/80 transition group flex flex-col justify-between"
+                className="p-3.5 sm:p-4 rounded-xl bg-slate-50 hover:bg-white hover:border-emerald-300 border border-slate-200/80 transition group flex flex-col justify-between min-h-[96px]"
               >
                 <div className="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center mb-2 group-hover:scale-105 transition">
                   <Users className="w-4 h-4" />
                 </div>
                 <div>
                   <div className="font-semibold text-xs sm:text-sm text-slate-800">Lớp học của tôi</div>
-                  <div className="text-[11px] text-slate-500 mt-0.5">Danh sách lớp & bạn học</div>
+                  <div className="text-[11px] text-slate-500 mt-0.5">Danh sách lớp học</div>
                 </div>
               </Link>
             </div>
           </div>
 
           {/* Quick Join Classroom Form Box */}
-          <div className="bg-white p-5 sm:p-6 rounded-2xl border border-slate-200/90 shadow-xs mb-6">
+          <div className="bg-white p-4 sm:p-6 rounded-2xl border border-slate-200/90 shadow-xs mb-5 sm:mb-6">
             <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
               <div className="flex items-center space-x-3.5">
-                <div className="p-3 bg-indigo-50 text-indigo-600 rounded-xl">
+                <div className="p-3 bg-indigo-50 text-indigo-600 rounded-xl shrink-0">
                   <KeyRound className="w-5 h-5" />
                 </div>
                 <div>
@@ -284,7 +303,7 @@ export function StudentDashboard() {
                 </div>
               </div>
 
-              <form onSubmit={handleJoinClass} className="flex items-center space-x-2 w-full md:w-auto">
+              <form onSubmit={handleJoinClass} className="flex items-stretch sm:items-center space-x-2 w-full md:w-auto">
                 <input
                   type="text"
                   required
@@ -292,12 +311,12 @@ export function StudentDashboard() {
                   placeholder="MÃ LỚP (VD: TOAN9A)"
                   value={joinCode}
                   onChange={(e) => setJoinCode(e.target.value.toUpperCase())}
-                  className="px-4 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs sm:text-sm font-mono uppercase font-bold focus:outline-none focus:ring-2 focus:ring-indigo-500 text-center tracking-wider w-full md:w-48"
+                  className="px-4 py-2.5 min-h-[44px] bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm font-mono uppercase font-bold focus:outline-none focus:ring-2 focus:ring-indigo-500 text-center tracking-wider flex-1 md:w-48"
                 />
                 <button
                   type="submit"
                   disabled={joinLoading || !joinCode.trim()}
-                  className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold rounded-lg transition shadow-2xs disabled:opacity-50 whitespace-nowrap"
+                  className="px-4 py-2.5 min-h-[44px] bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 text-white text-xs font-semibold rounded-xl transition shadow-2xs disabled:opacity-50 whitespace-nowrap flex items-center justify-center cursor-pointer"
                 >
                   {joinLoading ? 'Đang vào…' : 'Gia nhập'}
                 </button>
@@ -306,16 +325,16 @@ export function StudentDashboard() {
           </div>
 
           {/* Two-Column Grid: Assigned Exams & Recent Submissions */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 sm:gap-6">
             {/* Left: Assigned Exams / Homework */}
-            <div className="bg-white p-5 sm:p-6 rounded-2xl border border-slate-200/90 shadow-xs flex flex-col justify-between">
+            <div className="bg-white p-4 sm:p-6 rounded-2xl border border-slate-200/90 shadow-xs flex flex-col justify-between">
               <div>
                 <div className="flex items-center justify-between mb-4 pb-2.5 border-b border-slate-100">
                   <h3 className="font-bold text-slate-900 text-sm sm:text-base flex items-center space-x-2">
                     <BookOpen className="w-4 h-4 text-indigo-600" />
                     <span>Bài tập & Đề thi cần làm</span>
                   </h3>
-                  <Link to="/student/assignments" className="text-xs font-semibold text-indigo-600 hover:text-indigo-800 flex items-center space-x-1">
+                  <Link to="/student/assignments" className="min-h-[44px] px-2 text-xs font-semibold text-indigo-600 hover:text-indigo-800 flex items-center space-x-1">
                     <span>Xem tất cả</span>
                     <ArrowRight className="w-3.5 h-3.5" />
                   </Link>
@@ -359,7 +378,7 @@ export function StudentDashboard() {
 
                           <Link
                             to={`/take-exam/${exam.id}`}
-                            className="px-3.5 py-1.5 bg-indigo-600 text-white text-xs font-semibold rounded-lg hover:bg-indigo-700 transition shadow-2xs whitespace-nowrap"
+                            className="min-h-[44px] px-4 py-2 bg-indigo-600 text-white text-xs font-semibold rounded-xl hover:bg-indigo-700 active:bg-indigo-800 transition shadow-2xs whitespace-nowrap flex items-center justify-center shrink-0"
                           >
                             Làm bài
                           </Link>
@@ -372,14 +391,14 @@ export function StudentDashboard() {
             </div>
 
             {/* Right: Recent Submissions with Review Modal */}
-            <div className="bg-white p-5 sm:p-6 rounded-2xl border border-slate-200/90 shadow-xs flex flex-col justify-between">
+            <div className="bg-white p-4 sm:p-6 rounded-2xl border border-slate-200/90 shadow-xs flex flex-col justify-between">
               <div>
                 <div className="flex items-center justify-between mb-4 pb-2.5 border-b border-slate-100">
                   <h3 className="font-bold text-slate-900 text-sm sm:text-base flex items-center space-x-2">
                     <Trophy className="w-4 h-4 text-amber-500" />
                     <span>Kết quả bài nộp gần đây</span>
                   </h3>
-                  <Link to="/student/history" className="text-xs font-semibold text-indigo-600 hover:text-indigo-800 flex items-center space-x-1">
+                  <Link to="/student/history" className="min-h-[44px] px-2 text-xs font-semibold text-indigo-600 hover:text-indigo-800 flex items-center space-x-1">
                     <span>Lịch sử thi</span>
                     <ArrowRight className="w-3.5 h-3.5" />
                   </Link>
@@ -407,7 +426,7 @@ export function StudentDashboard() {
                             </div>
                           </div>
 
-                          <div className="flex items-center space-x-3 shrink-0">
+                          <div className="flex items-center space-x-2 sm:space-x-3 shrink-0">
                             <div className="text-right">
                               <span className={`text-base font-extrabold ${isPassed ? 'text-emerald-600' : 'text-rose-600'}`}>
                                 {sub.score ?? 0}
@@ -418,7 +437,7 @@ export function StudentDashboard() {
                             <button
                               type="button"
                               onClick={() => setSelectedSubmissionId(sub.id)}
-                              className="p-1.5 rounded-lg bg-white border border-slate-200 text-slate-600 hover:text-indigo-600 hover:border-indigo-300 transition shadow-2xs"
+                              className="min-w-[44px] min-h-[44px] flex items-center justify-center p-2.5 rounded-xl bg-white border border-slate-200 text-slate-600 hover:text-indigo-600 hover:border-indigo-300 active:bg-slate-100 transition shadow-2xs cursor-pointer"
                               title="Xem chi tiết & bài làm"
                             >
                               <Eye className="w-4 h-4" />
