@@ -12,7 +12,7 @@ import { ErrorBoundary } from './components/ErrorBoundary'
 import { ToastProvider } from './context/ToastContext'
 import {
   StudentDashboard, ExamList, TakeExam, ExamHistory,
-  StudentAssignments, StudentClassrooms, StudentPractice, StudentProfile,
+  StudentAssignments, StudentClassrooms, StudentProfile,
   TeacherDashboard, QuestionBank, ClassroomManagement,
   Gradebook, Analytics, AIConfigManagement, ExamCreator, ExamManagement, AssignmentManagement,
 } from './lazyPages'
@@ -36,7 +36,7 @@ createRoot(document.getElementById('root')).render(
             <Route path="/student/dashboard" element={<StudentDashboard />} />
             <Route path="/student/assignments" element={<StudentAssignments />} />
             <Route path="/student/classrooms" element={<StudentClassrooms />} />
-            <Route path="/student/practice" element={<StudentPractice />} />
+            <Route path="/student/practice" element={<Navigate to="/student" replace />} />
             <Route path="/student/profile" element={<StudentProfile />} />
             <Route path="/profile" element={<StudentProfile />} />
             <Route path="/exams" element={<ExamList />} />

@@ -213,29 +213,10 @@ export function StudentDashboard() {
           {/* Quick Actions Bar */}
           <div className="bg-white p-4 sm:p-6 rounded-2xl border border-slate-200/90 shadow-xs mb-5 sm:mb-6">
             <h3 className="font-bold text-slate-900 text-sm sm:text-base mb-4 flex items-center space-x-2">
-              <Sparkles className="w-4 h-4 text-indigo-600" />
-              <span>Lối tắt học tập & Tự luyện</span>
+              <FileText className="w-4 h-4 text-indigo-600" />
+              <span>Lối tắt học tập</span>
             </h3>
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
-              {/* Shortcut: Smart Practice (AI Highlight) */}
-              <Link
-                to="/student/practice"
-                className="p-3.5 sm:p-4 rounded-xl bg-gradient-to-br from-violet-50 to-indigo-50 hover:from-violet-100 hover:to-indigo-100 border border-violet-200/90 transition group flex flex-col justify-between min-h-[96px] relative"
-              >
-                <div className="flex items-center justify-between mb-2">
-                  <div className="w-8 h-8 rounded-lg bg-violet-600 text-white flex items-center justify-center group-hover:scale-105 transition shadow-2xs">
-                    <Sparkles className="w-4 h-4 text-amber-200" />
-                  </div>
-                  <span className="text-[9px] font-extrabold bg-violet-600 text-white px-1.5 py-0.5 rounded-full uppercase tracking-wider">
-                    AI Tutor
-                  </span>
-                </div>
-                <div>
-                  <div className="font-bold text-xs sm:text-sm text-violet-950">Tự luyện AI</div>
-                  <div className="text-[11px] text-violet-700/80 mt-0.5">Ôn theo điểm yếu</div>
-                </div>
-              </Link>
-
+            <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-4 gap-3">
               <Link
                 to="/student/assignments"
                 className="p-3.5 sm:p-4 rounded-xl bg-slate-50 hover:bg-white hover:border-blue-300 border border-slate-200/80 transition group flex flex-col justify-between min-h-[96px]"

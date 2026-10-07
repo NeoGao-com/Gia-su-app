@@ -6,7 +6,6 @@ export const TakeExam = lazy(() => import('./pages/student/TakeExam').then(m => 
 export const ExamHistory = lazy(() => import('./pages/student/ExamHistory').then(m => ({ default: m.ExamHistory })));
 export const StudentAssignments = lazy(() => import('./pages/student/StudentAssignments').then(m => ({ default: m.StudentAssignments })));
 export const StudentClassrooms = lazy(() => import('./pages/student/StudentClassrooms').then(m => ({ default: m.StudentClassrooms })));
-export const StudentPractice = lazy(() => import('./pages/student/StudentPractice').then(m => ({ default: m.StudentPractice })));
 export const StudentProfile = lazy(() => import('./pages/student/StudentProfile').then(m => ({ default: m.StudentProfile })));
 
 export const TeacherDashboard = lazy(() => import('./pages/teacher/TeacherDashboard').then(m => ({ default: m.TeacherDashboard })));
