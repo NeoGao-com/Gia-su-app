@@ -7,6 +7,7 @@ import {
 import api, { resolveImageUrl } from '../api/axios';
 import { Modal } from './Modal';
 import { MathRenderer } from './MathRenderer';
+import { MathVirtualKeyboard } from './MathVirtualKeyboard';
 import { useToast } from '../context/ToastContext';
 
 export function ClassroomDiscussionsModal({ 
@@ -19,6 +20,8 @@ export function ClassroomDiscussionsModal({
   const { toast, confirm } = useToast();
   const fileInputRef = useRef(null);
   const commentFileInputRef = useRef(null);
+  const newPostTextareaRef = useRef(null);
+  const commentTextareaRef = useRef(null);
 
   const [currentUser, setCurrentUser] = useState(() => {
     try {
@@ -466,12 +469,18 @@ export function ClassroomDiscussionsModal({
                       Nội dung chi tiết (Hỗ trợ công thức Toán LaTeX $...$ hoặc $$...$$)
                     </label>
                     <textarea
+                      ref={newPostTextareaRef}
                       required
                       rows={6}
                       placeholder="Mô tả đề bài, vướng mắc của em ở bước nào (Gõ $x^2 - 4x + 3 = 0$ để hiển thị công thức đẹp mắt)..."
                       value={newContent}
                       onChange={(e) => setNewContent(e.target.value)}
                       className="w-full flex-1 p-3 bg-white border border-slate-300 rounded-xl text-xs font-normal text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-100 leading-relaxed font-sans"
+                    />
+                    <MathVirtualKeyboard
+                      targetRef={newPostTextareaRef}
+                      className="mt-2"
+                      defaultOpen={false}
                     />
                   </div>
 
@@ -709,6 +718,7 @@ export function ClassroomDiscussionsModal({
                 <div className="flex items-end space-x-2">
                   <div className="flex-1 bg-white border border-slate-300 rounded-xl p-2 focus-within:ring-2 focus-within:ring-indigo-100 focus-within:border-indigo-600">
                     <textarea
+                      ref={commentTextareaRef}
                       rows={2}
                       placeholder={isTeacher ? "Nhập lời giải đáp án hoặc hướng dẫn học sinh (Hỗ trợ LaTeX $...$)..." : "Nhập câu trả lời hoặc trao đổi thêm..."}
                       value={commentContent}
@@ -758,6 +768,12 @@ export function ClassroomDiscussionsModal({
                     </button>
                   </div>
                 </div>
+
+                <MathVirtualKeyboard
+                  targetRef={commentTextareaRef}
+                  className="mt-1"
+                  defaultOpen={false}
+                />
               </form>
             </div>
           ) : (

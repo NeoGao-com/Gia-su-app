@@ -15,7 +15,7 @@ from app.models.user import User
 from app.models.classroom import Classroom, Assignment, ClassroomStudent, ClassroomExam
 from app.core.security import get_current_user
 from app.schemas.exam import ExamSubmissionRequest, ExamSubmissionResponse, ExamResponse, ExamSubmissionSaveRequest, StudentExamResponse
-from app.services.grading import GradingService
+from app.services.grading import GradingService, calculate_total_score
 
 router = APIRouter(prefix="/api/student", tags=["student"])
 
@@ -468,7 +468,9 @@ async def submit_student_exam(
     status = "SUBMITTED" if has_essay else "GRADED"
 
     submission.auto_score = score
-    submission.score = (score or 0) + (submission.essay_score or 0)
+    n_obj = len([q for q in questions if q.question_type != "ESSAY"])
+    n_essay = len([q for q in questions if q.question_type == "ESSAY"])
+    submission.score = calculate_total_score(n_obj, score, n_essay, [submission.essay_score] if submission.essay_score else [])
     submission.answers = request.answers
     submission.graded_answers = graded_answers
     submission.time_spent = request.time_spent

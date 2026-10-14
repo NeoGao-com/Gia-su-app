@@ -7,6 +7,7 @@ import {
 import api from '../api/axios';
 import { Modal } from './Modal';
 import { MathRenderer } from './MathRenderer';
+import { MathVirtualKeyboard } from './MathVirtualKeyboard';
 import { useToast } from '../context/ToastContext';
 
 const QUESTION_TYPES = [
@@ -73,6 +74,8 @@ Chất béo (trigixerit) là trieste của glixerol với các axit béo: axit p
 export function AIGenerateQuizModal({ isOpen, onClose, onSuccess, defaultSubject = 'Toán', defaultGrade = 10 }) {
   const { toast } = useToast();
   const fileInputRef = useRef(null);
+  const promptInputRef = useRef(null);
+  const activeEditInputRef = useRef(null);
 
   // Steps: 'input' | 'review'
   const [step, setStep] = useState('input');
@@ -494,11 +497,18 @@ export function AIGenerateQuizModal({ isOpen, onClose, onSuccess, defaultSubject
               {inputMode === 'text' && (
                 <div className="space-y-3">
                   <textarea
+                    ref={promptInputRef}
                     rows={8}
                     value={inputText}
                     onChange={(e) => setInputText(e.target.value)}
                     placeholder="Dán tóm tắt lý thuyết, nội dung bài giảng, đoạn văn đọc hiểu, hoặc các dạng bài tập cần AI phân tích và tự động tạo đề thi (Hỗ trợ công thức Toán/Lý/Hóa $...$)..."
                     className="w-full p-3.5 bg-white border border-slate-300 rounded-2xl text-xs font-normal text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-100 focus:border-indigo-600 leading-relaxed font-sans shadow-inner"
+                  />
+
+                  <MathVirtualKeyboard
+                    targetRef={promptInputRef}
+                    className="mt-1"
+                    defaultOpen={false}
                   />
 
                   {/* Quick sample prompt chips */}
@@ -776,7 +786,14 @@ export function AIGenerateQuizModal({ isOpen, onClose, onSuccess, defaultSubject
           title={`Chỉnh sửa Câu ${editingIndex + 1}`}
           maxWidth="max-w-2xl"
         >
-          <div className="space-y-4 text-xs">
+          <div 
+            className="space-y-4 text-xs"
+            onFocusCapture={(e) => {
+              if (e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA')) {
+                activeEditInputRef.current = e.target;
+              }
+            }}
+          >
             <div>
               <label className="block font-bold text-slate-700 mb-1">Nội dung câu hỏi</label>
               <textarea
@@ -784,6 +801,11 @@ export function AIGenerateQuizModal({ isOpen, onClose, onSuccess, defaultSubject
                 value={editingForm.content || ''}
                 onChange={(e) => setEditingForm(prev => ({ ...prev, content: e.target.value }))}
                 className="w-full p-2.5 border border-slate-300 rounded-xl font-sans"
+              />
+              <MathVirtualKeyboard
+                targetRef={() => activeEditInputRef.current}
+                className="mt-2"
+                defaultOpen={false}
               />
             </div>
 

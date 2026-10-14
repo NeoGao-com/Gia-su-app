@@ -16,7 +16,7 @@ from app.schemas.exam import ExamCreate, ExamUpdate, ExamResponse, ExamSubmissio
 from app.core.security import get_current_user, get_current_teacher
 from app.models.user import User
 from app.models.exam import ExamMatrix
-from app.services.grading import GradingService
+from app.services.grading import GradingService, calculate_total_score
 from app.services.ai_service import AIService
 
 logger = logging.getLogger(__name__)
@@ -155,12 +155,17 @@ async def grade_essay_submission_ai(
 
     # Recalculate total essay score from graded_answers
     total_essay_score = 0.0
+    essay_scores = []
     for q_id_str, g_ans in submission.graded_answers.items():
         if g_ans.get("question_type") == "ESSAY":
-            total_essay_score += g_ans.get("points_awarded", 0.0)
+            pts = float(g_ans.get("points_awarded", 0.0) or 0.0)
+            total_essay_score += pts
+            essay_scores.append(pts)
 
-    submission.essay_score = total_essay_score
-    submission.score = (submission.auto_score or 0) + (submission.essay_score or 0)
+    submission.essay_score = round(total_essay_score, 2)
+    n_obj = len([q for q in questions if q.question_type != "ESSAY"])
+    n_essay = len([q for q in questions if q.question_type == "ESSAY"])
+    submission.score = calculate_total_score(n_obj, submission.auto_score or 0.0, n_essay, essay_scores)
 
     # Check if all essay questions are graded (or if we graded all)
     all_essay_ids = [str(q.id) for q in questions if q.question_type == "ESSAY"]

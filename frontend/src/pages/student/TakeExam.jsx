@@ -96,11 +96,14 @@ export function TakeExam() {
     }
 
     setSubmitting(true);
+    if (saveTimeoutRef.current) {
+      clearTimeout(saveTimeoutRef.current);
+    }
 
     try {
       await api.post(`/student/submissions/${submissionId}/submit`, {
         exam_id: parseInt(examId),
-        answers: answers,
+        answers: latestAnswersRef.current || answers,
         time_spent: exam ? (exam.duration_minutes * 60 - timeLeft) : 0
       });
       toast.success('Nộp bài thi thành công!');
@@ -117,6 +120,10 @@ export function TakeExam() {
   }, [version]);
 
   const [tabSwitches, setTabSwitches] = useState(0);
+  const tabSwitchesRef = useRef(tabSwitches);
+  useEffect(() => {
+    tabSwitchesRef.current = tabSwitches;
+  }, [tabSwitches]);
 
   useEffect(() => {
     const handleVisibilityChange = () => {
@@ -128,34 +135,84 @@ export function TakeExam() {
     return () => window.removeEventListener('visibilitychange', handleVisibilityChange);
   }, []);
 
+  const latestAnswersRef = useRef(answers);
+  useEffect(() => {
+    latestAnswersRef.current = answers;
+  }, [answers]);
+
+  const saveTimeoutRef = useRef(null);
+  const isSavingRef = useRef(false);
+  const pendingSaveRef = useRef(false);
+
+  const executeSave = useCallback(async () => {
+    if (!submissionId || submitting) return;
+    if (isSavingRef.current) {
+      pendingSaveRef.current = true;
+      return;
+    }
+
+    isSavingRef.current = true;
+    setSaveStatus('saving');
+    const answersToSend = latestAnswersRef.current;
+    const currentVer = versionRef.current;
+    const switches = tabSwitchesRef.current;
+
+    try {
+      const res = await api.post(`/student/submissions/${submissionId}/save`, {
+        answers: answersToSend,
+        version: currentVer,
+        tab_switches: switches
+      });
+      if (res.data?.version) {
+        setVersion(res.data.version);
+        versionRef.current = res.data.version;
+      }
+      setSaveStatus('saved');
+    } catch (err) {
+      setSaveStatus('saved');
+      if (err.response?.status === 409) {
+        setServerAnswers(err.response.data.detail?.current_answers || {});
+        setConflictModal(true);
+        if (err.response.data.detail?.server_version) {
+          versionRef.current = err.response.data.detail.server_version;
+          setVersion(err.response.data.detail.server_version);
+        }
+      }
+    } finally {
+      isSavingRef.current = false;
+      if (pendingSaveRef.current) {
+        pendingSaveRef.current = false;
+        setTimeout(executeSave, 150);
+      }
+    }
+  }, [submissionId, submitting]);
+
   const handleAnswerChange = useCallback((questionId, value) => {
     setAnswers(prev => {
-      const updatedAnswers = { ...prev, [questionId]: value };
-      if (submissionId && !submitting) {
-        setSaveStatus('saving');
-        api.post(`/student/submissions/${submissionId}/save`, {
-          answers: updatedAnswers,
-          version: versionRef.current,
-          tab_switches: tabSwitches
-        })
-        .then(res => {
-          if (res.data?.version) {
-            setVersion(res.data.version);
-            versionRef.current = res.data.version;
-          }
-          setSaveStatus('saved');
-        })
-        .catch(err => {
-          setSaveStatus('saved');
-          if (err.response?.status === 409) {
-            setServerAnswers(err.response.data.detail?.current_answers || {});
-            setConflictModal(true);
-          }
-        });
-      }
-      return updatedAnswers;
+      const next = { ...prev, [questionId]: value };
+      latestAnswersRef.current = next;
+      return next;
     });
-  }, [submissionId, submitting, tabSwitches]);
+
+    if (saveTimeoutRef.current) {
+      clearTimeout(saveTimeoutRef.current);
+    }
+
+    // Debounce 800ms for text input, or 150ms for options/clicks
+    const isText = typeof value === 'string' && value.length > 1;
+    const delay = isText ? 800 : 150;
+    saveTimeoutRef.current = setTimeout(() => {
+      executeSave();
+    }, delay);
+  }, [executeSave]);
+
+  useEffect(() => {
+    return () => {
+      if (saveTimeoutRef.current) {
+        clearTimeout(saveTimeoutRef.current);
+      }
+    };
+  }, []);
 
   const toggleBookmark = useCallback((qId) => {
     setBookmarked(prev => ({ ...prev, [qId]: !prev[qId] }));

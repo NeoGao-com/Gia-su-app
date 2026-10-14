@@ -60,8 +60,8 @@ createRoot(document.getElementById('root')).render(
             <Route path="/teacher/ai-config" element={<AIConfigManagement />} />
             <Route path="/teacher/exams" element={<ExamCreator />} />
             <Route path="/teacher/exams/create" element={<ExamCreator />} />
-            <Route path="/teacher/exams/manage" element={<ExamManagement />} />
-            <Route path="/teacher/exam-management" element={<ExamManagement />} />
+            <Route path="/teacher/exams/manage" element={<ExamCreator />} />
+            <Route path="/teacher/exam-management" element={<ExamCreator />} />
             <Route path="/teacher/assignments" element={<AssignmentManagement />} />
             <Route path="/teacher/profile" element={<TeacherProfile />} />
           </Route>

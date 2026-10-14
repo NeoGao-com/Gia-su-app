@@ -3,6 +3,7 @@ import { Modal } from './Modal';
 import { BookOpen, Image as ImageIcon, CheckCircle2, HelpCircle, Plus, Trash2, Eye, EyeOff } from 'lucide-react';
 import api, { resolveImageUrl } from '../api/axios';
 import { MathRenderer } from './MathRenderer';
+import { MathVirtualKeyboard } from './MathVirtualKeyboard';
 
 const mergeFormData = (initialData) => {
   const base = {
@@ -63,6 +64,8 @@ export function CreateQuestionModal({ isOpen, onClose, onSubmit, initialData }) 
   const [showPreview, setShowPreview] = useState(true);
   const [busy, setBusy] = useState(false);
   const formRef = useRef(null);
+  const contentInputRef = useRef(null);
+  const activeInputRef = useRef(null);
 
   // Submit bằng Ctrl+Enter
   useEffect(() => {
@@ -129,7 +132,16 @@ export function CreateQuestionModal({ isOpen, onClose, onSubmit, initialData }) 
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} title={initialData?.id ? "Chỉnh sửa câu hỏi" : "Tạo câu hỏi mới"} size="lg">
-      <form ref={formRef} onSubmit={handleSubmit} className="space-y-5 p-1 max-h-[80vh] overflow-y-auto pr-2">
+      <form 
+        ref={formRef} 
+        onSubmit={handleSubmit} 
+        onFocusCapture={(e) => {
+          if (e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA')) {
+            activeInputRef.current = e.target;
+          }
+        }}
+        className="space-y-5 p-1 max-h-[80vh] overflow-y-auto pr-2"
+      >
         {/* Section 1: Phân loại */}
         <div className="bg-slate-50/70 p-4 rounded-2xl border border-slate-200/80 space-y-3">
           <h4 className="text-xs font-bold text-indigo-900 uppercase tracking-wider flex items-center space-x-1.5">
@@ -197,12 +209,25 @@ export function CreateQuestionModal({ isOpen, onClose, onSubmit, initialData }) 
                 <span>{showPreview ? 'Ẩn xem trước' : 'Xem trước'}</span>
               </button>
             </div>
-            <textarea value={formData.content} onChange={e => setField('content', e.target.value)} className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-sm font-medium focus:outline-none focus:border-indigo-600 focus:ring-2 focus:ring-indigo-500/20 text-slate-800" rows="3" placeholder={formData.question_type === 'SHORT_ANSWER' ? "Ví dụ: Thủ đô của /key là Hà Nội." : "Nhập nội dung câu hỏi..."} required />
+            <textarea 
+              ref={contentInputRef}
+              value={formData.content} 
+              onChange={e => setField('content', e.target.value)} 
+              className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-sm font-medium focus:outline-none focus:border-indigo-600 focus:ring-2 focus:ring-indigo-500/20 text-slate-800" 
+              rows="3" 
+              placeholder={formData.question_type === 'SHORT_ANSWER' ? "Ví dụ: Thủ đô của /key là Hà Nội." : "Nhập nội dung câu hỏi..."} 
+              required 
+            />
             {showPreview && formData.content && (
               <div className="mt-2 p-3 bg-white border border-slate-200 rounded-xl">
                 <MathRenderer content={formData.content} />
               </div>
             )}
+            <MathVirtualKeyboard 
+              targetRef={() => activeInputRef.current || contentInputRef.current} 
+              className="mt-3" 
+              defaultOpen={false} 
+            />
           </div>
 
           <div className="space-y-2 pt-2 border-t border-slate-200">
