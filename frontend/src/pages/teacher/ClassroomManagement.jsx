@@ -11,6 +11,7 @@ import {
 import { Modal } from '../../components/Modal';
 import { EditAssignmentModal } from '../../components/EditAssignmentModal';
 import { ClassroomDiscussionsModal } from '../../components/ClassroomDiscussionsModal';
+import { StudentAssignmentProgressModal } from '../../components/StudentAssignmentProgressModal';
 import { useToast } from '../../context/ToastContext';
 
 export function ClassroomManagement() {
@@ -22,6 +23,10 @@ export function ClassroomManagement() {
   const [allStudents, setAllStudents] = useState([]);
   const [isDiscussionModalOpen, setIsDiscussionModalOpen] = useState(false);
   const [discussionModalClass, setDiscussionModalClass] = useState(null);
+
+  // Student progress modal state
+  const [selectedStudentForProgress, setSelectedStudentForProgress] = useState(null);
+  const [isProgressModalOpen, setIsProgressModalOpen] = useState(false);
   
   const [isClassModalOpen, setIsClassModalOpen] = useState(false);
   const [isStudentModalOpen, setIsStudentModalOpen] = useState(false);
@@ -702,14 +707,19 @@ export function ClassroomManagement() {
                         studentsInClass.map((s) => (
                           <div
                             key={s.id}
-                            className="p-3.5 bg-slate-50 hover:bg-white hover:shadow-sm border border-slate-200/80 rounded-xl flex items-center justify-between transition"
+                            className="p-3.5 bg-slate-50 hover:bg-white hover:shadow-md hover:border-indigo-200 border border-slate-200/80 rounded-xl flex items-center justify-between transition cursor-pointer group"
+                            onClick={() => {
+                              setSelectedStudentForProgress(s);
+                              setIsProgressModalOpen(true);
+                            }}
+                            title="Bấm để xem chi tiết tiến độ bài tập và lịch sử nộp bài"
                           >
                             <div className="flex items-center space-x-3.5 min-w-0">
-                              <div className="w-9 h-9 rounded-xl bg-indigo-100 text-indigo-700 font-extrabold flex items-center justify-center text-sm shadow-xs shrink-0">
+                              <div className="w-9 h-9 rounded-xl bg-indigo-100 text-indigo-700 font-extrabold flex items-center justify-center text-sm shadow-xs shrink-0 group-hover:bg-indigo-600 group-hover:text-white transition">
                                 {(s.full_name || s.email || '?').charAt(0).toUpperCase()}
                               </div>
                               <div className="min-w-0">
-                                <h4 className="font-bold text-sm text-slate-800 truncate">{s.full_name || 'Chưa đặt tên'}</h4>
+                                <h4 className="font-bold text-sm text-slate-800 truncate group-hover:text-indigo-600 transition">{s.full_name || 'Chưa đặt tên'}</h4>
                                 <div className="flex flex-wrap items-center gap-2 mt-0.5 text-xs">
                                   <span className="text-slate-400 font-mono text-[11px]">{s.email}</span>
                                   {s.phone_number && (
@@ -733,10 +743,21 @@ export function ClassroomManagement() {
                               </div>
                             </div>
 
-                            <div className="flex items-center space-x-1.5 shrink-0">
+                            <div className="flex items-center space-x-1.5 shrink-0" onClick={(e) => e.stopPropagation()}>
                               <span className="text-[11px] bg-emerald-50 text-emerald-700 border border-emerald-200/60 font-bold px-2.5 py-0.5 rounded-full hidden sm:inline-block">
                                 Hoạt động
                               </span>
+                              <button
+                                onClick={() => {
+                                  setSelectedStudentForProgress(s);
+                                  setIsProgressModalOpen(true);
+                                }}
+                                className="text-indigo-600 hover:text-indigo-800 bg-indigo-50/70 hover:bg-indigo-100/80 px-2.5 py-1.5 rounded-lg transition flex items-center space-x-1.5 text-xs font-bold border border-indigo-200/60"
+                                title="Xem tiến độ bài tập và lịch sử làm bài"
+                              >
+                                <FileText className="w-3.5 h-3.5 text-indigo-600" />
+                                <span className="hidden sm:inline">Tiến độ bài tập</span>
+                              </button>
                               <button
                                 onClick={() => handleOpenEditStudent(s)}
                                 className="text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 p-1.5 rounded-lg transition"
@@ -1571,6 +1592,16 @@ export function ClassroomManagement() {
             classroomId={discussionModalClass?.id}
             classroomName={discussionModalClass?.name}
             isTeacher={true}
+          />
+
+          <StudentAssignmentProgressModal
+            isOpen={isProgressModalOpen}
+            onClose={() => {
+              setIsProgressModalOpen(false);
+              setSelectedStudentForProgress(null);
+            }}
+            student={selectedStudentForProgress}
+            classroom={selectedClass}
           />
         </main>
       </div>

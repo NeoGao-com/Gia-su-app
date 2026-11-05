@@ -1,246 +1,511 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback, useTransition } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { Navbar } from '../../components/Navbar';
 import { Sidebar } from '../../components/Sidebar';
-import { TrendingUp, Users, Award, BookOpen, BarChart3, School, FileText, CheckCircle2 } from 'lucide-react';
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
+import {
+  BarChart3,
+  TrendingUp,
+  BookOpen,
+  Sparkles,
+  HelpCircle,
+  RefreshCw,
+  AlertTriangle,
+  Flame,
+  ArrowRight,
+} from 'lucide-react';
 import api from '../../api/axios';
+import { AnalyticsFilterBar } from '../../components/analytics/AnalyticsFilterBar';
+import { ScoreDistributionChart } from '../../components/analytics/ScoreDistributionChart';
+import { TopicPerformanceTable } from '../../components/analytics/TopicPerformanceTable';
+import { RecommendationsPanel } from '../../components/analytics/RecommendationsPanel';
+import { QuestionAnomaliesList } from '../../components/analytics/QuestionAnomaliesList';
 
 export function Analytics() {
-  const [activeTab, setActiveTab] = useState('overview'); // 'overview' | 'exams' | 'classrooms'
-  const [stats, setStats] = useState({
-    exams_count: 0,
-    questions_count: 0,
-    classrooms_count: 0,
-    submissions_count: 0,
-    average_score: 0,
-    score_distribution: []
-  });
-  const [examsList, setExamsList] = useState([]);
-  const [classroomsList, setClassroomsList] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [, startTransition] = useTransition();
 
+  // Active Tab from URL or default to 'overview'
+  const activeTab = searchParams.get('tab') || 'overview';
+
+  // Filters state initialized from URL search params
+  const [filters, setFilters] = useState(() => ({
+    classroom_id:
+      searchParams.get('classroom_id') ||
+      searchParams.get('classroomId') ||
+      '',
+    exam_id: searchParams.get('exam_id') || searchParams.get('examId') || '',
+    student_id:
+      searchParams.get('student_id') ||
+      searchParams.get('studentId') ||
+      '',
+    date_range:
+      searchParams.get('date_range') ||
+      searchParams.get('dateRange') ||
+      'all',
+    attempt_filter:
+      searchParams.get('attempt_filter') ||
+      searchParams.get('attemptFilter') ||
+      'best',
+  }));
+
+  // Metadata dropdown options
+  const [classrooms, setClassrooms] = useState([]);
+  const [exams, setExams] = useState([]);
+  const [students, setStudents] = useState([]);
+
+  // Analytics Response States
+  const [dashboardData, setDashboardData] = useState(null);
+  const [topicsData, setTopicsData] = useState(null);
+  const [recommendationsData, setRecommendationsData] = useState(null);
+  const [questionsData, setQuestionsData] = useState(null);
+
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  // Sync state if URL query params change externally (e.g. back/forward navigation or drill-downs)
   useEffect(() => {
-    const fetchData = async () => {
+    const urlClassroomId =
+      searchParams.get('classroom_id') || searchParams.get('classroomId') || '';
+    const urlExamId =
+      searchParams.get('exam_id') || searchParams.get('examId') || '';
+    const urlStudentId =
+      searchParams.get('student_id') || searchParams.get('studentId') || '';
+    const urlDateRange =
+      searchParams.get('date_range') || searchParams.get('dateRange') || 'all';
+    const urlAttemptFilter =
+      searchParams.get('attempt_filter') ||
+      searchParams.get('attemptFilter') ||
+      'best';
+
+    setFilters((prev) => {
+      if (
+        prev.classroom_id === urlClassroomId &&
+        prev.exam_id === urlExamId &&
+        prev.student_id === urlStudentId &&
+        prev.date_range === urlDateRange &&
+        prev.attempt_filter === urlAttemptFilter
+      ) {
+        return prev;
+      }
+      return {
+        classroom_id: urlClassroomId,
+        exam_id: urlExamId,
+        student_id: urlStudentId,
+        date_range: urlDateRange,
+        attempt_filter: urlAttemptFilter,
+      };
+    });
+  }, [searchParams]);
+
+  // Tab change handler
+  const handleTabChange = (tabKey) => {
+    startTransition(() => {
+      const nextParams = new URLSearchParams(searchParams);
+      if (tabKey === 'overview') {
+        nextParams.delete('tab');
+      } else {
+        nextParams.set('tab', tabKey);
+      }
+      setSearchParams(nextParams, { replace: true });
+    });
+  };
+
+  // Load teacher classrooms & exams metadata on mount
+  useEffect(() => {
+    let cancelled = false;
+    const fetchMetadata = async () => {
       try {
-        setLoading(true);
-        const [summaryRes, examsRes, classRes] = await Promise.all([
-          api.get('/analytics/summary').catch(() => ({ data: {} })),
-          api.get('/exams').catch(() => ({ data: [] })),
-          api.get('/classrooms', { params: { limit: 100 } }).catch(() => ({ data: [] }))
+        const [classRes, examRes] = await Promise.all([
+          api.get('/classrooms', { params: { limit: 100 } }).catch(() => ({ data: [] })),
+          api.get('/exams', { params: { limit: 100 } }).catch(() => ({ data: [] })),
         ]);
 
-        setStats(summaryRes.data || {});
-        setExamsList(Array.isArray(examsRes.data?.items) ? examsRes.data.items : (Array.isArray(examsRes.data) ? examsRes.data : []));
-        const classes = Array.isArray(classRes.data?.items) ? classRes.data.items : (Array.isArray(classRes.data) ? classRes.data : []);
-        setClassroomsList(classes);
+        if (cancelled) return;
+
+        const classList = Array.isArray(classRes.data?.items)
+          ? classRes.data.items
+          : Array.isArray(classRes.data)
+            ? classRes.data
+            : [];
+        const examList = Array.isArray(examRes.data?.items)
+          ? examRes.data.items
+          : Array.isArray(examRes.data)
+            ? examRes.data
+            : [];
+
+        setClassrooms(classList);
+        setExams(examList);
       } catch (err) {
-        console.error('Lỗi lấy dữ liệu thống kê:', err);
-      } finally {
-        setLoading(false);
+        console.error('Lỗi tải danh mục lớp và đề thi:', err);
       }
     };
-    fetchData();
+
+    fetchMetadata();
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
-  const chartData = (stats.score_distribution && stats.score_distribution.length > 0)
-    ? stats.score_distribution.map(d => ({
-        range: d.name || d.range,
-        count: d.count || 0
-      }))
-    : [
-        { range: 'Yếu (< 5)', count: 0 },
-        { range: 'Trung bình (5 - 6.5)', count: 0 },
-        { range: 'Khá (6.5 - 8)', count: 0 },
-        { range: 'Giỏi (>= 8)', count: 0 }
-      ];
+  // Fetch students for selected classroom or all classrooms
+  useEffect(() => {
+    let cancelled = false;
+    const fetchStudents = async () => {
+      try {
+        if (filters.classroom_id) {
+          const res = await api
+            .get(`/classrooms/${filters.classroom_id}`)
+            .catch(() => ({ data: {} }));
+          if (cancelled) return;
+          const classStudents = res.data?.students || [];
+          setStudents(classStudents);
+        } else {
+          const res = await api
+            .get('/classrooms/students/all')
+            .catch(() => ({ data: [] }));
+          if (cancelled) return;
+          const allStudents = Array.isArray(res.data) ? res.data : [];
+          setStudents(allStudents);
+        }
+      } catch (err) {
+        console.error('Lỗi tải danh sách học sinh:', err);
+      }
+    };
+
+    fetchStudents();
+    return () => {
+      cancelled = true;
+    };
+  }, [filters.classroom_id]);
+
+  // Compute date strings for backend filtering
+  const computeDateRangeParams = (range) => {
+    if (!range || range === 'all') return {};
+    const now = new Date();
+    let days = 0;
+    if (range === '7d') days = 7;
+    if (range === '30d') days = 30;
+    if (range === '90d') days = 90;
+
+    const startDate = new Date(now.getTime() - days * 24 * 60 * 60 * 1000);
+    return {
+      start_date: startDate.toISOString(),
+      end_date: now.toISOString(),
+    };
+  };
+
+  // Fetch all analytics datasets
+  const fetchAnalyticsData = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+
+    const dateParams = computeDateRangeParams(filters.date_range);
+    const queryParams = {
+      ...(filters.classroom_id ? { classroom_id: Number(filters.classroom_id) } : {}),
+      ...(filters.exam_id ? { exam_id: Number(filters.exam_id) } : {}),
+      ...(filters.student_id ? { student_id: Number(filters.student_id) } : {}),
+      attempt_filter: filters.attempt_filter || 'best',
+      ...dateParams,
+    };
+
+    try {
+      const [dashRes, topicsRes, recsRes, questionsRes] = await Promise.all([
+        api.get('/analytics/dashboard', { params: queryParams }).catch((err) => {
+          console.warn('Dashboard API error:', err);
+          return { data: null };
+        }),
+        api.get('/analytics/topics', { params: queryParams }).catch((err) => {
+          console.warn('Topics API error:', err);
+          return { data: null };
+        }),
+        api
+          .get('/analytics/recommendations', {
+            params: {
+              ...(filters.classroom_id ? { classroom_id: Number(filters.classroom_id) } : {}),
+              ...(filters.exam_id ? { exam_id: Number(filters.exam_id) } : {}),
+            },
+          })
+          .catch((err) => {
+            console.warn('Recommendations API error:', err);
+            return { data: null };
+          }),
+        api
+          .get('/analytics/questions', {
+            params: {
+              ...(filters.exam_id ? { exam_id: Number(filters.exam_id) } : {}),
+              ...(filters.classroom_id ? { classroom_id: Number(filters.classroom_id) } : {}),
+            },
+          })
+          .catch((err) => {
+            console.warn('Questions API error:', err);
+            return { data: null };
+          }),
+      ]);
+
+      setDashboardData(dashRes.data);
+      setTopicsData(topicsRes.data);
+      setRecommendationsData(recsRes.data);
+      setQuestionsData(questionsRes.data);
+    } catch (err) {
+      console.error('Lỗi khi tải dữ liệu phân tích:', err);
+      setError('Không thể tải dữ liệu thống kê. Vui lòng thử lại sau.');
+    } finally {
+      setLoading(false);
+    }
+  }, [filters]);
+
+  useEffect(() => {
+    fetchAnalyticsData();
+  }, [fetchAnalyticsData]);
+
+  const handleFilterChange = (newFilters) => {
+    setFilters(newFilters);
+  };
+
+  const handleResetFilters = () => {
+    setFilters({
+      classroom_id: '',
+      exam_id: '',
+      student_id: '',
+      date_range: 'all',
+      attempt_filter: 'best',
+    });
+  };
+
+  const topWeakTopics = dashboardData?.top_weak_topics || [];
+  const recSummary = dashboardData?.recommendations_summary || recommendationsData?.summary;
 
   return (
     <div className="min-h-screen bg-slate-50 font-sans">
       <Navbar />
       <div className="flex">
         <Sidebar role="teacher" />
-        <main className="flex-1 p-6 lg:p-8 max-w-7xl mx-auto w-full">
-          <div className="mb-6">
-            <h1 className="text-2xl font-extrabold text-slate-900 tracking-tight flex items-center space-x-2">
-              <BarChart3 className="w-7 h-7 text-indigo-600" />
-              <span>Thống kê & Phân tích chất lượng</span>
-            </h1>
-            <p className="text-xs sm:text-sm text-slate-500 mt-1">
-              Phân tích phổ điểm, chất lượng giảng dạy phân tầng theo tổng quan, từng đề thi và từng lớp học.
-            </p>
+        <main className="flex-1 p-5 sm:p-6 lg:p-8 max-w-7xl mx-auto w-full">
+          {/* Page Header */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+            <div>
+              <div className="inline-flex items-center space-x-2 px-3 py-1 rounded-full text-xs font-semibold bg-indigo-50 text-indigo-700 border border-indigo-100 mb-2">
+                <Sparkles className="w-3.5 h-3.5" />
+                <span>Trí tuệ Nhân tạo & Thống kê Sư phạm</span>
+              </div>
+              <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight flex items-center space-x-2.5">
+                <BarChart3 className="w-8 h-8 text-indigo-600" />
+                <span>Thống kê & Phân tích chất lượng</span>
+              </h1>
+              <p className="text-xs sm:text-sm text-slate-500 mt-1">
+                Phân tích phổ điểm 10 mốc chuẩn, đánh giá năng lực theo chuyên đề và tự động đưa ra khuyến nghị can thiệp.
+              </p>
+            </div>
+
+            <div className="flex items-center space-x-2">
+              <button
+                type="button"
+                onClick={fetchAnalyticsData}
+                disabled={loading}
+                className="inline-flex items-center space-x-2 px-3.5 py-2 rounded-xl text-xs font-bold bg-white border border-slate-200/90 text-slate-700 hover:bg-slate-50 shadow-2xs active:scale-95 transition disabled:opacity-50"
+              >
+                <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin text-indigo-600' : ''}`} />
+                <span>Làm mới</span>
+              </button>
+            </div>
           </div>
 
-          {/* Tab Navigation */}
+          {/* 1. Multi-Dimensional Filter Bar */}
+          <AnalyticsFilterBar
+            classrooms={classrooms}
+            exams={exams}
+            students={students}
+            filters={filters}
+            onFilterChange={handleFilterChange}
+            onReset={handleResetFilters}
+            loading={loading}
+          />
+
+          {/* Error Banner */}
+          {error && (
+            <div className="mb-6 p-4 rounded-2xl bg-rose-50 border border-rose-200 flex items-start space-x-3 text-rose-800 text-xs">
+              <AlertTriangle className="w-5 h-5 text-rose-600 shrink-0 mt-0.5" />
+              <div className="flex-1">
+                <h4 className="font-bold">Đã xảy ra sự cố khi tải dữ liệu</h4>
+                <p className="mt-0.5">{error}</p>
+              </div>
+              <button
+                type="button"
+                onClick={fetchAnalyticsData}
+                className="px-3 py-1 rounded-lg bg-rose-600 text-white font-bold hover:bg-rose-700 transition"
+              >
+                Thử lại
+              </button>
+            </div>
+          )}
+
+          {/* 2. Modern Tab Navigation */}
           <div className="flex flex-wrap items-center gap-2 mb-6">
             <button
-              onClick={() => setActiveTab('overview')}
-              className={`px-4 py-2.5 rounded-xl font-bold text-xs sm:text-sm transition flex items-center space-x-2 ${activeTab === 'overview' ? 'bg-indigo-600 text-white shadow-xs' : 'bg-white border border-slate-200 text-slate-700 hover:bg-slate-50'}`}
+              type="button"
+              onClick={() => handleTabChange('overview')}
+              className={`px-4 py-2.5 rounded-xl font-bold text-xs sm:text-sm transition flex items-center space-x-2 ${
+                activeTab === 'overview'
+                  ? 'bg-indigo-600 text-white shadow-xs'
+                  : 'bg-white border border-slate-200 text-slate-700 hover:bg-slate-50'
+              }`}
             >
               <TrendingUp className="w-4 h-4" />
-              <span>Tổng quan chung</span>
+              <span>Tổng quan & Phổ điểm</span>
             </button>
 
             <button
-              onClick={() => setActiveTab('exams')}
-              className={`px-4 py-2.5 rounded-xl font-bold text-xs sm:text-sm transition flex items-center space-x-2 ${activeTab === 'exams' ? 'bg-indigo-600 text-white shadow-xs' : 'bg-white border border-slate-200 text-slate-700 hover:bg-slate-50'}`}
+              type="button"
+              onClick={() => handleTabChange('topics')}
+              className={`px-4 py-2.5 rounded-xl font-bold text-xs sm:text-sm transition flex items-center space-x-2 ${
+                activeTab === 'topics'
+                  ? 'bg-indigo-600 text-white shadow-xs'
+                  : 'bg-white border border-slate-200 text-slate-700 hover:bg-slate-50'
+              }`}
             >
-              <FileText className="w-4 h-4" />
-              <span>Phân tích theo Đề thi ({examsList.length})</span>
+              <BookOpen className="w-4 h-4" />
+              <span>Chuyên đề & Dạng bài</span>
+              {topicsData?.topics?.length > 0 && (
+                <span
+                  className={`px-2 py-0.5 rounded-full text-[11px] ${
+                    activeTab === 'topics'
+                      ? 'bg-white/20 text-white'
+                      : 'bg-slate-100 text-slate-600'
+                  }`}
+                >
+                  {topicsData.topics.length}
+                </span>
+              )}
             </button>
 
             <button
-              onClick={() => setActiveTab('classrooms')}
-              className={`px-4 py-2.5 rounded-xl font-bold text-xs sm:text-sm transition flex items-center space-x-2 ${activeTab === 'classrooms' ? 'bg-indigo-600 text-white shadow-xs' : 'bg-white border border-slate-200 text-slate-700 hover:bg-slate-50'}`}
+              type="button"
+              onClick={() => handleTabChange('recommendations')}
+              className={`px-4 py-2.5 rounded-xl font-bold text-xs sm:text-sm transition flex items-center space-x-2 ${
+                activeTab === 'recommendations'
+                  ? 'bg-indigo-600 text-white shadow-xs'
+                  : 'bg-white border border-slate-200 text-slate-700 hover:bg-slate-50'
+              }`}
             >
-              <School className="w-4 h-4" />
-              <span>Phân tích theo Lớp học ({classroomsList.length})</span>
+              <Sparkles className="w-4 h-4" />
+              <span>Khuyến nghị sư phạm</span>
+              {recSummary?.high_priority_count > 0 && (
+                <span className="px-2 py-0.5 rounded-full text-[11px] font-bold bg-rose-500 text-white">
+                  {recSummary.high_priority_count}
+                </span>
+              )}
+            </button>
+
+            <button
+              type="button"
+              onClick={() => handleTabChange('questions')}
+              className={`px-4 py-2.5 rounded-xl font-bold text-xs sm:text-sm transition flex items-center space-x-2 ${
+                activeTab === 'questions'
+                  ? 'bg-indigo-600 text-white shadow-xs'
+                  : 'bg-white border border-slate-200 text-slate-700 hover:bg-slate-50'
+              }`}
+            >
+              <HelpCircle className="w-4 h-4" />
+              <span>Phân tích câu hỏi & Bẫy</span>
+              {questionsData?.questions?.filter((q) => q.is_flagged_anomaly)
+                .length > 0 && (
+                <span
+                  className={`px-2 py-0.5 rounded-full text-[11px] font-bold ${
+                    activeTab === 'questions'
+                      ? 'bg-white/20 text-white'
+                      : 'bg-purple-100 text-purple-700'
+                  }`}
+                >
+                  {
+                    questionsData.questions.filter((q) => q.is_flagged_anomaly)
+                      .length
+                  }
+                </span>
+              )}
             </button>
           </div>
 
-          {activeTab === 'overview' && (
-            <div className="space-y-6">
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-                <div className="bg-white p-5 rounded-2xl border border-slate-200/90 shadow-sm flex items-center space-x-4">
-                  <div className="bg-indigo-50 text-indigo-600 p-3.5 rounded-xl">
-                    <Users className="w-6 h-6" />
-                  </div>
-                  <div>
-                    <p className="text-xs text-slate-400 font-semibold uppercase tracking-wider">Tổng số bài nộp</p>
-                    <h3 className="text-2xl font-black text-slate-900 mt-0.5 tabular-nums">{loading ? '...' : (stats.submissions_count || 0)}</h3>
-                  </div>
-                </div>
-
-                <div className="bg-white p-5 rounded-2xl border border-slate-200/90 shadow-sm flex items-center space-x-4">
-                  <div className="bg-emerald-50 text-emerald-600 p-3.5 rounded-xl">
-                    <TrendingUp className="w-6 h-6" />
-                  </div>
-                  <div>
-                    <p className="text-xs text-slate-400 font-semibold uppercase tracking-wider">Điểm trung bình</p>
-                    <h3 className="text-2xl font-black text-emerald-700 mt-0.5 tabular-nums">{loading ? '...' : (stats.average_score || 0)}</h3>
-                  </div>
-                </div>
-
-                <div className="bg-white p-5 rounded-2xl border border-slate-200/90 shadow-sm flex items-center space-x-4">
-                  <div className="bg-blue-50 text-blue-600 p-3.5 rounded-xl">
-                    <BookOpen className="w-6 h-6" />
-                  </div>
-                  <div>
-                    <p className="text-xs text-slate-400 font-semibold uppercase tracking-wider">Tổng đề thi</p>
-                    <h3 className="text-2xl font-black text-slate-900 mt-0.5 tabular-nums">{loading ? '...' : (stats.exams_count || 0)}</h3>
-                  </div>
-                </div>
-
-                <div className="bg-white p-5 rounded-2xl border border-slate-200/90 shadow-sm flex items-center space-x-4">
-                  <div className="bg-amber-50 text-amber-600 p-3.5 rounded-xl">
-                    <Award className="w-6 h-6" />
-                  </div>
-                  <div>
-                    <p className="text-xs text-slate-400 font-semibold uppercase tracking-wider">Tổng câu hỏi</p>
-                    <h3 className="text-2xl font-black text-slate-900 mt-0.5 tabular-nums">{loading ? '...' : (stats.questions_count || 0)}</h3>
-                  </div>
-                </div>
+          {/* 3. Tab Contents */}
+          {loading && !dashboardData ? (
+            <div className="py-24 text-center">
+              <div className="w-12 h-12 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center mx-auto mb-4 animate-spin">
+                <RefreshCw className="w-6 h-6" />
               </div>
-
-              <div className="bg-white p-6 rounded-2xl border border-slate-200/90 shadow-sm">
-                <h2 className="text-base font-bold text-slate-900 mb-4 flex items-center space-x-2">
-                  <BarChart3 className="w-5 h-5 text-indigo-600" />
-                  <span>Biểu đồ Phổ điểm Tổng thể</span>
-                </h2>
-                <div className="h-72 w-full">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={chartData}>
-                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E2E8F0" />
-                      <XAxis dataKey="range" tick={{ fill: '#64748B', fontSize: 12 }} />
-                      <YAxis allowDecimals={false} tick={{ fill: '#64748B', fontSize: 12 }} />
-                      <Tooltip 
-                        contentStyle={{ borderRadius: '12px', border: '1px solid #E2E8F0', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
-                        formatter={(value) => [`${value} bài`, 'Số lượng']} 
-                      />
-                      <Bar dataKey="count" fill="#4F46E5" radius={[6, 6, 0, 0]} />
-                    </BarChart>
-                  </ResponsiveContainer>
-                </div>
-              </div>
+              <h3 className="text-sm font-bold text-slate-800">
+                Đang tổng hợp dữ liệu thống kê...
+              </h3>
+              <p className="text-xs text-slate-400 mt-1">
+                Đang tính toán phổ điểm 10 mốc và phân tích năng lực chuyên đề
+              </p>
             </div>
-          )}
-
-          {activeTab === 'exams' && (
-            <div className="bg-white rounded-2xl border border-slate-200/90 shadow-sm overflow-hidden">
-              <div className="p-4 border-b border-slate-100 font-bold text-sm text-slate-800">
-                Thống kê chi tiết theo từng bài thi ({examsList.length})
-              </div>
-              {examsList.length === 0 ? (
-                <div className="p-12 text-center text-slate-400">Chưa có đề thi nào trong hệ thống.</div>
-              ) : (
-                <div className="overflow-x-auto">
-                  <table className="w-full text-left border-collapse">
-                    <thead>
-                      <tr className="bg-slate-50 text-[11px] font-bold text-slate-500 uppercase tracking-wider border-b border-slate-200">
-                        <th className="p-4">Tên bài thi</th>
-                        <th className="p-4">Thời gian</th>
-                        <th className="p-4">Số lượng câu hỏi</th>
-                        <th className="p-4">Trạng thái</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-100 text-sm">
-                      {examsList.map((exam) => (
-                        <tr key={exam.id} className="hover:bg-slate-50/80 transition">
-                          <td className="p-4 font-bold text-slate-900">{exam.title}</td>
-                          <td className="p-4 text-slate-600 tabular-nums">{exam.duration_minutes} phút</td>
-                          <td className="p-4 font-semibold text-indigo-700 tabular-nums">{exam.question_count ?? (exam.questions?.length || 0)} câu</td>
-                          <td className="p-4">
-                            <span className={`inline-flex items-center space-x-1 px-2.5 py-0.5 rounded-full text-xs font-bold border ${
-                              exam.is_published 
-                                ? 'bg-emerald-50 border-emerald-200 text-emerald-700' 
-                                : 'bg-amber-50 border-amber-200 text-amber-700'
-                            }`}>
-                              {exam.is_published ? (
-                                <>
-                                  <CheckCircle2 className="w-3.5 h-3.5" />
-                                  <span>Đã xuất bản</span>
-                                </>
-                              ) : (
-                                <span>Bản nháp</span>
-                              )}
-                            </span>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              )}
-            </div>
-          )}
-
-          {activeTab === 'classrooms' && (
-            <div className="bg-white rounded-2xl border border-slate-200/90 shadow-sm overflow-hidden">
-              <div className="p-4 border-b border-slate-100 font-bold text-sm text-slate-800">
-                Thống kê chi tiết theo từng lớp học ({classroomsList.length})
-              </div>
-              {classroomsList.length === 0 ? (
-                <div className="p-12 text-center text-slate-400">Chưa có lớp học nào.</div>
-              ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 p-6">
-                  {classroomsList.map((c) => (
-                    <div key={c.id} className="p-5 border border-slate-200 rounded-xl bg-white hover:border-indigo-300 hover:shadow-sm transition">
-                      <div className="flex items-center space-x-3 mb-3">
-                        <div className="p-3 bg-indigo-50 text-indigo-600 rounded-xl">
-                          <School className="w-6 h-6" />
+          ) : (
+            <div>
+              {/* TAB 1: OVERVIEW & SCORE DISTRIBUTION */}
+              {activeTab === 'overview' && (
+                <div className="space-y-6">
+                  {/* Top Weak Topics Alert Spotlight (if any) */}
+                  {topWeakTopics.length > 0 && (
+                    <div className="bg-gradient-to-r from-rose-500/10 via-amber-500/10 to-indigo-500/10 border border-rose-200 p-4 sm:p-5 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                      <div className="flex items-start space-x-3">
+                        <div className="w-9 h-9 rounded-xl bg-rose-600 text-white flex items-center justify-center shrink-0 shadow-xs">
+                          <Flame className="w-5 h-5" />
                         </div>
                         <div>
-                          <h4 className="font-bold text-slate-900 text-base">{c.name}</h4>
-                          <span className="text-xs text-slate-400 font-mono">Mã lớp: {c.code || c.id}</span>
+                          <div className="flex items-center space-x-2">
+                            <h4 className="text-sm font-extrabold text-slate-900">
+                              Phát hiện {topWeakTopics.length} chuyên đề yếu cần củng cố (&lt;60% đúng)
+                            </h4>
+                            <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-100 text-rose-700 uppercase">
+                              Cần lưu ý
+                            </span>
+                          </div>
+                          <p className="text-xs text-slate-600 mt-0.5">
+                            Các chuyên đề: {topWeakTopics.map((t) => `${t.topic} (${Number(t.accuracy_rate).toFixed(1)}%)`).join(', ')}.
+                          </p>
                         </div>
                       </div>
-                      <p className="text-xs text-slate-500 mb-4">{c.description || 'Không có mô tả'}</p>
-                      <div className="flex items-center justify-between text-xs pt-3 border-t border-slate-100 font-semibold text-slate-600">
-                        <span className="tabular-nums">Sĩ số: {c.students?.length || 0} học sinh</span>
-                        <span className="text-indigo-700 font-bold tabular-nums">Đề đã giao: {c.assignments?.length || 0}</span>
-                      </div>
+
+                      <button
+                        type="button"
+                        onClick={() => handleTabChange('recommendations')}
+                        className="inline-flex items-center space-x-1.5 px-4 py-2 rounded-xl text-xs font-bold bg-rose-600 text-white hover:bg-rose-700 shadow-xs active:scale-95 transition shrink-0"
+                      >
+                        <span>Xem khuyến nghị sư phạm</span>
+                        <ArrowRight className="w-3.5 h-3.5" />
+                      </button>
                     </div>
-                  ))}
+                  )}
+
+                  {/* Main Score Distribution Chart Component */}
+                  <ScoreDistributionChart
+                    distribution={dashboardData?.score_distribution}
+                    summary={dashboardData?.summary}
+                  />
                 </div>
+              )}
+
+              {/* TAB 2: TOPIC PERFORMANCE */}
+              {activeTab === 'topics' && (
+                <TopicPerformanceTable
+                  topics={topicsData?.topics || []}
+                  difficultySummary={topicsData?.difficulty_summary || []}
+                  questionTypeSummary={topicsData?.question_type_summary || []}
+                />
+              )}
+
+              {/* TAB 3: RECOMMENDATIONS */}
+              {activeTab === 'recommendations' && (
+                <RecommendationsPanel
+                  recommendations={recommendationsData?.recommendations || []}
+                  summary={recommendationsData?.summary}
+                />
+              )}
+
+              {/* TAB 4: QUESTIONS ANOMALY ANALYSIS */}
+              {activeTab === 'questions' && (
+                <QuestionAnomaliesList
+                  questions={questionsData?.questions || []}
+                  loading={loading}
+                />
               )}
             </div>
           )}

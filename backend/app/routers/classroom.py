@@ -12,7 +12,8 @@ from app.models.question import Question
 from app.schemas.classroom import (
     ClassroomCreate, ClassroomUpdate, ClassroomResponse,
     AssignmentCreate, JoinClassroomRequest, GradebookResponse,
-    PostCreate, PostResponse, CommentCreate, CommentResponse, DiscussionAuthor
+    PostCreate, PostResponse, CommentCreate, CommentResponse, DiscussionAuthor,
+    StudentSubmissionItem, StudentClassAssignmentProgress, StudentAssignmentsProgressResponse
 )
 from app.schemas.assignment import (
     AssignmentResponse, AssignmentCreateBody,
@@ -433,6 +434,290 @@ async def add_student_to_classroom(
     await db.commit()
     await invalidate_classroom_cache()
     return {"message": "Đã thêm học sinh vào lớp thành công"}
+
+
+@router.get(
+    "/{classroom_id}/students/{student_id}/assignments",
+    response_model=StudentAssignmentsProgressResponse,
+    summary="Xem tiến độ và lịch sử làm bài tập của học sinh trong lớp"
+)
+async def get_student_class_assignments(
+    classroom_id: int,
+    student_id: int,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_teacher)
+):
+    # 1. Verify classroom exists and teacher is instructor
+    classroom = await db.get(Classroom, classroom_id)
+    if not classroom or classroom.is_deleted:
+        raise HTTPException(status_code=404, detail="Lớp học không tồn tại")
+    if classroom.instructor_id and classroom.instructor_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Bạn không có quyền quản lý lớp học này")
+
+    # 2. Verify student exists and is active in classroom
+    cs_res = await db.execute(
+        select(User)
+        .join(ClassroomStudent, ClassroomStudent.student_id == User.id)
+        .filter(
+            ClassroomStudent.classroom_id == classroom_id,
+            ClassroomStudent.student_id == student_id,
+            ClassroomStudent.is_active == True,
+            User.is_deleted == False
+        )
+    )
+    student = cs_res.scalars().first()
+    if not student:
+        raise HTTPException(status_code=404, detail="Học sinh không tồn tại hoặc không thuộc lớp này")
+
+    # 3. Fetch active assignments in classroom
+    assign_res = await db.execute(
+        select(Assignment)
+        .options(selectinload(Assignment.exam))
+        .filter(
+            Assignment.classroom_id == classroom_id,
+            Assignment.is_active == True
+        )
+        .order_by(Assignment.assigned_at.desc())
+    )
+    assignments = assign_res.scalars().all()
+    assigned_exam_ids = [a.exam_id for a in assignments if a.exam and not a.exam.is_deleted]
+
+    # Legacy ClassroomExam fallback
+    ce_res = await db.execute(
+        select(ClassroomExam, Exam)
+        .join(Exam, ClassroomExam.exam_id == Exam.id)
+        .filter(
+            ClassroomExam.classroom_id == classroom_id,
+            Exam.is_deleted == False
+        )
+    )
+    legacy_ces = ce_res.all()
+    for ce, ex in legacy_ces:
+        if ce.exam_id not in assigned_exam_ids:
+            assigned_exam_ids.append(ce.exam_id)
+
+    if not assigned_exam_ids:
+        return {
+            "classroom_id": classroom_id,
+            "classroom_name": classroom.name,
+            "student": student,
+            "assignments": []
+        }
+
+    # 4. Fetch all submissions of this student for these assigned exams
+    subs_res = await db.execute(
+        select(ExamSubmission)
+        .filter(
+            ExamSubmission.user_id == student_id,
+            ExamSubmission.exam_id.in_(assigned_exam_ids)
+        )
+        .order_by(ExamSubmission.attempt_number.desc(), ExamSubmission.id.desc())
+    )
+    all_subs = subs_res.scalars().all()
+    subs_by_exam: dict[int, list[ExamSubmission]] = {}
+    for sub in all_subs:
+        subs_by_exam.setdefault(sub.exam_id, []).append(sub)
+
+    # 5. Build assignment progress items
+    progress_items = []
+    processed_exam_ids = set()
+
+    # Process standard assignments
+    for a in assignments:
+        if not a.exam or a.exam.is_deleted or a.exam_id in processed_exam_ids:
+            continue
+        processed_exam_ids.add(a.exam_id)
+        exam = a.exam
+        exam_subs = subs_by_exam.get(a.exam_id, [])
+        completed_subs = [s for s in exam_subs if s.status != "IN_PROGRESS"]
+        latest_sub = exam_subs[0] if exam_subs else None
+
+        effective_max = a.max_attempts or exam.max_attempts or 1
+        effective_duration = a.duration_minutes_override or exam.duration_minutes or 45
+
+        # Determine status
+        if completed_subs:
+            status_str = "COMPLETED"
+            is_completed = True
+        elif latest_sub and latest_sub.status == "IN_PROGRESS":
+            status_str = "IN_PROGRESS"
+            is_completed = False
+        else:
+            status_str = "NOT_STARTED"
+            is_completed = False
+
+        best_score = max((s.score for s in completed_subs if s.score is not None), default=None)
+        latest_submitted_at = completed_subs[0].submitted_at if completed_subs else None
+
+        progress_items.append({
+            "assignment_id": a.id,
+            "exam_id": a.exam_id,
+            "title": exam.title,
+            "description": exam.description,
+            "exam_type": getattr(exam, 'exam_type', 'EXAM') or 'EXAM',
+            "due_date": a.due_date,
+            "open_date": a.open_date,
+            "duration_minutes": effective_duration,
+            "max_attempts": effective_max,
+            "attempts_taken": len(completed_subs),
+            "is_completed": is_completed,
+            "status": status_str,
+            "score": best_score,
+            "submitted_at": latest_submitted_at,
+            "latest_submission_id": latest_sub.id if latest_sub else None,
+            "submissions": [
+                {
+                    "id": s.id,
+                    "attempt_number": s.attempt_number or 1,
+                    "score": s.score,
+                    "auto_score": s.auto_score,
+                    "essay_score": s.essay_score,
+                    "status": s.status,
+                    "grading_status": s.grading_status,
+                    "time_spent": s.time_spent or 0,
+                    "tab_switches": s.tab_switches or 0,
+                    "started_at": s.started_at,
+                    "submitted_at": s.submitted_at
+                }
+                for s in exam_subs
+            ]
+        })
+
+    # Fallback for legacy ClassroomExam items
+    for ce, ex in legacy_ces:
+        if ce.exam_id in processed_exam_ids:
+            continue
+        processed_exam_ids.add(ce.exam_id)
+        exam_subs = subs_by_exam.get(ce.exam_id, [])
+        completed_subs = [s for s in exam_subs if s.status != "IN_PROGRESS"]
+        latest_sub = exam_subs[0] if exam_subs else None
+
+        status_str = "COMPLETED" if completed_subs else ("IN_PROGRESS" if latest_sub else "NOT_STARTED")
+        best_score = max((s.score for s in completed_subs if s.score is not None), default=None)
+
+        progress_items.append({
+            "assignment_id": None,
+            "exam_id": ce.exam_id,
+            "title": ex.title,
+            "description": ex.description,
+            "exam_type": getattr(ex, 'exam_type', 'EXAM') or 'EXAM',
+            "due_date": ce.due_date,
+            "open_date": None,
+            "duration_minutes": ex.duration_minutes or 45,
+            "max_attempts": ex.max_attempts or 1,
+            "attempts_taken": len(completed_subs),
+            "is_completed": bool(completed_subs),
+            "status": status_str,
+            "score": best_score,
+            "submitted_at": completed_subs[0].submitted_at if completed_subs else None,
+            "latest_submission_id": latest_sub.id if latest_sub else None,
+            "submissions": [
+                {
+                    "id": s.id,
+                    "attempt_number": s.attempt_number or 1,
+                    "score": s.score,
+                    "auto_score": s.auto_score,
+                    "essay_score": s.essay_score,
+                    "status": s.status,
+                    "grading_status": s.grading_status,
+                    "time_spent": s.time_spent or 0,
+                    "tab_switches": s.tab_switches or 0,
+                    "started_at": s.started_at,
+                    "submitted_at": s.submitted_at
+                }
+                for s in exam_subs
+            ]
+        })
+
+    return {
+        "classroom_id": classroom_id,
+        "classroom_name": classroom.name,
+        "student": student,
+        "assignments": progress_items
+    }
+
+
+@router.delete(
+    "/{classroom_id}/students/{student_id}/submissions/{submission_id}",
+    summary="Xóa bài nộp của học sinh để đặt lại (reset) lượt làm bài"
+)
+async def delete_student_submission(
+    classroom_id: int,
+    student_id: int,
+    submission_id: int,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_teacher)
+):
+    # 1. Verify classroom exists and teacher owns it
+    classroom = await db.get(Classroom, classroom_id)
+    if not classroom or classroom.is_deleted:
+        raise HTTPException(status_code=404, detail="Lớp học không tồn tại")
+    if classroom.instructor_id and classroom.instructor_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Bạn không có quyền quản lý bài nộp của lớp học này")
+
+    # 2. Verify student is in this classroom
+    cs_res = await db.execute(
+        select(ClassroomStudent).filter(
+            ClassroomStudent.classroom_id == classroom_id,
+            ClassroomStudent.student_id == student_id,
+            ClassroomStudent.is_active == True
+        )
+    )
+    if not cs_res.scalars().first():
+        raise HTTPException(status_code=404, detail="Học sinh không thuộc lớp học này")
+
+    # 3. Find target submission
+    sub = await db.get(ExamSubmission, submission_id)
+    if not sub or sub.user_id != student_id:
+        raise HTTPException(status_code=404, detail="Không tìm thấy bài nộp của học sinh này")
+
+    exam_id = sub.exam_id
+
+    # 4. Verify the submission's exam is assigned to this classroom
+    assign_res = await db.execute(
+        select(Assignment).filter(
+            Assignment.classroom_id == classroom_id,
+            Assignment.exam_id == exam_id,
+            Assignment.is_active == True
+        )
+    )
+    if not assign_res.scalars().first():
+        ce_res = await db.execute(
+            select(ClassroomExam).filter(
+                ClassroomExam.classroom_id == classroom_id,
+                ClassroomExam.exam_id == exam_id
+            )
+        )
+        if not ce_res.scalars().first():
+            raise HTTPException(status_code=400, detail="Bài nộp không thuộc bài tập được giao cho lớp này")
+
+    # 5. Delete submission from database
+    await db.delete(sub)
+    await db.commit()
+
+    # 6. Invalidate caches
+    try:
+        from app.routers.student import invalidate_student_exams_cache
+        await invalidate_student_exams_cache(student_id)
+    except Exception as e:
+        logger.warning(f"Error invalidating student exams cache: {e}")
+
+    await invalidate_classroom_cache()
+
+    try:
+        keys = await redis_client.keys(f"exams:{exam_id}:*")
+        if keys:
+            await redis_client.delete(*keys)
+    except Exception:
+        pass
+
+    return {
+        "success": True,
+        "message": "Đã xóa bài nộp thành công và đặt lại lượt làm bài cho học sinh",
+        "deleted_submission_id": submission_id,
+        "student_id": student_id,
+        "exam_id": exam_id
+    }
 
 
 @router.get("/{classroom_id}")

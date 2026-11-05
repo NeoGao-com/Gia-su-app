@@ -107,3 +107,45 @@ class PostResponse(BaseModel):
     comments_count: int = 0
     comments: Optional[List[CommentResponse]] = []
 
+
+class StudentSubmissionItem(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    id: int
+    attempt_number: int
+    score: Optional[float] = None
+    auto_score: Optional[float] = None
+    essay_score: Optional[float] = None
+    status: str
+    grading_status: Optional[str] = None
+    time_spent: Optional[int] = 0
+    tab_switches: Optional[int] = 0
+    started_at: Optional[datetime] = None
+    submitted_at: Optional[datetime] = None
+
+
+class StudentClassAssignmentProgress(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    assignment_id: Optional[int] = None
+    exam_id: int
+    title: str
+    description: Optional[str] = None
+    exam_type: Optional[str] = "EXAM"
+    due_date: Optional[datetime] = None
+    open_date: Optional[datetime] = None
+    duration_minutes: int = 45
+    max_attempts: int = 1
+    attempts_taken: int = 0
+    is_completed: bool = False
+    status: str  # "COMPLETED", "IN_PROGRESS", "NOT_STARTED"
+    score: Optional[float] = None
+    submitted_at: Optional[datetime] = None
+    latest_submission_id: Optional[int] = None
+    submissions: List[StudentSubmissionItem] = []
+
+
+class StudentAssignmentsProgressResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    classroom_id: int
+    classroom_name: str
+    student: UserResponse
+    assignments: List[StudentClassAssignmentProgress]

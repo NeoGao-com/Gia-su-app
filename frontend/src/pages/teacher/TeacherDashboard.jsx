@@ -4,16 +4,28 @@ import { Sidebar } from '../../components/Sidebar';
 import api from '../../api/axios';
 import { 
   CheckSquare, BookOpen, Users, UserCheck, PlusCircle, 
-  ArrowRight, Sparkles, Copy, Check, Send, Award, Clock, Calendar
+  ArrowRight, Sparkles, Copy, Check, Send, Award, Clock, Calendar,
+  TrendingUp, AlertTriangle, Target, Flame, BarChart3
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useToast } from '../../context/ToastContext';
 
 export function TeacherDashboard() {
   const { toast } = useToast();
-  const [stats, setStats] = useState({ questions: 0, exams: 0, classrooms: 0, students: 0 });
+  const [stats, setStats] = useState({
+    questions: 0,
+    exams: 0,
+    classrooms: 0,
+    students: 0,
+    average_score: 0,
+    pass_rate: 0,
+    submissions_count: 0,
+    median_score: 0,
+  });
   const [classrooms, setClassrooms] = useState([]);
   const [recentExams, setRecentExams] = useState([]);
+  const [topWeakTopics, setTopWeakTopics] = useState([]);
+  const [recommendationsSummary, setRecommendationsSummary] = useState(null);
   const [copiedCode, setCopiedCode] = useState(null);
   const [loading, setLoading] = useState(true);
 
@@ -36,24 +48,40 @@ export function TeacherDashboard() {
     const fetchDashboardData = async () => {
       try {
         setLoading(true);
-        const [summaryRes, classRes, examRes, studentsRes] = await Promise.all([
+        const [summaryRes, classRes, examRes, studentsRes, dashRes] = await Promise.all([
           api.get('/analytics/summary').catch(() => ({ data: {} })),
           api.get('/classrooms', { params: { limit: 6 } }).catch(() => ({ data: { items: [] } })),
           api.get('/exams?limit=6').catch(() => ({ data: { items: [] } })),
           api.get('/classrooms/students/all').catch(() => ({ data: [] })),
+          api.get('/analytics/dashboard').catch(() => ({ data: null })),
         ]);
 
         const classList = Array.isArray(classRes.data?.items) ? classRes.data.items : (Array.isArray(classRes.data) ? classRes.data : []);
         const examList = Array.isArray(examRes.data?.items) ? examRes.data.items : (Array.isArray(examRes.data) ? examRes.data : []);
         const studentList = Array.isArray(studentsRes.data) ? studentsRes.data : [];
 
+        const dashData = dashRes.data;
+        const dashSummary = dashData?.summary;
+
         setClassrooms(classList);
         setRecentExams(examList);
+        setTopWeakTopics(dashData?.top_weak_topics || []);
+        setRecommendationsSummary(
+          dashData?.recommendations_summary || {
+            high_priority_count: summaryRes.data?.active_recommendations_count || 0,
+            total_recommendations: summaryRes.data?.active_recommendations_count || 0,
+          }
+        );
+
         setStats({
           questions: summaryRes.data?.questions_count ?? 0,
           exams: summaryRes.data?.exams_count ?? (examRes.data?.total ?? examList.length),
           classrooms: summaryRes.data?.classrooms_count ?? (classRes.data?.total ?? classList.length),
           students: summaryRes.data?.students_count ?? studentList.length,
+          average_score: dashSummary?.average_score ?? summaryRes.data?.average_score ?? 0,
+          pass_rate: dashSummary?.pass_rate ?? summaryRes.data?.pass_rate ?? 0,
+          submissions_count: dashSummary?.total_submissions ?? summaryRes.data?.submissions_count ?? 0,
+          median_score: dashSummary?.median_score ?? summaryRes.data?.median_score ?? 0,
         });
       } catch (err) {
         console.error('Error loading dashboard:', err);
@@ -72,8 +100,10 @@ export function TeacherDashboard() {
     setTimeout(() => setCopiedCode(null), 2500);
   };
 
+  const hasAlerts = (recommendationsSummary?.total_recommendations || 0) > 0 || topWeakTopics.length > 0;
+
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="min-h-screen bg-slate-50 font-sans">
       <Navbar />
       <div className="flex">
         <Sidebar role="teacher" />
@@ -89,7 +119,7 @@ export function TeacherDashboard() {
                 {getGreeting()}, {teacherName}!
               </h1>
               <p className="mt-2 text-indigo-100 text-xs sm:text-sm leading-relaxed">
-                Hệ thống hỗ trợ quản lý lớp học, phân phối bài tập và theo dõi kết quả làm bài của học sinh một cách trực quan, chính xác.
+                Hệ thống hỗ trợ quản lý lớp học, phân tích phổ điểm chất lượng và phát hiện sớm các lỗ hổng kiến thức của học sinh.
               </p>
             </div>
             <div className="absolute right-0 bottom-0 opacity-10 pointer-events-none transform translate-x-8 translate-y-8">
@@ -97,7 +127,129 @@ export function TeacherDashboard() {
             </div>
           </div>
 
-          {/* Quick Stats Grid */}
+          {/* Active Recommendation Alerts Banner */}
+          {hasAlerts && (
+            <div className="mb-6 bg-gradient-to-r from-amber-500/10 via-rose-500/10 to-indigo-500/10 border border-amber-300/80 p-4 sm:p-5 rounded-2xl shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div className="flex items-start space-x-3">
+                <div className="w-9 h-9 rounded-xl bg-amber-500 text-white flex items-center justify-center shrink-0 shadow-xs">
+                  <AlertTriangle className="w-5 h-5" />
+                </div>
+                <div>
+                  <div className="flex items-center space-x-2">
+                    <h3 className="text-sm font-extrabold text-slate-900 tracking-tight">
+                      Cảnh báo & Khuyến nghị Sư phạm Ưu tiên
+                    </h3>
+                    <span className="px-2 py-0.5 rounded-full text-[10px] font-black bg-rose-100 text-rose-700 uppercase">
+                      Cần chú ý
+                    </span>
+                  </div>
+                  <p className="text-xs text-slate-600 mt-1 leading-relaxed">
+                    Hệ thống ghi nhận{' '}
+                    <strong className="text-slate-900">
+                      {topWeakTopics.length} chuyên đề yếu (&lt;60% đúng)
+                    </strong>{' '}
+                    và{' '}
+                    <strong className="text-slate-900">
+                      {recommendationsSummary?.total_recommendations || 0} khuyến nghị sư phạm
+                    </strong>{' '}
+                    cần giáo viên can thiệp hoặc củng cố trong tuần này.
+                  </p>
+                </div>
+              </div>
+
+              <Link
+                to="/teacher/analytics?tab=recommendations"
+                className="inline-flex items-center space-x-1.5 px-4 py-2 rounded-xl text-xs font-bold bg-indigo-600 text-white hover:bg-indigo-700 active:scale-95 transition shadow-xs whitespace-nowrap shrink-0"
+              >
+                <span>Xem khuyến nghị chi tiết</span>
+                <ArrowRight className="w-3.5 h-3.5" />
+              </Link>
+            </div>
+          )}
+
+          {/* Quality KPI Summary Cards */}
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5 mb-6">
+            {/* 1. Average Score */}
+            <div className="bg-white p-5 rounded-2xl border border-slate-200/90 shadow-xs hover:border-indigo-300 transition-all interactive-card">
+              <div className="flex items-center justify-between mb-2">
+                <div className="bg-indigo-50 text-indigo-600 p-2.5 rounded-xl">
+                  <TrendingUp className="w-5 h-5" />
+                </div>
+                <span className="text-[11px] font-bold text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-full">
+                  Chất lượng
+                </span>
+              </div>
+              <span className="text-xs sm:text-sm text-slate-500 font-medium">Điểm trung bình (ĐTB)</span>
+              <div className="flex items-baseline space-x-1.5 mt-1">
+                <h3 className="text-2xl sm:text-3xl font-black text-slate-900 tabular-nums">
+                  {loading ? '—' : Number(stats.average_score || 0).toFixed(2)}
+                </h3>
+                <span className="text-xs text-slate-400">/ 10</span>
+              </div>
+              <p className="text-[11px] text-slate-400 mt-1">Toàn bộ các bài nộp</p>
+            </div>
+
+            {/* 2. Pass Rate */}
+            <div className="bg-white p-5 rounded-2xl border border-slate-200/90 shadow-xs hover:border-emerald-300 transition-all interactive-card">
+              <div className="flex items-center justify-between mb-2">
+                <div className="bg-emerald-50 text-emerald-600 p-2.5 rounded-xl">
+                  <Award className="w-5 h-5" />
+                </div>
+                <span className="text-[11px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full">
+                  Chuẩn đạt
+                </span>
+              </div>
+              <span className="text-xs sm:text-sm text-slate-500 font-medium">Tỷ lệ đạt (&ge;5.0)</span>
+              <div className="flex items-baseline space-x-1.5 mt-1">
+                <h3 className="text-2xl sm:text-3xl font-black text-emerald-600 tabular-nums">
+                  {loading ? '—' : Number(stats.pass_rate || 0).toFixed(1)}%
+                </h3>
+              </div>
+              <p className="text-[11px] text-slate-400 mt-1">Đạt yêu cầu chuẩn kiến thức</p>
+            </div>
+
+            {/* 3. Median Score */}
+            <div className="bg-white p-5 rounded-2xl border border-slate-200/90 shadow-xs hover:border-purple-300 transition-all interactive-card">
+              <div className="flex items-center justify-between mb-2">
+                <div className="bg-purple-50 text-purple-600 p-2.5 rounded-xl">
+                  <Target className="w-5 h-5" />
+                </div>
+                <span className="text-[11px] font-bold text-purple-600 bg-purple-50 px-2 py-0.5 rounded-full">
+                  Trung vị
+                </span>
+              </div>
+              <span className="text-xs sm:text-sm text-slate-500 font-medium">Điểm trung vị</span>
+              <div className="flex items-baseline space-x-1.5 mt-1">
+                <h3 className="text-2xl sm:text-3xl font-black text-slate-900 tabular-nums">
+                  {loading ? '—' : Number(stats.median_score || 0).toFixed(2)}
+                </h3>
+                <span className="text-xs text-slate-400">/ 10</span>
+              </div>
+              <p className="text-[11px] text-slate-400 mt-1">Mức điểm phân vị 50%</p>
+            </div>
+
+            {/* 4. Total Submissions */}
+            <div className="bg-white p-5 rounded-2xl border border-slate-200/90 shadow-xs hover:border-blue-300 transition-all interactive-card">
+              <div className="flex items-center justify-between mb-2">
+                <div className="bg-blue-50 text-blue-600 p-2.5 rounded-xl">
+                  <BarChart3 className="w-5 h-5" />
+                </div>
+                <span className="text-[11px] font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full">
+                  Hoạt động
+                </span>
+              </div>
+              <span className="text-xs sm:text-sm text-slate-500 font-medium">Lượt bài nộp</span>
+              <div className="flex items-baseline space-x-1.5 mt-1">
+                <h3 className="text-2xl sm:text-3xl font-black text-slate-900 tabular-nums">
+                  {loading ? '—' : stats.submissions_count}
+                </h3>
+                <span className="text-xs text-slate-400">bài</span>
+              </div>
+              <p className="text-[11px] text-slate-400 mt-1">Đã được chấm tự động</p>
+            </div>
+          </div>
+
+          {/* Scale & Resource Stats Grid */}
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5 mb-6">
             <div className="bg-white p-5 rounded-2xl border border-slate-200/90 shadow-xs hover:border-blue-300 transition-all interactive-card">
               <div className="flex items-center space-x-3 mb-2.5">
@@ -153,6 +305,19 @@ export function TeacherDashboard() {
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3.5">
               <Link 
+                to="/teacher/analytics" 
+                className="p-4 rounded-xl bg-slate-50 hover:bg-white border border-slate-200/80 hover:border-indigo-400 shadow-2xs hover:shadow-xs transition-all interactive-btn group flex items-start space-x-3"
+              >
+                <div className="p-2.5 rounded-lg bg-indigo-50 text-indigo-600 group-hover:bg-indigo-600 group-hover:text-white transition-colors">
+                  <BarChart3 className="w-4 h-4" />
+                </div>
+                <div>
+                  <div className="font-semibold text-xs sm:text-sm text-slate-800">Thống kê & Phổ điểm</div>
+                  <div className="text-[11px] text-slate-500 mt-0.5">Phân tích chuyên đề & bẫy</div>
+                </div>
+              </Link>
+
+              <Link 
                 to="/teacher/schedule" 
                 className="p-4 rounded-xl bg-slate-50 hover:bg-white border border-slate-200/80 hover:border-indigo-400 shadow-2xs hover:shadow-xs transition-all interactive-btn group flex items-start space-x-3"
               >
@@ -203,21 +368,76 @@ export function TeacherDashboard() {
                   <div className="text-[11px] text-slate-500 mt-0.5">Nhập tay hoặc nhập file JSON/Word</div>
                 </div>
               </Link>
-
-              <Link 
-                to="/teacher/exams" 
-                className="p-4 rounded-xl bg-slate-50 hover:bg-white border border-slate-200/80 hover:border-amber-300 shadow-2xs hover:shadow-xs transition-all interactive-btn group flex items-start space-x-3"
-              >
-                <div className="p-2.5 rounded-lg bg-amber-50 text-amber-600 group-hover:bg-amber-600 group-hover:text-white transition-colors">
-                  <BookOpen className="w-4 h-4" />
-                </div>
-                <div>
-                  <div className="font-semibold text-xs sm:text-sm text-slate-800">Tạo đề thi mới</div>
-                  <div className="text-[11px] text-slate-500 mt-0.5">Tạo ma trận và xuất bản đề thi</div>
-                </div>
-              </Link>
             </div>
           </div>
+
+          {/* Top Weak Topics Widget (if any) */}
+          {topWeakTopics.length > 0 && (
+            <div className="bg-white p-5 sm:p-6 rounded-2xl border border-slate-200/90 shadow-xs mb-6">
+              <div className="flex items-center justify-between mb-4 pb-2.5 border-b border-slate-100">
+                <div className="flex items-center space-x-2">
+                  <div className="w-8 h-8 rounded-xl bg-rose-50 text-rose-600 flex items-center justify-center">
+                    <Flame className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <h3 className="font-extrabold text-slate-900 text-sm sm:text-base">
+                      Top chuyên đề yếu cần củng cố ({topWeakTopics.length})
+                    </h3>
+                    <p className="text-xs text-slate-500">
+                      Các chủ đề kiến thức có tỷ lệ làm đúng toàn lớp dưới 60%
+                    </p>
+                  </div>
+                </div>
+                <Link
+                  to="/teacher/analytics?tab=topics"
+                  className="text-xs font-semibold text-indigo-600 hover:text-indigo-800 flex items-center space-x-1"
+                >
+                  <span>Xem ma trận chuyên đề</span>
+                  <ArrowRight className="w-3.5 h-3.5" />
+                </Link>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5">
+                {topWeakTopics.slice(0, 3).map((topic, tIdx) => (
+                  <div
+                    key={tIdx}
+                    className="p-3.5 rounded-xl bg-rose-50/50 border border-rose-200/80 flex flex-col justify-between"
+                  >
+                    <div>
+                      <div className="flex items-center justify-between">
+                        <span className="font-bold text-slate-900 text-xs sm:text-sm truncate">
+                          {topic.topic}
+                        </span>
+                        <span className="px-2 py-0.5 rounded-md text-[10px] font-black bg-rose-100 text-rose-700">
+                          {Number(topic.accuracy_rate || 0).toFixed(1)}% đúng
+                        </span>
+                      </div>
+                      {topic.chapter && (
+                        <p className="text-[11px] text-slate-500 mt-0.5">
+                          {topic.chapter}
+                        </p>
+                      )}
+                    </div>
+
+                    <div className="mt-3">
+                      <div className="w-full bg-slate-200/80 rounded-full h-1.5 overflow-hidden">
+                        <div
+                          className="h-full bg-rose-500 rounded-full"
+                          style={{
+                            width: `${Math.min(100, Math.max(0, topic.accuracy_rate || 0))}%`,
+                          }}
+                        />
+                      </div>
+                      <div className="flex justify-between items-center text-[10px] text-slate-500 mt-1">
+                        <span>{topic.question_count || 0} câu hỏi</span>
+                        <span>{topic.total_attempts || 0} lượt làm</span>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* 2-Column Grid: Recent Classrooms & Recent Exams */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -257,6 +477,7 @@ export function TeacherDashboard() {
                       <div className="flex items-center space-x-2">
                         {cls.code && (
                           <button 
+                            type="button"
                             onClick={() => handleCopyCode(cls.code)} 
                             title="Sao chép mã tham gia lớp" 
                             className="flex items-center space-x-1 text-xs bg-white text-indigo-700 px-2.5 py-1.5 rounded-lg border border-slate-200 font-mono font-bold hover:bg-indigo-50 transition shadow-2xs interactive-btn"
