@@ -205,8 +205,13 @@ async function runComprehensiveTests() {
         await takeScreenshot(page, 'TC-CLS-04_student_progress_modal.png');
 
         // Close modal
-        const closeBtn = page.locator('div[role="dialog"] button:has-text("Đóng"), div[role="dialog"] button:has(svg.lucide-x)').first();
-        if (await closeBtn.isVisible()) await closeBtn.click();
+        await page.keyboard.press('Escape');
+        await page.waitForTimeout(500);
+        const closeBtn = page.locator('div.fixed button:has(svg), button:has-text("Đóng")').first();
+        if (await closeBtn.isVisible()) {
+          await closeBtn.click({ force: true }).catch(() => {});
+        }
+        await page.waitForTimeout(1000);
       }
     }
 

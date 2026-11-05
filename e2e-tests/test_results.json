@@ -4,167 +4,174 @@
     "name": "Form đăng nhập đầy đủ các trường (Email, Mật khẩu, Nút đăng nhập)",
     "status": "PASSED",
     "details": "",
-    "time": "2026-11-05T09:30:47.567Z"
+    "time": "2026-11-05T09:51:07.742Z"
   },
   {
     "id": "TC-AUTH-02",
     "name": "Bật / Tắt hiển thị mật khẩu (Show/Hide Toggle)",
     "status": "PASSED",
     "details": "",
-    "time": "2026-11-05T09:30:48.371Z"
+    "time": "2026-11-05T09:51:08.540Z"
   },
   {
     "id": "TC-AUTH-03",
     "name": "Hộp kiểm \"Ghi nhớ tài khoản trên thiết bị\"",
     "status": "PASSED",
     "details": "",
-    "time": "2026-11-05T09:30:48.410Z"
+    "time": "2026-11-05T09:51:08.572Z"
   },
   {
     "id": "TC-AUTH-04",
     "name": "Từ chối đăng nhập sai & cảnh báo thân thiện",
     "status": "PASSED",
     "details": "Email hoặc mật khẩu không chính xác",
-    "time": "2026-11-05T09:30:50.512Z"
+    "time": "2026-11-05T09:51:10.635Z"
   },
   {
     "id": "TC-AUTH-05",
     "name": "Trang Quên mật khẩu (/forgot-password)",
     "status": "PASSED",
     "details": "",
-    "time": "2026-11-05T09:30:52.287Z"
+    "time": "2026-11-05T09:51:12.376Z"
   },
   {
     "id": "TC-AUTH-06",
     "name": "Trang Đăng ký tài khoản mới (/register)",
     "status": "PASSED",
     "details": "",
-    "time": "2026-11-05T09:30:53.965Z"
+    "time": "2026-11-05T09:51:14.047Z"
   },
   {
     "id": "TC-AUTH-07",
     "name": "Đăng nhập Giáo viên & chuyển hướng /teacher",
     "status": "PASSED",
     "details": "URL: https://gia-su-app-psi.vercel.app/teacher",
-    "time": "2026-11-05T09:30:59.284Z"
+    "time": "2026-11-05T09:51:19.349Z"
   },
   {
     "id": "TC-AUTH-08",
     "name": "Trang Hồ sơ Giáo viên (/teacher/profile)",
     "status": "PASSED",
     "details": "",
-    "time": "2026-11-05T09:31:02.174Z"
+    "time": "2026-11-05T09:51:22.328Z"
   },
   {
     "id": "TC-CLS-01",
     "name": "Danh sách Lớp học (/teacher/classrooms)",
     "status": "PASSED",
     "details": "",
-    "time": "2026-11-05T09:31:07.374Z"
+    "time": "2026-11-05T09:51:28.080Z"
   },
   {
     "id": "TC-CLS-03",
     "name": "Xem chi tiết lớp học & danh sách học sinh",
     "status": "PASSED",
     "details": "",
-    "time": "2026-11-05T09:31:09.048Z"
+    "time": "2026-11-05T09:51:29.721Z"
+  },
+  {
+    "id": "TC-CLS-04",
+    "name": "Modal xem chi tiết tiến độ bài tập của học sinh",
+    "status": "PASSED",
+    "details": "Modal tiến độ bài tập phản hồi tốt",
+    "time": "2026-11-05T09:51:31.368Z"
   },
   {
     "id": "TC-CLS-05",
     "name": "Diễn đàn Hỏi đáp & Thảo luận lớp học (Q&A)",
     "status": "PASSED",
     "details": "",
-    "time": "2026-11-05T09:31:10.238Z"
+    "time": "2026-11-05T09:51:34.052Z"
   },
   {
     "id": "TC-QB-01",
     "name": "Danh sách Ngân hàng câu hỏi (/teacher/questions)",
     "status": "PASSED",
     "details": "",
-    "time": "2026-11-05T09:31:14.222Z"
+    "time": "2026-11-05T09:51:38.328Z"
   },
   {
     "id": "TC-QB-03",
     "name": "Modal AI Soạn đề trắc nghiệm thông minh (AIGenerateQuizModal)",
     "status": "PASSED",
     "details": "",
-    "time": "2026-11-05T09:31:15.508Z"
+    "time": "2026-11-05T09:51:39.586Z"
   },
   {
     "id": "TC-EXM-01",
     "name": "Trang Soạn thảo Đề thi (/teacher/exams/create)",
     "status": "PASSED",
     "details": "",
-    "time": "2026-11-05T09:31:19.871Z"
+    "time": "2026-11-05T09:51:43.693Z"
   },
   {
     "id": "TC-EXM-02",
     "name": "Trang Quản lý Bài tập đã giao (/teacher/assignments)",
     "status": "PASSED",
     "details": "",
-    "time": "2026-11-05T09:31:23.885Z"
+    "time": "2026-11-05T09:51:47.738Z"
   },
   {
     "id": "TC-ANA-01",
     "name": "Sổ điểm lớp học tổng hợp (/teacher/gradebook)",
     "status": "PASSED",
     "details": "",
-    "time": "2026-11-05T09:31:28.287Z"
+    "time": "2026-11-05T09:51:53.079Z"
   },
   {
     "id": "TC-ANA-02",
     "name": "Bảng Thống kê & Phân tích chất lượng đa chiều (/teacher/analytics)",
     "status": "PASSED",
     "details": "",
-    "time": "2026-11-05T09:31:32.616Z"
+    "time": "2026-11-05T09:52:10.663Z"
   },
   {
     "id": "TC-SCH-01",
     "name": "Thời khóa biểu & Lịch giảng dạy Giáo viên (/teacher/schedule)",
     "status": "PASSED",
     "details": "",
-    "time": "2026-11-05T09:31:36.083Z"
+    "time": "2026-11-05T09:52:14.352Z"
   },
   {
     "id": "TC-STU-01",
     "name": "Đăng nhập Học sinh & chuyển hướng /student",
     "status": "PASSED",
     "details": "URL: https://gia-su-app-psi.vercel.app/student",
-    "time": "2026-11-05T09:31:41.409Z"
+    "time": "2026-11-05T09:52:19.643Z"
   },
   {
     "id": "TC-STU-02",
     "name": "Danh sách Lớp học của học sinh (/student/classrooms) & Nút vào lớp bằng mã",
     "status": "PASSED",
     "details": "",
-    "time": "2026-11-05T09:31:45.440Z"
+    "time": "2026-11-05T09:52:23.665Z"
   },
   {
     "id": "TC-STU-03",
     "name": "Danh sách Bài tập & Nhiệm vụ học sinh (/student/assignments)",
     "status": "PASSED",
     "details": "",
-    "time": "2026-11-05T09:31:49.277Z"
+    "time": "2026-11-05T09:52:26.504Z"
   },
   {
     "id": "TC-STU-04",
     "name": "Lịch sử làm bài thi & Biểu đồ tiến độ (/student/history)",
     "status": "PASSED",
     "details": "",
-    "time": "2026-11-05T09:31:52.701Z"
+    "time": "2026-11-05T09:52:29.692Z"
   },
   {
     "id": "TC-STU-05",
     "name": "Thời khóa biểu học sinh (/student/schedule)",
     "status": "PASSED",
     "details": "",
-    "time": "2026-11-05T09:31:56.166Z"
+    "time": "2026-11-05T09:52:33.163Z"
   },
   {
     "id": "TC-STU-06",
     "name": "Hồ sơ cá nhân & Thông tin tài khoản Học sinh (/student/profile)",
     "status": "PASSED",
     "details": "",
-    "time": "2026-11-05T09:31:59.077Z"
+    "time": "2026-11-05T09:52:36.062Z"
   }
 ]
