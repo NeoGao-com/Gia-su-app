@@ -3,7 +3,7 @@ import random
 from fastapi import APIRouter, Depends, HTTPException, status, Query, Request, Body
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
-from sqlalchemy import func
+from sqlalchemy import func, or_, and_
 from sqlalchemy.orm import selectinload, joinedload
 from typing import List, Optional
 from app.database import get_db, redis_client
@@ -469,13 +469,12 @@ async def get_student_class_assignments(
     if not student:
         raise HTTPException(status_code=404, detail="Học sinh không tồn tại hoặc không thuộc lớp này")
 
-    # 3. Fetch active assignments in classroom
+    # 3. Fetch all assignments in classroom (both active and historical)
     assign_res = await db.execute(
         select(Assignment)
         .options(selectinload(Assignment.exam))
         .filter(
-            Assignment.classroom_id == classroom_id,
-            Assignment.is_active == True
+            Assignment.classroom_id == classroom_id
         )
         .order_by(Assignment.assigned_at.desc())
     )
@@ -678,7 +677,6 @@ async def delete_student_submission(
         select(Assignment).filter(
             Assignment.classroom_id == classroom_id,
             Assignment.exam_id == exam_id,
-            Assignment.is_active == True
         )
     )
     if not assign_res.scalars().first():
@@ -908,7 +906,7 @@ async def get_classroom_gradebook(
         raise HTTPException(status_code=403, detail="Not authorized")
 
     # Get active students count and pagination
-    from sqlalchemy import func, desc
+    from sqlalchemy import func, or_, and_, desc
     count_query = select(func.count(ClassroomStudent.student_id)).filter(
         ClassroomStudent.classroom_id == classroom_id,
         ClassroomStudent.is_active == True

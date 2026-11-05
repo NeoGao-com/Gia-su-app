@@ -65,7 +65,9 @@ export function StudentAssignmentProgressModal({
     try {
       setLoading(true);
       setError(null);
-      const res = await api.get(`/classrooms/${classroom.id}/students/${student.id}/assignments`);
+      const res = await api.get(`/classrooms/${classroom.id}/students/${student.id}/assignments`, {
+        headers: { 'Cache-Control': 'no-cache' }
+      });
       setData(res.data);
     } catch (err) {
       console.error('Failed to load student assignment progress:', err);
@@ -252,7 +254,10 @@ export function StudentAssignmentProgressModal({
               {/* Action: Refresh Data */}
               <button
                 type="button"
-                onClick={fetchProgress}
+                onClick={() => {
+                  clearApiCache();
+                  fetchProgress();
+                }}
                 disabled={loading}
                 className="shrink-0 p-2 text-slate-400 hover:text-white hover:bg-slate-800 rounded-xl transition border border-slate-800 hover:border-slate-700 flex items-center space-x-1.5 text-xs cursor-pointer"
                 title="Tải lại dữ liệu tiến độ"
