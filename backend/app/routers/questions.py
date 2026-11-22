@@ -44,14 +44,31 @@ async def create_question(
     current_user: User = Depends(get_current_teacher)
 ):
     try:
+        q_data = question_in.model_dump()
+        subj = q_data.get("subject", "Toán")
+        gr = q_data.get("grade_level", 10)
+        c_maps, l_maps, _, _ = await load_taxonomy_lookup_maps(db, {(subj, gr)})
+        c_map = c_maps.get((subj, gr), {})
+        l_map = l_maps.get((subj, gr), {})
+
+        if q_data.get("chapter"):
+            c_k = get_canonical_key(q_data["chapter"])
+            if c_k in c_map:
+                q_data["chapter"] = c_map[c_k]
+            c_res_ch = get_canonical_key(q_data["chapter"])
+            if q_data.get("lesson"):
+                l_k = get_canonical_key(q_data["lesson"])
+                if (c_res_ch, l_k) in l_map:
+                    q_data["lesson"] = l_map[(c_res_ch, l_k)]
+
         code = await generate_question_code(
             db,
-            question_in.subject,
-            question_in.grade_level,
-            question_in.question_type
+            q_data.get("subject", "Toán"),
+            q_data.get("grade_level", 10),
+            q_data.get("question_type")
         )
         question = Question(
-            **question_in.model_dump(),
+            **q_data,
             code=code,
             created_by_id=current_user.id
         )
@@ -101,7 +118,22 @@ async def get_tree_structure(
             if less not in tree[subj][grade][chap]: tree[subj][grade][chap][less] = {}
             if top not in tree[subj][grade][chap][less]: tree[subj][grade][chap][less][top] = 0
         
-        q_query = select(Question.subject, Question.grade_level, Question.chapter, Question.lesson, Question.topic, func.count(Question.id).label("count")).group_by(Question.subject, Question.grade_level, Question.chapter, Question.lesson, Question.topic)
+        q_query = select(
+            Question.subject,
+            Question.grade_level,
+            Question.chapter,
+            Question.lesson,
+            Question.topic,
+            func.count(Question.id).label("count")
+        ).filter(
+            (Question.status != "EXAM_CLONE") | (Question.status.is_(None))
+        ).group_by(
+            Question.subject,
+            Question.grade_level,
+            Question.chapter,
+            Question.lesson,
+            Question.topic
+        )
         q_res = await db.execute(q_query)
         for r in q_res.all():
             subj, grade, chap, less, top, cnt = r
@@ -826,7 +858,27 @@ async def preview_import_questions_json(
 async def update_question(question_id: int, q_in: QuestionUpdate, db: AsyncSession = Depends(get_db), current_user: User = Depends(get_current_teacher)):
     q = await db.get(Question, question_id)
     if not q: raise HTTPException(status_code=404, detail="Không tìm thấy câu hỏi")
-    for k, v in q_in.model_dump(exclude_unset=True).items(): setattr(q, k, v)
+    update_data = q_in.model_dump(exclude_unset=True)
+
+    subj = update_data.get("subject", q.subject) or "Toán"
+    gr = update_data.get("grade_level", q.grade_level) or 10
+    if "chapter" in update_data or "lesson" in update_data:
+        c_maps, l_maps, _, _ = await load_taxonomy_lookup_maps(db, {(subj, gr)})
+        c_map = c_maps.get((subj, gr), {})
+        l_map = l_maps.get((subj, gr), {})
+        chap_val = update_data.get("chapter", q.chapter)
+        if chap_val:
+            c_k = get_canonical_key(chap_val)
+            if c_k in c_map:
+                update_data["chapter"] = c_map[c_k]
+            c_res_ch = get_canonical_key(update_data.get("chapter", chap_val))
+            less_val = update_data.get("lesson", q.lesson)
+            if less_val:
+                l_k = get_canonical_key(less_val)
+                if (c_res_ch, l_k) in l_map:
+                    update_data["lesson"] = l_map[(c_res_ch, l_k)]
+
+    for k, v in update_data.items(): setattr(q, k, v)
     await db.commit()
     await db.refresh(q)
     await invalidate_questions_cache()

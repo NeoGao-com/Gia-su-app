@@ -789,6 +789,7 @@ async def update_classroom(
 
     await db.commit()
     await db.refresh(classroom)
+    await invalidate_classroom_cache()
     logger.info(f"Classroom updated: {classroom.id} by {current_user.email} from IP {client_ip}")
     return classroom
 
