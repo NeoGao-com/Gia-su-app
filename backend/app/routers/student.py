@@ -814,6 +814,7 @@ async def get_student_classrooms_detailed(
             "id": c.id,
             "name": c.name,
             "description": c.description,
+            "meeting_url": c.meeting_url,
             "code": c.code,
             "instructor_name": teacher_name,
             "instructor_email": teacher_email,

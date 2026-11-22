@@ -28,6 +28,7 @@ class Classroom(Base):
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String, nullable=False)
     description = Column(String, nullable=True)
+    meeting_url = Column(String, nullable=True) # Link phòng học trực tuyến (Google Meet, Zoom, MS Teams)
     code = Column(String(6), unique=True, index=True, default=generate_classroom_code)
     code_expires_at = Column(DateTime(timezone=True), nullable=True)
     is_deleted = Column(Boolean, default=False, index=True)

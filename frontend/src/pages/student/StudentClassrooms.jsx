@@ -5,7 +5,8 @@ import api, { clearApiCache } from '../../api/axios';
 import { 
   Users, KeyRound, BookOpen, Clock, Calendar, CheckCircle2, 
   Search, ArrowRight, ShieldCheck, Copy, Check, Sparkles, GraduationCap,
-  PhoneCall, Phone, MessageCircle, Mail, ExternalLink, Headphones, X, Info
+  PhoneCall, Phone, MessageCircle, Mail, ExternalLink, Headphones, X, Info,
+  Video
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useToast } from '../../context/ToastContext';
@@ -320,6 +321,21 @@ export function StudentClassrooms() {
                         )}
                       </div>
 
+                      {/* Nút Vào Phòng Học Online (Google Meet / Zoom) nếu có */}
+                      {c.meeting_url && (
+                        <a
+                          href={c.meeting_url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="w-full mb-2 py-2.5 px-3 rounded-xl bg-gradient-to-r from-emerald-600 via-teal-600 to-cyan-600 hover:from-emerald-700 hover:to-cyan-700 text-white font-extrabold text-xs flex items-center justify-center space-x-2 transition shadow-2xs hover:shadow-md cursor-pointer active:scale-98"
+                          title={`Vào phòng học online: ${c.meeting_url}`}
+                        >
+                          <Video className="w-4 h-4 shrink-0" />
+                          <span>Vào Phòng Học Online (Meet / Zoom)</span>
+                          <ExternalLink className="w-3.5 h-3.5 shrink-0 opacity-80" />
+                        </a>
+                      )}
+
                       {/* Nút mở Kênh Hỏi đáp & Trao đổi */}
                       <button
                         type="button"
@@ -508,6 +524,42 @@ export function StudentClassrooms() {
                   </button>
                 </div>
               </div>
+
+              {/* Link phòng học trực tuyến (Google Meet / Zoom) nếu có */}
+              {contactModalClass.meeting_url && (
+                <div className="p-3 rounded-2xl bg-emerald-50/80 border border-emerald-200 flex items-center justify-between">
+                  <div className="flex items-center space-x-3 min-w-0">
+                    <div className="w-8 h-8 rounded-lg bg-emerald-100 text-emerald-700 flex items-center justify-center shrink-0">
+                      <Video className="w-4 h-4" />
+                    </div>
+                    <div className="min-w-0">
+                      <div className="text-[10px] font-bold text-emerald-700 uppercase tracking-wider">Phòng Học Trực Tuyến</div>
+                      <div className="text-xs font-bold font-mono text-emerald-900 truncate">
+                        {contactModalClass.meeting_url}
+                      </div>
+                    </div>
+                  </div>
+                  <div className="flex items-center space-x-1 shrink-0">
+                    <a
+                      href={contactModalClass.meeting_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="px-2.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-[11px] font-bold rounded-lg transition shadow-2xs flex items-center space-x-1"
+                    >
+                      <ExternalLink className="w-3 h-3" />
+                      <span>Vào Học</span>
+                    </a>
+                    <button
+                      type="button"
+                      onClick={() => copyContact(contactModalClass.meeting_url, 'Link học online')}
+                      className="p-1.5 text-slate-500 hover:text-slate-800 hover:bg-slate-200/60 rounded-lg transition cursor-pointer"
+                      title="Sao chép Link học"
+                    >
+                      {copiedContact === 'Link học online' ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Note for student */}

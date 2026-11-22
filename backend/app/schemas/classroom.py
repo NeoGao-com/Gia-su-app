@@ -5,6 +5,7 @@ from datetime import datetime
 class ClassroomBase(BaseModel):
     name: str
     description: Optional[str] = None
+    meeting_url: Optional[str] = None
 
 class ClassroomCreate(ClassroomBase):
     instructor_id: Optional[int] = None
@@ -13,6 +14,7 @@ class ClassroomCreate(ClassroomBase):
 class ClassroomUpdate(BaseModel):
     name: Optional[str] = None
     description: Optional[str] = None
+    meeting_url: Optional[str] = None
     instructor_id: Optional[int] = None
     code_expires_at: Optional[datetime] = None
 

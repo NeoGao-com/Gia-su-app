@@ -62,6 +62,7 @@ async def create_classroom(
     classroom = Classroom(
         name=class_in.name,
         description=class_in.description,
+        meeting_url=class_in.meeting_url,
         instructor_id=instructor_id,
         code_expires_at=class_in.code_expires_at
     )
