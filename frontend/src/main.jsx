@@ -14,7 +14,7 @@ import {
   StudentDashboard, ExamList, TakeExam, ExamHistory,
   StudentAssignments, StudentClassrooms, StudentSchedule, StudentProfile,
   TeacherDashboard, QuestionBank, ClassroomManagement,
-  Gradebook, Analytics, AIConfigManagement, ExamCreator, ExamManagement, AssignmentManagement,
+  Gradebook, Analytics, ExamCreator, ExamManagement, AssignmentManagement,
   TeacherProfile, TeacherSchedule,
 } from './lazyPages'
 
@@ -57,7 +57,6 @@ createRoot(document.getElementById('root')).render(
             <Route path="/teacher/schedule" element={<TeacherSchedule />} />
             <Route path="/teacher/gradebook" element={<Gradebook />} />
             <Route path="/teacher/analytics" element={<Analytics />} />
-            <Route path="/teacher/ai-config" element={<AIConfigManagement />} />
             <Route path="/teacher/exams" element={<ExamCreator />} />
             <Route path="/teacher/exams/create" element={<ExamCreator />} />
             <Route path="/teacher/exams/manage" element={<ExamCreator />} />

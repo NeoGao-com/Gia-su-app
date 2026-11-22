@@ -17,12 +17,10 @@ from app.core.security import get_current_user, get_current_teacher
 from app.models.user import User
 from app.models.exam import ExamMatrix
 from app.services.grading import GradingService, calculate_total_score
-from app.services.ai_service import AIService
 
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api/exams", tags=["exam"])
-ai_service = AIService()
 
 async def invalidate_exams_cache():
     try:
@@ -59,134 +57,6 @@ async def check_grading_authorization(db: AsyncSession, submission: ExamSubmissi
             return
 
     raise HTTPException(status_code=403, detail="Bạn không có quyền chấm bài nộp này")
-
-async def _get_active_ai_service(db: AsyncSession) -> AIService:
-    try:
-        from app.models.ai_config import AIConfig
-        result = await db.execute(select(AIConfig).filter(AIConfig.is_active == True))
-        config = result.scalars().first()
-        if config:
-            return AIService(db_config={
-                "provider": config.provider,
-                "api_key": config.api_key,
-                "base_url": config.base_url,
-                "model_name": config.model_name
-            })
-    except Exception:
-        pass
-    return AIService()
-
-@router.post("/submissions/{submission_id}/grade-ai", summary="Chấm điểm câu hỏi tự luận bằng AI")
-async def grade_essay_submission_ai(
-    request: Request,
-    submission_id: int,
-    payload: Optional[EssayGradeRequest] = Body(None),
-    db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_user)
-):
-    client_ip = request.client.host if request.client else "unknown"
-    result = await db.execute(select(ExamSubmission).filter(ExamSubmission.id == submission_id))
-    submission = result.scalars().first()
-    if not submission:
-        logger.warning(f"AI grading failed: Submission not found {submission_id} by {current_user.email} from IP {client_ip}")
-        raise HTTPException(status_code=404, detail="Không tìm thấy bài nộp")
-
-    # Authorize: Submission owner or authorized teacher
-    if submission.user_id != current_user.id:
-        if current_user.role != "TEACHER":
-            raise HTTPException(status_code=403, detail="Bạn không có quyền chấm bài nộp này")
-        await check_grading_authorization(db, submission, current_user)
-
-    q_result = await db.execute(
-        select(Question).join(exam_questions, Question.id == exam_questions.c.question_id).filter(exam_questions.c.exam_id == submission.exam_id)
-    )
-    questions = q_result.scalars().all()
-
-    target_question_ids = payload.question_ids if payload and payload.question_ids else None
-
-    # Initialize graded_answers if not present
-    if not submission.graded_answers:
-        submission.graded_answers = {}
-
-    feedback_notes = []
-    has_graded_any = False
-    active_ai = await _get_active_ai_service(db)
-
-    for q in questions:
-        if q.question_type == "ESSAY":
-            q_id_str = str(q.id)
-            if target_question_ids and q.id not in target_question_ids:
-                continue
-
-            student_ans = submission.answers.get(q_id_str) or submission.answers.get(q.id) or ""
-
-            try:
-                res = active_ai.grade_essay(q.content, student_ans, q.sample_solution or "")
-            except Exception as e:
-                logger.error(f"AI grading failed for {submission_id} by {current_user.email} from IP {client_ip}: {str(e)}")
-                raise HTTPException(
-                    status_code=503,
-                    detail=f"Chức năng chấm điểm bằng AI hiện không khả dụng hoặc bị lỗi: {str(e)}. Vui lòng cấu hình OPENAI_API_KEY hoặc chấm thủ công."
-                )
-
-            score = float(res.get("score", 0.0))
-            feedback = res.get("feedback", "")
-
-            # Update graded_answers dictionary with rich feedback
-            submission.graded_answers[q_id_str] = {
-                "question_id": q.id,
-                "question_type": q.question_type,
-                "student_answer": student_ans,
-                "correct_answer": q.sample_solution,
-                "is_correct": score >= 5.0,
-                "points_awarded": score,
-                "max_points": 10.0,
-                "feedback": feedback,
-                "strengths": res.get("strengths", []),
-                "weaknesses": res.get("weaknesses", []),
-                "suggested_improvements": res.get("suggested_improvements", "")
-            }
-            feedback_notes.append(f"Câu hỏi {q.id}: {score}/10đ - {feedback}")
-            has_graded_any = True
-
-    if not has_graded_any and target_question_ids:
-        logger.warning(f"AI grading failed: No matching ESSAY questions found {submission_id} by {current_user.email} from IP {client_ip}")
-        raise HTTPException(status_code=400, detail="Không tìm thấy câu hỏi TỰ LUẬN phù hợp để chấm điểm")
-
-    # Recalculate total essay score from graded_answers
-    total_essay_score = 0.0
-    essay_scores = []
-    for q_id_str, g_ans in submission.graded_answers.items():
-        if g_ans.get("question_type") == "ESSAY":
-            pts = float(g_ans.get("points_awarded", 0.0) or 0.0)
-            total_essay_score += pts
-            essay_scores.append(pts)
-
-    submission.essay_score = round(total_essay_score, 2)
-    n_obj = len([q for q in questions if q.question_type != "ESSAY"])
-    n_essay = len([q for q in questions if q.question_type == "ESSAY"])
-    submission.score = calculate_total_score(n_obj, submission.auto_score or 0.0, n_essay, essay_scores)
-
-    # Check if all essay questions are graded (or if we graded all)
-    all_essay_ids = [str(q.id) for q in questions if q.question_type == "ESSAY"]
-    graded_essay_ids = [qid for qid in all_essay_ids if qid in submission.graded_answers]
-
-    if len(graded_essay_ids) >= len(all_essay_ids):
-        submission.grading_status = "GRADED"
-        submission.status = "GRADED"
-
-    flag_modified(submission, "graded_answers")
-    await db.commit()
-    logger.info(f"AI grading successful: Submission {submission_id} graded by {current_user.email} from IP {client_ip}")
-    return {
-        "message": "AI Graded successfully",
-        "new_score": submission.score,
-        "essay_score": submission.essay_score,
-        "grading_status": submission.grading_status,
-        "graded_answers": submission.graded_answers,
-        "feedback": "\n".join(feedback_notes)
-    }
-
 
 @router.get("", response_model=dict, summary="Lấy danh sách đề thi")
 @router.get("/", response_model=dict, include_in_schema=False)

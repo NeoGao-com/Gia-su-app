@@ -1,12 +1,14 @@
 import os
 import uuid
 import logging
-from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Request
+from typing import Optional, Any
+from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form, Request
 from app.core.security import get_current_user
 from app.core.rate_limiter import parse_rate_limit
 from app.core.config import settings
 from app.models.user import User
 from app.services.storage import StorageService
+from app.services.document_parser import extract_text_from_file, parse_questions_with_rules
 
 logger = logging.getLogger(__name__)
 
@@ -81,3 +83,32 @@ async def upload_image(
     logger.info(f"Image uploaded locally: {filename} by {current_user.email} from IP {client_ip}")
     # Return the URL (authenticated endpoint)
     return {"url": f"/api/uploads/{filename}"}
+
+
+@router.post("/extract-from-file", summary="Trích xuất câu hỏi từ tệp Word hoặc PDF bằng quy tắc")
+async def extract_questions_from_file(
+    file: UploadFile = File(...),
+    subject: Optional[str] = Form("Toán"),
+    grade_level: Optional[Any] = Form(10),
+    chapter: Optional[str] = Form(None),
+    current_user: User = Depends(get_current_user)
+):
+    if current_user.role != "TEACHER":
+        raise HTTPException(status_code=403, detail="Chỉ giáo viên mới có quyền sử dụng tính năng trích xuất câu hỏi.")
+
+    filename = file.filename or "unknown.txt"
+    contents = await file.read()
+    raw_text = extract_text_from_file(contents, filename)
+    parsed_qs = parse_questions_with_rules(
+        raw_text,
+        subject=subject or "Toán",
+        grade_level=int(grade_level) if grade_level else 10,
+        chapter=chapter
+    )
+    return {
+        "filename": filename,
+        "total_chars": len(raw_text),
+        "total_questions": len(parsed_qs),
+        "questions": parsed_qs,
+        "text_preview": raw_text[:500]
+    }

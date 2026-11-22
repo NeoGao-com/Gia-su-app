@@ -6,7 +6,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from app.database import engine, Base, redis_client, AsyncSessionLocal
-from app.routers import rendering, auth, questions, exam, export, student, upload, classroom, analytics, uploads_protected, ai, notifications, ai_config, oauth, schedule
+from app.routers import rendering, auth, questions, exam, export, student, upload, classroom, analytics, uploads_protected, notifications, oauth, schedule
 
 logger = logging.getLogger(__name__)
 
@@ -201,9 +201,7 @@ app.include_router(classroom.router)
 app.include_router(analytics.router)
 app.include_router(upload.router)
 app.include_router(uploads_protected.router)
-app.include_router(ai.router)
 app.include_router(notifications.router)
-app.include_router(ai_config.router)
 app.include_router(oauth.router)
 app.include_router(schedule.router)
 

@@ -12,8 +12,6 @@ import { CreateQuestionModal } from '../../components/CreateQuestionModal';
 import { CreateCategoryModal } from '../../components/CreateCategoryModal';
 import { ImportFileModal } from '../../components/ImportFileModal';
 import { ImportJsonModal } from '../../components/ImportJsonModal';
-import { AIAuditFixModal } from '../../components/AIAuditFixModal';
-import { AIGenerateQuizModal } from '../../components/AIGenerateQuizModal';
 import { WinFileExplorerTree } from '../../components/WinFileExplorerTree';
 import { MathRenderer } from '../../components/MathRenderer';
 import { useToast } from '../../context/ToastContext';
@@ -45,7 +43,6 @@ export function QuestionBank() {
   const [debouncedSearch, setDebouncedSearch] = useState('');
   const [typeFilter, setTypeFilter] = useState('all');
   const [difficultyFilter, setDifficultyFilter] = useState('all');
-  const [aiFilter, setAiFilter] = useState('all');
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -66,104 +63,6 @@ export function QuestionBank() {
   // JSON Import modal
   const [isJsonModalOpen, setIsJsonModalOpen] = useState(false);
   const [isImportFileModalOpen, setIsImportFileModalOpen] = useState(false);
-  const [isAIGenerateModalOpen, setIsAIGenerateModalOpen] = useState(false);
-
-  // AI Verification states
-  const [verifyingId, setVerifyingId] = useState(null);
-  const [verifyResults, setVerifyResults] = useState({});
-  const [batchVerifying, setBatchVerifying] = useState(false);
-
-  // AI Audit & Fix states
-  const [isAuditFixModalOpen, setIsAuditFixModalOpen] = useState(false);
-  const [auditingId, setAuditingId] = useState(null);
-
-  const handleAuditAndFixSingle = async (q) => {
-    try {
-      setAuditingId(q.id);
-      const res = await api.post('/ai/audit-and-fix', {
-        question_id: q.id,
-        auto_apply: true
-      });
-      const data = res.data;
-      if (data.success && data.question) {
-        setQuestions(prev => prev.map(item => item.id === q.id ? data.question : item));
-        const audit = data.audit_result || {};
-        if (audit.action === 'SET_MISSING_ANSWER') {
-          toast.success(`AI đã giải và chọn đáp án ${audit.new_display || ''} thành công!`);
-        } else if (audit.action === 'FIX_ANSWER') {
-          toast.success(`AI đã phát hiện đáp án sai và sửa thành ${audit.new_display || ''}!`);
-        } else {
-          toast.info(`AI đã rà soát: Đáp án hiện tại đã chính xác.`);
-        }
-      } else {
-        toast.warning(data.error || 'AI không đưa ra thay đổi nào.');
-      }
-    } catch (err) {
-      toast.error(err.response?.data?.detail || 'Không thể rà soát câu hỏi với AI');
-    } finally {
-      setAuditingId(null);
-    }
-  };
-
-  const handleVerifyAI = async (q) => {
-    try {
-      setVerifyingId(q.id);
-      const res = await api.post('/ai/verify-question', {
-        question_id: q.id,
-        content: q.content,
-        question_type: q.question_type,
-        options: q.options,
-        correct_option: q.correct_option,
-        correct_answer: q.correct_answer,
-        sample_solution: q.explanation || q.sample_solution
-      });
-      setVerifyResults(prev => ({ ...prev, [q.id]: res.data }));
-    } catch (err) {
-      toast.error(err.response?.data?.detail || 'Không thể kiểm tra câu hỏi bằng AI');
-    } finally {
-      setVerifyingId(null);
-    }
-  };
-
-  const handleBatchVerifyAI = async () => {
-    if (!selectedCategory) {
-      toast.warning('Vui lòng chọn một danh mục từ cây kiến thức bên trái để kiểm tra hàng loạt.');
-      return;
-    }
-    const confirmMsg = `Bạn có chắc muốn chạy AI kiểm tra cho các câu hỏi thuộc mục: ` +
-      [selectedCategory.subject, selectedCategory.grade_level ? `Khối ${selectedCategory.grade_level}` : '', selectedCategory.chapter, selectedCategory.lesson].filter(Boolean).join(' › ') + `?`;
-    
-    confirm({
-      title: 'Xác nhận AI kiểm tra hàng loạt',
-      message: confirmMsg,
-      confirmText: 'Bắt đầu kiểm tra',
-      onConfirm: async () => {
-        try {
-          setBatchVerifying(true);
-          const res = await api.post('/ai/verify-batch', {
-            subject: selectedCategory.subject,
-            grade_level: selectedCategory.grade_level,
-            chapter: selectedCategory.chapter,
-            limit: 20
-          });
-          const data = res.data.results || [];
-          const newMap = {};
-          let correctCount = 0;
-          data.forEach(item => {
-            newMap[item.question_id] = item;
-            if (item.is_correct) correctCount++;
-          });
-          setVerifyResults(prev => ({ ...prev, ...newMap }));
-          toast.success(`Đã kiểm tra xong ${data.length} câu hỏi! (${correctCount}/${data.length} câu chính xác)`);
-          refreshQuestions();
-        } catch (err) {
-          toast.error(err.response?.data?.detail || 'Không thể kiểm tra hàng loạt');
-        } finally {
-          setBatchVerifying(false);
-        }
-      }
-    });
-  };
 
   const buildQuestionsUrl = useCallback((targetPage = page) => {
     let url = `/questions/?page=${targetPage}&limit=${limit}`;
@@ -176,10 +75,9 @@ export function QuestionBank() {
     }
     if (typeFilter && typeFilter !== 'all') url += `&question_type=${typeFilter}`;
     if (difficultyFilter && difficultyFilter !== 'all') url += `&difficulty=${difficultyFilter}`;
-    if (aiFilter && aiFilter !== 'all') url += `&ai_status=${aiFilter}`;
     if (debouncedSearch.trim()) url += `&search=${encodeURIComponent(debouncedSearch.trim())}`;
     return url;
-  }, [page, selectedCategory, typeFilter, difficultyFilter, aiFilter, debouncedSearch]);
+  }, [page, selectedCategory, typeFilter, difficultyFilter, debouncedSearch]);
 
   useEffect(() => {
     let cancelled = false;
@@ -232,10 +130,6 @@ export function QuestionBank() {
   };
   const handleDifficultyFilter = (val) => {
     setDifficultyFilter(val);
-    setPage(1);
-  };
-  const handleAiFilter = (val) => {
-    setAiFilter(val);
     setPage(1);
   };
   const handleSearchChange = (val) => {
@@ -391,23 +285,6 @@ export function QuestionBank() {
             </div>
             <div className="flex flex-wrap items-center gap-2">
               <button
-                onClick={() => setIsAuditFixModalOpen(true)}
-                className="flex items-center space-x-1.5 px-3.5 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded-xl font-medium text-xs shadow-2xs transition"
-                title="Tự động kiểm tra: câu nào sai thì sửa đáp án đúng, câu nào thiếu đáp án thì bổ sung"
-              >
-                <Wand2 className="w-4 h-4" />
-                <span>Tự động kiểm tra & Điền đáp án</span>
-              </button>
-              <button
-                onClick={handleBatchVerifyAI}
-                disabled={batchVerifying}
-                className="flex items-center space-x-1.5 px-3.5 py-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 rounded-xl font-medium text-xs shadow-2xs transition"
-                title="Kiểm tra hàng loạt câu hỏi trong danh mục"
-              >
-                {batchVerifying ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
-                <span>{batchVerifying ? 'Đang kiểm tra…' : 'Kiểm tra đáp án'}</span>
-              </button>
-              <button
                 onClick={() => setIsImportFileModalOpen(true)}
                 className="flex items-center space-x-1.5 px-3.5 py-2 bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 rounded-xl font-medium text-xs shadow-2xs transition"
                 title="Trích xuất và nhập câu hỏi từ tệp Word (.docx, .doc), PDF (.pdf)"
@@ -421,14 +298,6 @@ export function QuestionBank() {
               >
                 <FileText className="w-4 h-4 text-emerald-600" />
                 <span>Nhập JSON</span>
-              </button>
-              <button
-                onClick={() => setIsAIGenerateModalOpen(true)}
-                className="flex items-center space-x-1.5 px-3.5 py-2 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white rounded-xl font-bold text-xs shadow-2xs transition active:scale-95 cursor-pointer"
-                title="AI tự động phân tích bài giảng / tài liệu và sinh bộ câu hỏi chất lượng cao"
-              >
-                <Sparkles className="w-4 h-4 text-amber-300" />
-                <span>AI Soạn đề từ tài liệu</span>
               </button>
               <button
                 onClick={() => handleOpenModal()}
@@ -507,24 +376,6 @@ export function QuestionBank() {
                       key={val}
                       onClick={() => handleDifficultyFilter(val)}
                       className={`px-3 py-1 rounded-lg text-xs font-medium transition ${difficultyFilter === val ? 'bg-indigo-600 text-white shadow-2xs font-semibold' : 'bg-slate-100 text-slate-600 hover:bg-slate-200/80'}`}
-                    >
-                      {label}
-                    </button>
-                  ))}
-                </div>
-
-                <div className="flex flex-wrap items-center gap-2">
-                  <span className="text-xs font-semibold text-slate-500 w-24 shrink-0">Kiểm tra:</span>
-                  {[
-                    ['all', 'Tất cả'],
-                    ['unverified', 'Chưa kiểm tra'],
-                    ['correct', 'Đáp án chuẩn'],
-                    ['incorrect', 'Cần xem lại'],
-                  ].map(([val, label]) => (
-                    <button
-                      key={val}
-                      onClick={() => handleAiFilter(val)}
-                      className={`px-3 py-1 rounded-lg text-xs font-medium transition ${aiFilter === val ? 'bg-indigo-600 text-white shadow-2xs font-semibold' : 'bg-slate-100 text-slate-600 hover:bg-slate-200/80'}`}
                     >
                       {label}
                     </button>
@@ -610,26 +461,6 @@ export function QuestionBank() {
 
                             {/* Action Buttons */}
                             <div className="flex items-center space-x-1 shrink-0">
-                              <button
-                                onClick={() => handleAuditAndFixSingle(q)}
-                                disabled={auditingId === q.id}
-                                className="px-2.5 py-1 bg-amber-50 hover:bg-amber-100 text-amber-800 rounded-lg text-xs font-medium transition flex items-center space-x-1 border border-amber-200 shadow-2xs"
-                                title="Tự động kiểm tra: sửa nếu đáp án sai hoặc tự động chọn đáp án đúng nếu còn thiếu"
-                              >
-                                {auditingId === q.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Wand2 className="w-3.5 h-3.5 text-amber-600" />}
-                                <span className="hidden sm:inline">
-                                  {q.question_type === 'MULTIPLE_CHOICE' && q.correct_option === null ? 'Điền đáp án' : 'Sửa câu'}
-                                </span>
-                              </button>
-                              <button
-                                onClick={() => handleVerifyAI(q)}
-                                disabled={verifyingId === q.id}
-                                className="px-2.5 py-1 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded-lg text-xs font-medium transition flex items-center space-x-1 border border-indigo-200"
-                                title="Kiểm tra đáp án & lời giải"
-                              >
-                                {verifyingId === q.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5" />}
-                                <span className="hidden sm:inline">Kiểm tra</span>
-                              </button>
                               <button 
                                 onClick={() => handleOpenModal(q)} 
                                 className="p-1.5 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition"
@@ -725,26 +556,6 @@ export function QuestionBank() {
                             </div>
                           )}
 
-                          {/* AI Verification Results Box */}
-                          {verifyResults[q.id] && (
-                            <div className={`p-3.5 rounded-2xl border text-xs space-y-1.5 ${verifyResults[q.id].is_correct ? 'bg-emerald-50/70 border-emerald-200 text-emerald-900' : 'bg-amber-50/70 border-amber-200 text-amber-900'}`}>
-                              <div className="flex items-center space-x-2 font-bold text-xs">
-                                {verifyResults[q.id].is_correct ? (
-                                  <>
-                                    <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-                                    <span className="text-emerald-700">AI Xác nhận: Đáp án chính xác</span>
-                                  </>
-                                ) : (
-                                  <>
-                                    <AlertTriangle className="w-4 h-4 text-amber-600" />
-                                    <span className="text-amber-700">AI Cảnh báo: Có thể có sai sót</span>
-                                  </>
-                                )}
-                                <span className="text-[10px] bg-white/80 px-2 py-0.5 rounded-full font-mono">Độ tin cậy: {Math.round((verifyResults[q.id].confidence || 0) * 100)}%</span>
-                              </div>
-                              <div><strong>AI giải:</strong> {verifyResults[q.id].feedback}</div>
-                            </div>
-                          )}
                         </div>
                       );
                     })}
@@ -814,30 +625,6 @@ export function QuestionBank() {
           <ImportFileModal
             isOpen={isImportFileModalOpen}
             onClose={() => setIsImportFileModalOpen(false)}
-            onSuccess={() => {
-              refreshQuestions();
-              refreshTreeData();
-            }}
-          />
-
-          {/* AI Audit & Auto-Fix Modal */}
-          <AIAuditFixModal
-            isOpen={isAuditFixModalOpen}
-            onClose={() => setIsAuditFixModalOpen(false)}
-            selectedCategory={selectedCategory}
-            onFinished={() => {
-              refreshQuestions();
-              refreshTreeData();
-            }}
-            toast={toast}
-          />
-
-          {/* AI Document/Text to Quiz Generator Modal */}
-          <AIGenerateQuizModal
-            isOpen={isAIGenerateModalOpen}
-            onClose={() => setIsAIGenerateModalOpen(false)}
-            defaultSubject={selectedCategory?.subject || 'Toán'}
-            defaultGrade={selectedCategory?.grade_level || 10}
             onSuccess={() => {
               refreshQuestions();
               refreshTreeData();

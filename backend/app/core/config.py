@@ -26,7 +26,6 @@ class Settings(BaseSettings):
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
     UPLOAD_DIR: str = os.getenv("UPLOAD_DIR", "/tmp/uploads" if os.getenv("VERCEL") else "static/uploads")
-    OPENAI_API_KEY: Optional[str] = os.getenv("OPENAI_API_KEY")
     REDIS_URL: str = os.getenv("REDIS_URL", "redis://localhost:6379/0")
 
     # Supabase Integration

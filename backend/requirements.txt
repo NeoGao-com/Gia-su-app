@@ -13,7 +13,6 @@ python-docx
 latex2mathml
 email-validator
 starlette
-openai
 redis
 aiosmtplib
 requests

@@ -942,18 +942,6 @@ async def get_practice_recommendations(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    from app.services.ai_service import AIService
-    from app.models.ai_config import AIConfig
-
-    ai_config_res = await db.execute(select(AIConfig).filter(AIConfig.is_active == True))
-    ai_cfg = ai_config_res.scalars().first()
-    ai_svc = AIService(db_config={
-        "provider": ai_cfg.provider,
-        "api_key": ai_cfg.api_key,
-        "base_url": ai_cfg.base_url,
-        "model_name": ai_cfg.model_name
-    } if ai_cfg else None)
-
     # 1. Fetch student's recent submissions
     subs_res = await db.execute(
         select(ExamSubmission)
@@ -1033,15 +1021,16 @@ async def get_practice_recommendations(
     overall_accuracy = (total_correct / max(total_answers, 1)) * 100 if total_answers > 0 else 0.0
     student_name = current_user.full_name or "Học sinh"
 
-    rec = await asyncio.to_thread(
-        ai_svc.recommend_smart_practice,
-        student_name=student_name,
-        weak_topics=weak_topics,
-        overall_accuracy=overall_accuracy,
-        preferred_subject=subject or "Toán học",
-        preferred_grade=grade_level or 12,
-        has_history=has_history
-    )
+    recommendations_list = []
+    for w in weak_topics[:5]:
+        recommendations_list.append(f"Cần ôn tập thêm chuyên đề {w['chapter']} (độ chính xác hiện tại: {round(w['accuracy'], 1)}%)")
+    if not recommendations_list:
+        recommendations_list.append("Học sinh có kết quả học tập rất tốt, hãy duy trì phong độ và làm thêm các đề thi nâng cao.")
+
+    rec = {
+        "analysis": f"Học sinh {student_name} đạt độ chính xác trung bình {round(overall_accuracy, 1)}%.",
+        "action_items": recommendations_list
+    }
 
     return {
         "success": True,

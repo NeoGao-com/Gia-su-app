@@ -38,7 +38,6 @@ export function ImportFileModal({ isOpen, onClose, onSuccess }) {
   const [subject, setSubject] = useState('Toán');
   const [gradeLevel, setGradeLevel] = useState(10);
   const [chapter, setChapter] = useState('');
-  const [useAI, setUseAI] = useState(true);
 
   // Extracted data
   const [extractedQuestions, setExtractedQuestions] = useState([]);
@@ -114,15 +113,14 @@ export function ImportFileModal({ isOpen, onClose, onSuccess }) {
       formData.append('subject', subject);
       formData.append('grade_level', gradeLevel.toString());
       if (chapter) formData.append('chapter', chapter);
-      formData.append('use_ai', useAI.toString());
 
-      const res = await api.post('/ai/extract-from-file', formData, {
+      const res = await api.post('/upload/extract-from-file', formData, {
         headers: { 'Content-Type': 'multipart/form-data' }
       });
 
       const questions = res.data?.questions || [];
       if (questions.length === 0) {
-        toast.warning('Không tìm thấy câu hỏi nào trong tệp. Hãy kiểm tra định dạng hoặc thử tắt/bật AI.');
+        toast.warning('Không tìm thấy câu hỏi nào trong tệp. Hãy kiểm tra định dạng tệp Word hoặc PDF.');
         return;
       }
 
@@ -340,28 +338,6 @@ export function ImportFileModal({ isOpen, onClose, onSuccess }) {
                     className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs focus:outline-none focus:border-indigo-500 text-slate-800"
                   />
                 </div>
-              </div>
-
-              {/* AI toggle */}
-              <div className="flex items-center justify-between pt-2 border-t border-slate-200">
-                <div className="flex items-center space-x-2">
-                  <Sparkles className="w-4 h-4 text-indigo-600" />
-                  <div>
-                    <div className="text-xs font-bold text-slate-800">Sử dụng AI phân tích thông minh</div>
-                    <div className="text-[11px] text-slate-500">
-                      Tự động chuyển đổi công thức Toán LaTeX, giải đề nếu thiếu đáp án, xử lý đúng/sai &amp; tự luận.
-                    </div>
-                  </div>
-                </div>
-                <label className="relative inline-flex items-center cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={useAI}
-                    onChange={e => setUseAI(e.target.checked)}
-                    className="sr-only peer"
-                  />
-                  <div className="w-9 h-5 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-indigo-600"></div>
-                </label>
               </div>
             </div>
 

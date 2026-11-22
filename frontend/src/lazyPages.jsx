@@ -16,7 +16,6 @@ export const ClassroomManagement = lazy(() => import('./pages/teacher/ClassroomM
 
 export const Gradebook = lazy(() => import('./pages/teacher/Gradebook').then(m => ({ default: m.Gradebook })));
 export const Analytics = lazy(() => import('./pages/teacher/Analytics').then(m => ({ default: m.Analytics })));
-export const AIConfigManagement = lazy(() => import('./pages/teacher/AIConfigManagement').then(m => ({ default: m.AIConfigManagement })));
 export const ExamCreator = lazy(() => import('./pages/teacher/ExamCreator').then(m => ({ default: m.ExamCreator })));
 export const ExamManagement = ExamCreator;
 export const AssignmentManagement = lazy(() => import('./pages/teacher/AssignmentManagement').then(m => ({ default: m.AssignmentManagement })));

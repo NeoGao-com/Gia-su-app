@@ -72,12 +72,6 @@ export function Sidebar({ role }) {
           ]
         },
         {
-          title: 'Công cụ hỗ trợ',
-          items: [
-            { to: '/teacher/ai-config', icon: Cpu, label: 'Trợ lý soạn đề & AI' },
-          ]
-        },
-        {
           title: 'Tài khoản & Cài đặt',
           items: [
             { to: '/teacher/profile', icon: UserCheck, label: 'Hồ sơ & Mật khẩu' },

@@ -664,11 +664,11 @@ export function ImportJsonModal({
               <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
                 <div className="space-y-1">
                   <div className="text-xs sm:text-sm font-extrabold text-indigo-950 flex items-center space-x-2">
-                    <Sparkles className="w-4 h-4 text-indigo-600" />
-                    <span>Prompt AI Chuẩn: Dùng khi tải tệp đề lên ChatGPT / Claude / Gemini / DeepSeek</span>
+                    <FileCode2 className="w-4 h-4 text-indigo-600" />
+                    <span>Cấu trúc JSON Chuẩn: Hướng dẫn định dạng tệp câu hỏi hợp lệ</span>
                   </div>
                   <p className="text-xs text-slate-600 leading-relaxed">
-                    AI sẽ đọc tệp tài liệu, giải bài và trích xuất thành mảng JSON đúng chuẩn môn học và khối lớp bạn chỉ định.
+                    Hệ thống sẽ đọc dữ liệu JSON, xác thực cú pháp và nhập hàng loạt câu hỏi vào đúng môn học và khối lớp bạn chỉ định.
                   </p>
                 </div>
 
@@ -687,10 +687,10 @@ export function ImportJsonModal({
                     type="button"
                     onClick={handleCopyPrompt}
                     className="flex-1 sm:flex-none flex items-center justify-center space-x-1.5 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold shadow-xs transition cursor-pointer"
-                    title="Bấm để sao chép Prompt dán cùng file lên AI"
+                    title="Bấm để sao chép cấu trúc JSON mẫu"
                   >
                     {copiedPrompt ? <Check className="w-4 h-4 text-emerald-300" /> : <Copy className="w-4 h-4" />}
-                    <span>{copiedPrompt ? 'Đã sao chép Prompt!' : 'Sao chép Prompt gửi AI'}</span>
+                    <span>{copiedPrompt ? 'Đã sao chép mẫu!' : 'Sao chép cấu trúc mẫu'}</span>
                   </button>
                 </div>
               </div>

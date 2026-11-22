@@ -50,36 +50,6 @@ export function SubmissionReviewModal({ isOpen, onClose, submissionId }) {
       });
   }, [isModalOpen, submissionId]);
 
-  const handleGradeEssayAI = async (questionId) => {
-    if (!submissionId) return;
-    try {
-      setGradingId(questionId);
-      const res = await api.post(`/exams/submissions/${submissionId}/grade-ai`, {
-        question_ids: questionId ? [questionId] : undefined
-      });
-      if (res.data) {
-        toast.success('AI đã chấm bài tự luận và nhận xét thành công!');
-        setData(prev => {
-          if (!prev) return prev;
-          return {
-            ...prev,
-            submission: {
-              ...prev.submission,
-              score: res.data.new_score ?? prev.submission.score,
-              essay_score: res.data.essay_score ?? prev.submission.essay_score,
-              grading_status: res.data.grading_status ?? 'GRADED',
-              graded_answers: res.data.graded_answers ?? prev.submission.graded_answers
-            }
-          };
-        });
-      }
-    } catch (err) {
-      toast.error(err.response?.data?.detail || 'Lỗi khi gọi AI chấm bài');
-    } finally {
-      setGradingId(null);
-    }
-  };
-
   if (!isModalOpen) return null;
 
   const submission = data?.submission || {};
@@ -557,18 +527,6 @@ export function SubmissionReviewModal({ isOpen, onClose, submissionId }) {
                         </div>
                       )}
 
-                      {/* Action button to trigger AI grading */}
-                      <div className="flex justify-end pt-1">
-                        <button
-                          type="button"
-                          disabled={gradingId === q.id}
-                          onClick={() => handleGradeEssayAI(q.id)}
-                          className="flex items-center space-x-1.5 px-3.5 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold transition shadow-2xs active:scale-95 disabled:opacity-50 cursor-pointer"
-                        >
-                          {gradingId === q.id ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Wand2 className="w-3.5 h-3.5" />}
-                          <span>{gradingId === q.id ? 'AI đang chấm bài...' : (q.gradInfo ? 'Chấm lại bằng AI' : '🤖 Chấm điểm tự luận bằng AI')}</span>
-                        </button>
-                      </div>
                     </div>
                   )}
 
