@@ -28,14 +28,11 @@ def test_api_routes_prefixes():
     client = TestClient(app)
 
     # Test routes exist under /api/ and do NOT return 404
-    res_ai = client.post("/api/ai/generate-questions", json={"prompt_text": "test"})
-    assert res_ai.status_code != 404
+    res_q = client.get("/api/questions")
+    assert res_q.status_code != 404
 
     res_notif = client.get("/api/notifications")
     assert res_notif.status_code != 404
-
-    res_config = client.get("/api/ai-configs")
-    assert res_config.status_code != 404
 
     res_student_exams = client.get("/api/student/exams")
     assert res_student_exams.status_code != 404
@@ -46,17 +43,6 @@ def test_delete_exam_requires_auth():
     client = TestClient(app)
     res = client.delete("/api/exams/6?force=true")
     assert res.status_code in (401, 403)
-
-def test_audit_and_fix_routes_exist():
-    from fastapi.testclient import TestClient
-    from app.main import app
-    client = TestClient(app)
-    # Check routes exist (return 401 or 422, not 404)
-    res_single = client.post("/api/ai/audit-and-fix", json={"question_id": 1})
-    assert res_single.status_code in (401, 403, 422)
-
-    res_batch = client.post("/api/ai/audit-and-fix-batch", json={"limit": 5})
-    assert res_batch.status_code in (401, 403, 422)
 
 def test_normalize_question_payload():
     from app.routers.questions import normalize_question_payload
@@ -96,41 +82,6 @@ def test_export_exam_routes_exist():
 
     res_pdf = client.get("/api/export/exam/9999/pdf")
     assert res_pdf.status_code in (401, 403, 404)
-
-
-def test_ai_analyze_difficulty_heuristic():
-    from app.services.ai_service import AIService
-    ai = AIService()
-
-    # VDC question with extremum keywords
-    res_vdc = ai.analyze_question_difficulty(
-        content="Tìm giá trị lớn nhất và giá trị nhỏ nhất của hàm số f(x) với tham số m",
-        subject="Toán",
-        grade_level=12
-    )
-    assert res_vdc["difficulty"] == "VAN_DUNG_CAO"
-    assert res_vdc["confidence"] > 0.7
-
-    # NB question with simple definition
-    res_nb = ai.analyze_question_difficulty(
-        content="Mệnh đề nào sau đây đúng về tập xác định?",
-        subject="Toán",
-        grade_level=10
-    )
-    assert res_nb["difficulty"] in ("NHAN_BIET", "THONG_HIEU")
-
-
-def test_ai_recommend_smart_practice():
-    from app.services.ai_service import AIService
-    ai = AIService()
-
-    weak = [
-        {"chapter": "Hình không gian", "accuracy": 30.0, "wrong_count": 7, "total_count": 10, "subject": "Toán", "grade_level": 12}
-    ]
-    rec = ai.recommend_smart_practice("Nguyễn Văn A", weak, 55.0, "Toán học", 12)
-    assert "ai_tutor_message" in rec
-    assert rec["suggested_config"]["chapter"] == "Hình không gian"
-    assert rec["suggested_config"]["difficulty"] == "easy"
 
 
 def test_exporter_exam_docx_and_pdf():
@@ -357,18 +308,9 @@ def test_extract_from_file_route_exists():
     from fastapi.testclient import TestClient
     from app.main import app
     client = TestClient(app)
-    # /api/ai/extract-from-file exists and requires teacher auth (returns 401/403, not 404)
-    res = client.post("/api/ai/extract-from-file")
+    # /api/upload/extract-from-file exists and requires teacher auth (returns 401/403, not 404)
+    res = client.post("/api/upload/extract-from-file")
     assert res.status_code in (401, 403, 422)
-
-
-def test_grade_ai_route_exists():
-    from fastapi.testclient import TestClient
-    from app.main import app
-    client = TestClient(app)
-    # /api/exams/submissions/1/grade-ai exists and requires auth
-    res = client.post("/api/exams/submissions/1/grade-ai")
-    assert res.status_code in (401, 403, 404)
 
 
 def test_exam_and_classroom_schemas_null_safe():
@@ -433,6 +375,37 @@ def test_exam_and_classroom_schemas_null_safe():
     c = ClassroomResponse.model_validate(MockClassroom())
     assert c.id == 30
     assert c.code == "" or c.code is None
+
+
+def test_manual_essay_grading_normalized_and_bounded():
+    from app.services.grading import calculate_total_score
+    # 9 objective questions, auto_score = 9.0 (out of 10)
+    # 1 essay question, graded as 8.0 (out of 10)
+    # Total score must be normalized to scale of 10.0: ((9.0 * 9) + (8.0 * 1)) / 10 = 8.90
+    total = calculate_total_score(n_obj=9, auto_score=9.0, n_essay=1, essay_scores=[8.0])
+    assert total == 8.90
+    assert 0.0 <= total <= 10.0
+
+    # 100% essay exam (n_obj=0, n_essay=2, essay_scores=[7.0, 9.0] -> avg = 8.0)
+    total_essay_only = calculate_total_score(n_obj=0, auto_score=0.0, n_essay=2, essay_scores=[7.0, 9.0])
+    assert total_essay_only == 8.0
+
+
+def test_document_parser_safe_fallback():
+    from app.services.document_parser import parse_questions_with_rules
+    sample_text = """
+    Câu 1. [NB] Hàm số nào sau đây là hàm số bậc hai?
+    A. y = 2x + 1
+    B. y = x^2 - 3x + 2
+    C. y = 1/x
+    D. y = x^3
+    Lời giải: Chọn B vì có bậc 2.
+    """
+    res = parse_questions_with_rules(sample_text, default_subject="Toán", default_grade_level=10)
+    assert len(res) == 1
+    assert res[0]["question_type"] == "MULTIPLE_CHOICE"
+    assert res[0]["correct_option"] == 1
+
 
 
 

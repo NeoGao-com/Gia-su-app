@@ -221,6 +221,14 @@ export function TakeExam() {
   const timerTriggered = useRef(false);
 
   useEffect(() => {
+    if (!loading && exam && submissionId && timeLeft <= 0 && !submitting && !timerTriggered.current) {
+      timerTriggered.current = true;
+      toast.warning('Thời gian làm bài đã hết! Hệ thống đang tự động nộp bài...');
+      handleSubmit(true);
+    }
+  }, [loading, exam, submissionId, timeLeft, submitting, handleSubmit, toast]);
+
+  useEffect(() => {
     if (timeLeft <= 0 || loading) return;
     const timer = setInterval(() => {
       setTimeLeft(prev => {

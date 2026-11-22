@@ -688,7 +688,8 @@ async def get_exam(
 async def grade_essay_submission(
     request: Request,
     submission_id: int,
-    essay_score: float,
+    essay_score: Optional[float] = Query(None, ge=0.0, le=10.0),
+    payload: Optional[Dict[str, Any]] = Body(None),
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_teacher)
 ):
@@ -701,13 +702,63 @@ async def grade_essay_submission(
 
     await check_grading_authorization(db, submission, current_user)
 
-    submission.essay_score = essay_score
-    submission.score = (submission.auto_score or 0) + (submission.essay_score or 0)
+    actual_score = None
+    feedback_text = None
+    if payload and isinstance(payload, dict):
+        if "essay_score" in payload and payload["essay_score"] is not None:
+            try:
+                actual_score = float(payload["essay_score"])
+            except (ValueError, TypeError):
+                pass
+        feedback_text = payload.get("feedback")
+    if actual_score is None and essay_score is not None:
+        actual_score = float(essay_score)
 
+    if actual_score is None:
+        raise HTTPException(status_code=400, detail="Vui lòng cung cấp điểm số tự luận (essay_score)")
+
+    actual_score = round(max(0.0, min(10.0, actual_score)), 2)
+    submission.essay_score = actual_score
+
+    # Determine n_obj and n_essay to compute normalized total score on scale 10.0
+    if submission.question_snapshot and isinstance(submission.question_snapshot, list):
+        n_obj = len([q for q in submission.question_snapshot if isinstance(q, dict) and q.get("question_type") != "ESSAY"])
+        n_essay = len([q for q in submission.question_snapshot if isinstance(q, dict) and q.get("question_type") == "ESSAY"])
+    else:
+        q_result = await db.execute(
+            select(Question.question_type).join(exam_questions, Question.id == exam_questions.c.question_id).filter(exam_questions.c.exam_id == submission.exam_id)
+        )
+        types = q_result.scalars().all()
+        n_obj = len([t for t in types if t != "ESSAY"])
+        n_essay = len([t for t in types if t == "ESSAY"])
+
+    submission.score = calculate_total_score(n_obj, submission.auto_score or 0.0, max(1, n_essay), [actual_score])
     submission.grading_status = "GRADED"
+    submission.status = "GRADED"
+
+    # Update graded_answers for essay question if available
+    if submission.graded_answers and isinstance(submission.graded_answers, dict):
+        ga = dict(submission.graded_answers)
+        for q_id, g_item in ga.items():
+            if isinstance(g_item, dict) and g_item.get("question_type") == "ESSAY":
+                g_item["points_awarded"] = actual_score
+                g_item["is_correct"] = actual_score >= 5.0
+                if feedback_text:
+                    g_item["feedback"] = feedback_text
+        submission.graded_answers = ga
+        flag_modified(submission, "graded_answers")
+
     await db.commit()
+    await db.refresh(submission)
+    await invalidate_exams_cache()
+    try:
+        from app.routers.student import invalidate_student_exams_cache
+        await invalidate_student_exams_cache(submission.user_id)
+    except Exception:
+        pass
+
     logger.info(f"Grading successful: Submission {submission_id} graded by {current_user.email} from IP {client_ip}")
-    return {"message": "Submission graded successfully", "new_score": submission.score}
+    return {"message": "Submission graded successfully", "new_score": submission.score, "essay_score": submission.essay_score}
 
 @router.put("/{exam_id}", response_model=ExamResponse, summary="Cập nhật đề thi")
 async def update_exam(

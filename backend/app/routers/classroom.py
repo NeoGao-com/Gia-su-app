@@ -769,9 +769,9 @@ async def update_classroom(
         logger.warning(f"Classroom update failed: Not found {classroom_id} by {current_user.email} from IP {client_ip}")
         raise HTTPException(status_code=404, detail="Classroom not found")
 
-    if current_user.role != "TEACHER" and classroom.instructor_id != current_user.id:
+    if classroom.instructor_id != current_user.id:
         logger.warning(f"Classroom update failed: Unauthorized {classroom_id} by {current_user.email} from IP {client_ip}")
-        raise HTTPException(status_code=403, detail="Not authorized")
+        raise HTTPException(status_code=403, detail="Chỉ giáo viên phụ trách mới có quyền cập nhật lớp học này")
 
     update_data = class_in.model_dump(exclude_unset=True)
     if "instructor_id" in update_data and update_data["instructor_id"] is not None:
@@ -806,9 +806,9 @@ async def delete_classroom(
         logger.warning(f"Classroom delete failed: Not found {classroom_id} by {current_user.email} from IP {client_ip}")
         raise HTTPException(status_code=404, detail="Classroom not found")
 
-    if current_user.role != "TEACHER" and classroom.instructor_id != current_user.id:
+    if classroom.instructor_id != current_user.id:
         logger.warning(f"Classroom delete failed: Unauthorized {classroom_id} by {current_user.email} from IP {client_ip}")
-        raise HTTPException(status_code=403, detail="Not authorized")
+        raise HTTPException(status_code=403, detail="Chỉ giáo viên phụ trách mới có quyền xóa lớp học này")
 
     classroom.is_deleted = True
     await db.commit()
@@ -902,8 +902,8 @@ async def get_classroom_gradebook(
     if not classroom:
         raise HTTPException(status_code=404, detail="Classroom not found")
 
-    if current_user.role != "TEACHER" and classroom.instructor_id != current_user.id:
-        raise HTTPException(status_code=403, detail="Not authorized")
+    if classroom.instructor_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Chỉ giáo viên phụ trách mới có quyền xem sổ điểm lớp này")
 
     # Get active students count and pagination
     from sqlalchemy import func, or_, and_, desc
@@ -1583,8 +1583,9 @@ async def delete_classroom_post(
     if not post:
         raise HTTPException(status_code=404, detail="Không tìm thấy bài thảo luận")
 
-    # Only author or teacher can delete
-    if current_user.role != "TEACHER" and post.user_id != current_user.id:
+    # Only post author or classroom instructor can delete
+    is_instructor = bool(classroom and classroom.instructor_id == current_user.id)
+    if not is_instructor and post.user_id != current_user.id:
         raise HTTPException(status_code=403, detail="Bạn không có quyền xóa bài viết này")
 
     await db.delete(post)
@@ -1608,7 +1609,8 @@ async def delete_classroom_comment(
     if not comment:
         raise HTTPException(status_code=404, detail="Không tìm thấy bình luận")
 
-    if current_user.role != "TEACHER" and comment.user_id != current_user.id:
+    is_instructor = bool(classroom and classroom.instructor_id == current_user.id)
+    if not is_instructor and comment.user_id != current_user.id:
         raise HTTPException(status_code=403, detail="Bạn không có quyền xóa bình luận này")
 
     await db.delete(comment)

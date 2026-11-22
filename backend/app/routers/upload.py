@@ -99,10 +99,15 @@ async def extract_questions_from_file(
     filename = file.filename or "unknown.txt"
     contents = await file.read()
     raw_text = extract_text_from_file(contents, filename)
+    try:
+        safe_grade = int(grade_level) if grade_level else 10
+    except (ValueError, TypeError):
+        safe_grade = 10
+
     parsed_qs = parse_questions_with_rules(
         raw_text,
         subject=subject or "Toán",
-        grade_level=int(grade_level) if grade_level else 10,
+        grade_level=safe_grade,
         chapter=chapter
     )
     return {

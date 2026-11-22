@@ -449,7 +449,7 @@ export function SubmissionReviewModal({ isOpen, onClose, submissionId }) {
                     </div>
                   )}
 
-                  {/* ESSAY display & AI Grading */}
+                  {/* ESSAY display & Teacher Grading */}
                   {q.question_type === 'ESSAY' && (
                     <div className="space-y-3 pt-1 text-xs">
                       {/* Student submission text */}
@@ -470,13 +470,13 @@ export function SubmissionReviewModal({ isOpen, onClose, submissionId }) {
                         </div>
                       )}
 
-                      {/* AI Grading Card if exists */}
+                      {/* Teacher Grading Card if exists */}
                       {q.gradInfo && (
                         <div className="p-3.5 bg-gradient-to-br from-indigo-50/90 via-sky-50/70 to-blue-50/80 border border-indigo-200/90 rounded-2xl space-y-2.5 shadow-2xs">
                           <div className="flex items-center justify-between">
                             <span className="font-bold text-indigo-900 flex items-center space-x-1.5">
                               <Sparkles className="w-4 h-4 text-indigo-600" />
-                              <span>Đánh giá &amp; Điểm số từ AI Trợ giảng</span>
+                              <span>Đánh giá &amp; Điểm số từ Giáo viên</span>
                             </span>
                             <span className="px-2.5 py-1 bg-indigo-600 text-white rounded-lg font-extrabold text-xs shadow-2xs">
                               {q.gradInfo.points_awarded ?? q.gradInfo.points ?? 0} / {q.gradInfo.max_points || 10} điểm

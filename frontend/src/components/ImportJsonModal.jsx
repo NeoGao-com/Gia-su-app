@@ -43,7 +43,7 @@ export function generateMasterFilePrompt(subject = 'Toán', grade = 10) {
     ? '- Khối lớp: Tự nhận diện khối lớp theo nội dung tệp đính kèm'
     : `- Khối lớp mục tiêu: Lớp ${grade} (Gán "grade_level": ${grade} cho toàn bộ các câu hỏi)`;
 
-  return `Bạn là một trợ lý AI chuyên nghiệp về khảo thí và trích xuất dữ liệu đề thi.
+  return `Bạn là một trợ lý chuyên nghiệp về khảo thí và trích xuất dữ liệu đề thi.
 Tôi đã đính kèm / tải lên một tệp tài liệu (Word, PDF, Hình ảnh, Text hoặc Đề cương câu hỏi).
 
 THÔNG TIN CẤU HÌNH YÊU CẦU:
@@ -290,13 +290,13 @@ export function robustJsonRepair(raw) {
 
 export function cleanAndParseJson(rawText) {
   if (!rawText || !rawText.trim()) {
-    throw new Error('Vui lòng dán chuỗi JSON kết quả từ AI.');
+    throw new Error('Vui lòng dán chuỗi JSON danh sách câu hỏi.');
   }
 
   const trimmed = rawText.trim();
 
   if (!trimmed.includes('{') && !trimmed.includes('[')) {
-    throw new Error('Văn bản bạn vừa dán không phải là mã JSON! Hãy gửi đề thi của bạn cho AI kèm Prompt mẫu, sau đó sao chép kết quả JSON do AI tạo ra để dán vào đây.');
+    throw new Error('Văn bản bạn vừa dán không phải là mã JSON! Hãy nhập danh sách câu hỏi theo định dạng JSON chuẩn để dán vào đây.');
   }
 
   try {
@@ -455,7 +455,7 @@ export function ImportJsonModal({
     try {
       await navigator.clipboard.writeText(currentMasterPrompt);
       setCopiedPrompt(true);
-      toast.success(`Đã sao chép Prompt cho [${selectedSubject === 'AUTO' ? 'Tự nhận diện' : selectedSubject} - ${selectedGrade === 'AUTO' ? 'Tự nhận diện' : 'Lớp ' + selectedGrade}]! Hãy dán vào AI cùng tệp.`);
+      toast.success(`Đã sao chép cấu trúc mẫu cho [${selectedSubject === 'AUTO' ? 'Tự nhận diện' : selectedSubject} - ${selectedGrade === 'AUTO' ? 'Tự nhận diện' : 'Lớp ' + selectedGrade}]!`);
       setTimeout(() => setCopiedPrompt(false), 2500);
     } catch {
       const textarea = document.createElement('textarea');
@@ -465,7 +465,7 @@ export function ImportJsonModal({
       document.execCommand('copy');
       document.body.removeChild(textarea);
       setCopiedPrompt(true);
-      toast.success('Đã sao chép Prompt AI thành công!');
+      toast.success('Đã sao chép cấu trúc mẫu thành công!');
       setTimeout(() => setCopiedPrompt(false), 2500);
     }
   };
@@ -511,7 +511,7 @@ export function ImportJsonModal({
   // FAST DIRECT BULK IMPORT (1-Click)
   const handleFastDirectImport = async () => {
     if (!jsonInput.trim()) {
-      toast.error('Vui lòng dán chuỗi JSON kết quả từ AI vào ô bên dưới.');
+      toast.error('Vui lòng dán chuỗi JSON vào ô bên dưới.');
       return;
     }
 
@@ -613,7 +613,7 @@ export function ImportJsonModal({
     <Modal 
       isOpen={isOpen} 
       onClose={onClose} 
-      title="Nhập câu hỏi hàng loạt bằng JSON (Chuẩn hóa cho AI đọc tệp)"
+      title="Nhập câu hỏi hàng loạt bằng JSON chuẩn hóa"
       maxWidth="max-w-4xl"
     >
       <div className="space-y-4">
@@ -655,11 +655,11 @@ export function ImportJsonModal({
         </div>
 
         {/* ======================================================== */}
-        {/* STEP 1: PROMPT AI & JSON INPUT */}
+        {/* STEP 1: FORMAT & JSON INPUT */}
         {/* ======================================================== */}
         {step === 'input' && (
           <div className="space-y-4">
-            {/* MASTER FILE AI PROMPT BANNER */}
+            {/* MASTER FILE FORMAT BANNER */}
             <div className="p-4 sm:p-5 bg-gradient-to-br from-indigo-50/90 via-slate-50/50 to-white border border-indigo-200/80 rounded-2xl space-y-3.5 shadow-xs">
               <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
                 <div className="space-y-1">
@@ -741,7 +741,7 @@ export function ImportJsonModal({
                 </div>
                 <div className="flex items-center space-x-2 bg-white/80 p-2.5 rounded-xl border border-indigo-100">
                   <span className="w-5 h-5 rounded-full bg-indigo-600 text-white text-[11px] font-bold flex items-center justify-center shrink-0">2</span>
-                  <span>Tải file lên AI &amp; dán Prompt gửi đi</span>
+                  <span>Định dạng tệp theo mẫu chuẩn</span>
                 </div>
                 <div className="flex items-center space-x-2 bg-white/80 p-2.5 rounded-xl border border-indigo-100">
                   <span className="w-5 h-5 rounded-full bg-indigo-600 text-white text-[11px] font-bold flex items-center justify-center shrink-0">3</span>
@@ -753,7 +753,7 @@ export function ImportJsonModal({
               {showPromptDetails && (
                 <div className="pt-2">
                   <div className="text-[11px] font-bold text-slate-600 mb-1 flex items-center justify-between">
-                    <span>Nội dung Prompt gửi cho AI (Đã gắn Môn: {selectedSubject}, Khối: {selectedGrade}):</span>
+                    <span>Nội dung mẫu JSON chuẩn (Đã gắn Môn: {selectedSubject}, Khối: {selectedGrade}):</span>
                     <button 
                       type="button" 
                       onClick={handleCopyPrompt} 
@@ -797,7 +797,7 @@ export function ImportJsonModal({
             <div className="space-y-2">
               <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
                 <label className="block text-xs font-bold text-gray-800">
-                  Dán chuỗi JSON kết quả từ AI vào đây:
+                  Dán chuỗi JSON danh sách câu hỏi vào đây:
                 </label>
                 <div className="flex flex-wrap items-center gap-1.5">
                   <button
