@@ -266,6 +266,20 @@ export function QuestionBank() {
     }
   };
 
+  const handleMergeCategory = async (sourceTaxonomy, targetTaxonomy) => {
+    try {
+      await api.put('/questions/categories/move', { source: sourceTaxonomy, target: targetTaxonomy });
+      if (selectedCategory && JSON.stringify(selectedCategory) === JSON.stringify(sourceTaxonomy)) {
+        setSelectedCategory(targetTaxonomy);
+      }
+      refreshQuestions();
+      refreshTreeData();
+      toast.success('Gộp thư mục thành công!');
+    } catch (err) {
+      toast.error(err.response?.data?.detail || 'Không thể gộp thư mục');
+    }
+  };
+
   const totalPages = Math.ceil(totalQuestions / limit) || 1;
 
   return (
@@ -320,6 +334,7 @@ export function QuestionBank() {
                 onDeleteCategory={handleDeleteCategory}
                 onMoveQuestion={handleMoveQuestion}
                 onMoveCategory={handleMoveCategory}
+                onMergeCategory={handleMergeCategory}
               />
             </div>
 

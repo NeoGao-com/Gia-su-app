@@ -407,6 +407,226 @@ def test_document_parser_safe_fallback():
     assert res[0]["correct_option"] == 1
 
 
+def test_get_canonical_key():
+    from app.routers.questions import get_canonical_key
+
+    # 1. Basic prefix stripping
+    assert get_canonical_key("Chương 1: Mệnh đề và tập hợp") == "mệnh đề và tập hợp"
+    assert get_canonical_key("Chương 01: Mệnh đề và tập hợp") == "mệnh đề và tập hợp"
+    assert get_canonical_key("Chương I: Mệnh đề và tập hợp") == "mệnh đề và tập hợp"
+    assert get_canonical_key("Chương I - Mệnh đề và tập hợp") == "mệnh đề và tập hợp"
+    assert get_canonical_key("Chương 1 – Mệnh đề và tập hợp") == "mệnh đề và tập hợp"
+    assert get_canonical_key("Chương 1 — Mệnh đề và tập hợp") == "mệnh đề và tập hợp"
+    assert get_canonical_key("Phần 2: Hình học không gian") == "hình học không gian"
+    assert get_canonical_key("Chuyên đề 3. Giải tích") == "giải tích"
+    assert get_canonical_key("Bài 1: Mệnh đề") == "mệnh đề"
+    assert get_canonical_key("Bài 01. Mệnh đề") == "mệnh đề"
+
+    # 2. Bare names match prefixed names
+    assert get_canonical_key("Mệnh đề và tập hợp") == "mệnh đề và tập hợp"
+    assert get_canonical_key("mệnh đề và tập hợp") == get_canonical_key("Chương 1: Mệnh đề và tập hợp")
+
+    # 3. Empty core fallback
+    assert get_canonical_key("Chương 1:") == "chương 1:"
+    assert get_canonical_key("Chương 1") == "chương 1"
+
+    # 4. Do NOT strip numbers from "Ôn tập chương 1" or "Bài tập cuối chương 2"
+    assert get_canonical_key("Ôn tập chương 1") == "ôn tập chương 1"
+    assert get_canonical_key("Bài tập cuối chương 2") == "bài tập cuối chương 2"
+
+    # 5. Empty inputs
+    assert get_canonical_key("") == ""
+    assert get_canonical_key("   ") == ""
+    assert get_canonical_key(None) == ""
+
+
+def test_normalize_question_payload_preserves_display_names():
+    from app.routers.questions import normalize_question_payload
+
+    raw = {
+        "content": "Một câu hỏi trắc nghiệm",
+        "chapter": "Chương 1: Mệnh đề và tập hợp",
+        "lesson": "Bài 1: Mệnh đề",
+        "options": ["A", "B", "C", "D"],
+        "correct_option": 0
+    }
+    norm = normalize_question_payload(raw)
+    assert norm["chapter"] == "Chương 1: Mệnh đề và tập hợp"
+    assert norm["lesson"] == "Bài 1: Mệnh đề"
+
+
+def test_preview_endpoint_registered():
+    from fastapi.testclient import TestClient
+    from app.main import app
+
+    client = TestClient(app)
+    # Without auth, it should require teacher credentials (401 or 403), NOT 404
+    res = client.post("/api/questions/import-json/preview", json={"questions": []})
+    assert res.status_code in (401, 403)
+
+
+@pytest.mark.asyncio
+async def test_smart_taxonomy_normalization_and_preview_logic(tmp_path):
+    from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
+    from sqlalchemy.orm import sessionmaker
+    from app.database import Base
+    from app.models.question import Question, QuestionCategory, CategoryAuditLog
+    from app.models.user import User
+    from app.routers.questions import (
+        load_taxonomy_lookup_maps,
+        preview_import_questions_json,
+        import_questions_json,
+        QuestionImportRequest,
+        move_category,
+        CategoryMoveRequest,
+        CategoryDeleteRequest
+    )
+
+    db_file = tmp_path / "test_taxonomy.db"
+    engine = create_async_engine(f"sqlite+aiosqlite:///{db_file.as_posix()}", echo=False)
+    async with engine.begin() as conn:
+        await conn.run_sync(Base.metadata.create_all)
+
+    async_session = sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
+
+    async with async_session() as session:
+        # Pre-seed teacher user
+        teacher = User(id=99, email="teacher@test.com", hashed_password="pw", role="TEACHER")
+        session.add(teacher)
+
+        # Pre-seed category in DB
+        cat1 = QuestionCategory(
+            subject="Toán",
+            grade_level=10,
+            chapter="Chương 1: Mệnh đề và tập hợp",
+            lesson="Bài 1: Mệnh đề",
+            topic="Dạng 1: Nhận biết"
+        )
+        session.add(cat1)
+        await session.commit()
+
+        # Test pre-loading lookup maps
+        pairs = {("Toán", 10)}
+        c_maps, l_maps, db_chaps, db_less = await load_taxonomy_lookup_maps(session, pairs)
+        assert ("mệnh đề và tập hợp") in c_maps[("Toán", 10)]
+        assert c_maps[("Toán", 10)]["mệnh đề và tập hợp"] == "Chương 1: Mệnh đề và tập hợp"
+        assert ("mệnh đề và tập hợp", "mệnh đề") in l_maps[("Toán", 10)]
+        assert l_maps[("Toán", 10)][("mệnh đề và tập hợp", "mệnh đề")] == "Bài 1: Mệnh đề"
+
+        # Test preview endpoint logic:
+        # 1 question matching existing chapter & lesson
+        # 1 question matching existing chapter but with new lesson
+        # 1 question in a completely new chapter
+        preview_payload = QuestionImportRequest(questions=[
+            {
+                "content": "Câu 1",
+                "subject": "Toán",
+                "grade_level": 10,
+                "chapter": "Mệnh đề và tập hợp",
+                "lesson": "Bài 1. Mệnh đề",
+                "options": ["A", "B"],
+                "correct_option": 0
+            },
+            {
+                "content": "Câu 2",
+                "subject": "Toán",
+                "grade_level": 10,
+                "chapter": "Chương I: Mệnh đề và tập hợp",
+                "lesson": "Bài 2: Tập hợp các số",
+                "options": ["A", "B"],
+                "correct_option": 0
+            },
+            {
+                "content": "Câu 3",
+                "subject": "Toán",
+                "grade_level": 10,
+                "chapter": "Chương 5: Phương pháp tọa độ",
+                "lesson": "Bài 1: Hệ tọa độ",
+                "options": ["A", "B"],
+                "correct_option": 0
+            }
+        ])
+
+        preview_result = await preview_import_questions_json(preview_payload, session, teacher)
+        assert len(preview_result) == 3
+
+        # Item 1: Chapter and Lesson match existing DB record
+        assert preview_result[0]["original_chapter"] == "Mệnh đề và tập hợp"
+        assert preview_result[0]["mapped_chapter"] == "Chương 1: Mệnh đề và tập hợp"
+        assert preview_result[0]["original_lesson"] == "Bài 1. Mệnh đề"
+        assert preview_result[0]["mapped_lesson"] == "Bài 1: Mệnh đề"
+        assert preview_result[0]["status"] == "MATCHED"
+
+        # Item 2: Chapter matches existing DB, lesson is NEW
+        assert preview_result[1]["original_chapter"] == "Chương I: Mệnh đề và tập hợp"
+        assert preview_result[1]["mapped_chapter"] == "Chương 1: Mệnh đề và tập hợp"
+        assert preview_result[1]["original_lesson"] == "Bài 2: Tập hợp các số"
+        assert preview_result[1]["status"] == "NEW"
+
+        # Item 3: Brand new chapter and lesson
+        assert preview_result[2]["mapped_chapter"] == "Chương 5: Phương pháp tọa độ"
+        assert preview_result[2]["status"] == "NEW"
+
+        # Test actual import
+        import_result = await import_questions_json(preview_payload, session, teacher)
+        assert import_result["created"] == 3
+
+        # Verify saved questions in DB have canonical mapped names
+        q_res = await session.execute(Question.__table__.select().where(Question.content == "Câu 1"))
+        q1 = q_res.first()
+        assert q1.chapter == "Chương 1: Mệnh đề và tập hợp"
+        assert q1.lesson == "Bài 1: Mệnh đề"
+
+        # Test move_category with deduplication & audit log
+        cat2 = QuestionCategory(
+            subject="Toán",
+            grade_level=10,
+            chapter="Chương Cũ",
+            lesson="Bài Cũ",
+            topic="Dạng Cũ"
+        )
+        session.add(cat2)
+        await session.commit()
+
+        # Move cat2 to a brand new target
+        move_req1 = CategoryMoveRequest(
+            source=CategoryDeleteRequest(subject="Toán", grade_level=10, chapter="Chương Cũ"),
+            target=CategoryDeleteRequest(subject="Toán", grade_level=10, chapter="Chương Mới")
+        )
+        await move_category(move_req1, session, teacher)
+
+        # Verify cat2 moved
+        await session.refresh(cat2)
+        assert cat2.chapter == "Chương Mới"
+        assert cat2.is_deleted is False
+
+        # Now merge cat2 into cat1 (same subject, grade, chapter, lesson, topic)
+        move_req2 = CategoryMoveRequest(
+            source=CategoryDeleteRequest(subject="Toán", grade_level=10, chapter="Chương Mới"),
+            target=CategoryDeleteRequest(
+                subject="Toán",
+                grade_level=10,
+                chapter="Chương 1: Mệnh đề và tập hợp",
+                lesson="Bài 1: Mệnh đề",
+                topic="Dạng 1: Nhận biết"
+            )
+        )
+        await move_category(move_req2, session, teacher)
+
+        # Verify cat2 was deduplicated (marked is_deleted=True)
+        await session.refresh(cat2)
+        assert cat2.is_deleted is True
+
+        # Verify CategoryAuditLog was written
+        audit_res = await session.execute(CategoryAuditLog.__table__.select().where(CategoryAuditLog.category_id == cat2.id))
+        audits = audit_res.fetchall()
+        assert len(audits) >= 2
+        actions = [a.action for a in audits]
+        assert "MOVE" in actions
+        assert "MOVE_DEDUPLICATE" in actions
+
+
+
 
 
 

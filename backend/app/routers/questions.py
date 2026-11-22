@@ -2,11 +2,13 @@ import logging
 import io
 import json
 import random
-from typing import List, Optional, Dict, Any
+import unicodedata
+import re
+from typing import List, Optional, Dict, Any, Tuple, Set
 from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
-from sqlalchemy import func
+from sqlalchemy import func, union, or_, and_
 from pydantic import BaseModel
 
 from app.database import get_db, redis_client
@@ -297,12 +299,53 @@ async def move_category(
         if payload.source.lesson: cat_query = cat_query.filter(QuestionCategory.lesson == payload.source.lesson)
         if payload.source.topic: cat_query = cat_query.filter(QuestionCategory.topic == payload.source.topic)
         cats = (await db.execute(cat_query)).scalars().all()
+
+        source_cat_ids = {cat.id for cat in cats}
+
+        # Query other non-deleted categories to avoid duplicate taxonomy rows after move/merge
+        other_cats_query = select(QuestionCategory).filter(QuestionCategory.is_deleted == False)
+        if source_cat_ids:
+            other_cats_query = other_cats_query.filter(~QuestionCategory.id.in_(source_cat_ids))
+        other_cats = (await db.execute(other_cats_query)).scalars().all()
+        seen_taxonomy = {
+            (c.subject, c.grade_level, c.chapter, c.lesson, c.topic)
+            for c in other_cats
+        }
+
         for cat in cats:
-            if payload.target.subject: cat.subject = payload.target.subject
-            if payload.target.grade_level is not None: cat.grade_level = payload.target.grade_level
-            if payload.target.chapter is not None: cat.chapter = payload.target.chapter
-            if payload.target.lesson is not None: cat.lesson = payload.target.lesson
-            if payload.target.topic is not None: cat.topic = payload.target.topic
+            target_subject = payload.target.subject if payload.target.subject is not None else cat.subject
+            target_grade = payload.target.grade_level if payload.target.grade_level is not None else cat.grade_level
+            target_chapter = payload.target.chapter if payload.target.chapter is not None else cat.chapter
+            target_lesson = payload.target.lesson if payload.target.lesson is not None else cat.lesson
+            target_topic = payload.target.topic if payload.target.topic is not None else cat.topic
+
+            target_key = (target_subject, target_grade, target_chapter, target_lesson, target_topic)
+
+            if target_key in seen_taxonomy:
+                # Deduplicate: soft-delete redundant category row
+                cat.is_deleted = True
+                audit = CategoryAuditLog(
+                    category_id=cat.id,
+                    action="MOVE_DEDUPLICATE",
+                    user_id=current_user.id,
+                    details={"source": payload.source.model_dump(), "target": payload.target.model_dump(), "deduplicated_into": list(target_key)}
+                )
+                db.add(audit)
+            else:
+                cat.subject = target_subject
+                cat.grade_level = target_grade
+                cat.chapter = target_chapter
+                cat.lesson = target_lesson
+                cat.topic = target_topic
+                seen_taxonomy.add(target_key)
+
+                audit = CategoryAuditLog(
+                    category_id=cat.id,
+                    action="MOVE",
+                    user_id=current_user.id,
+                    details=payload.model_dump()
+                )
+                db.add(audit)
 
         q_query = select(Question)
         if payload.source.subject: q_query = q_query.filter(Question.subject == payload.source.subject)
@@ -312,7 +355,7 @@ async def move_category(
         if payload.source.topic: q_query = q_query.filter(Question.topic == payload.source.topic)
         questions = (await db.execute(q_query)).scalars().all()
         for q in questions:
-            if payload.target.subject: q.subject = payload.target.subject
+            if payload.target.subject is not None: q.subject = payload.target.subject
             if payload.target.grade_level is not None: q.grade_level = payload.target.grade_level
             if payload.target.chapter is not None: q.chapter = payload.target.chapter
             if payload.target.lesson is not None: q.lesson = payload.target.lesson
@@ -323,6 +366,7 @@ async def move_category(
         return {"message": f"Đã di chuyển danh mục và {len(questions)} câu hỏi thành công"}
     except Exception as e:
         await db.rollback()
+        logger.error(f"Error moving category: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Lỗi khi di chuyển danh mục: {str(e)}")
 
 @router.get("", response_model=dict, summary="Lấy danh sách câu hỏi")
@@ -368,6 +412,101 @@ async def get_questions(
         return {"total": total, "items": items, "page": page, "limit": limit}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+def get_canonical_key(name: str) -> str:
+    r"""
+    Chuẩn hóa thông minh tên Chương / Bài học thành canonical key:
+    - Unicode NFC normalize (unicodedata.normalize('NFC', name)) và strip().lower().
+    - Collapse whitespace: re.sub(r'\s+', ' ', s).
+    - Strip leading prefix using safe regex: r'^(?:chương|phần|chuyên đề|bài)\s*(?:[0-9]+|[ivxlcdm]+)\s*[:.\-–—]\s*'
+    - Strip leading/trailing punctuation ':.-–—'.
+    - If core is empty, return s. Do NOT strip numbers from "Ôn tập chương 1" or "Bài tập cuối chương 2".
+    """
+    if not name or not str(name).strip():
+        return ""
+    s = unicodedata.normalize('NFC', str(name)).strip().lower()
+    s = re.sub(r'\s+', ' ', s)
+    prefix_pattern = r'^(?:chương|phần|chuyên đề|bài)\s*(?:[0-9]+|[ivxlcdm]+)\s*[:.\-–—]\s*'
+    core = re.sub(prefix_pattern, '', s)
+    core = core.strip(" :.-–—")
+    return core if core else s
+
+async def load_taxonomy_lookup_maps(
+    db: AsyncSession,
+    pairs: Set[Tuple[str, int]]
+) -> Tuple[Dict[Tuple[str, int], Dict[str, str]], Dict[Tuple[str, int], Dict[Tuple[str, str], str]], Set[Tuple[str, int, str]], Set[Tuple[str, int, str, str]]]:
+    """
+    Pre-load existing (chapter, lesson) taxonomy from Question and QuestionCategory
+    for (subject, grade_level) in one query.
+    Build lookup maps: chapter_map (canonical_key -> db_original_name), lesson_map ((chapter_canonical, lesson_canonical) -> db_original_name).
+    """
+    chapter_maps: Dict[Tuple[str, int], Dict[str, str]] = {}
+    lesson_maps: Dict[Tuple[str, int], Dict[Tuple[str, str], str]] = {}
+    db_chapter_keys: Set[Tuple[str, int, str]] = set()
+    db_lesson_keys: Set[Tuple[str, int, str, str]] = set()
+
+    for subj, grade in pairs:
+        chapter_maps[(subj, grade)] = {}
+        lesson_maps[(subj, grade)] = {}
+
+    cat_stmt = select(
+        QuestionCategory.subject,
+        QuestionCategory.grade_level,
+        QuestionCategory.chapter,
+        QuestionCategory.lesson
+    ).filter(QuestionCategory.is_deleted == False)
+
+    q_stmt = select(
+        Question.subject,
+        Question.grade_level,
+        Question.chapter,
+        Question.lesson
+    ).filter((Question.status != "EXAM_CLONE") | (Question.status.is_(None)))
+
+    if pairs:
+        cat_conds = [
+            and_(QuestionCategory.subject == s, QuestionCategory.grade_level == g)
+            for s, g in pairs
+        ]
+        cat_stmt = cat_stmt.filter(or_(*cat_conds))
+
+        q_conds = [
+            and_(Question.subject == s, Question.grade_level == g)
+            for s, g in pairs
+        ]
+        q_stmt = q_stmt.filter(or_(*q_conds))
+
+    combined_stmt = union(cat_stmt, q_stmt)
+    res = await db.execute(combined_stmt)
+    rows = res.all()
+
+    for subj, grade, chap, less in rows:
+        subj_val = (subj or "Toán").strip()
+        grade_val = grade if grade is not None else 10
+        pair_key = (subj_val, grade_val)
+        c_map = chapter_maps.setdefault(pair_key, {})
+        l_map = lesson_maps.setdefault(pair_key, {})
+
+        if chap and chap.strip() and chap.strip().lower() not in ("null", "none"):
+            chap_clean = chap.strip()
+            c_chap = get_canonical_key(chap_clean)
+            if c_chap:
+                if c_chap not in c_map:
+                    c_map[c_chap] = chap_clean
+                db_chapter_keys.add((subj_val, grade_val, c_chap))
+
+                if less and less.strip() and less.strip().lower() not in ("null", "none"):
+                    less_clean = less.strip()
+                    c_less = get_canonical_key(less_clean)
+                    if c_less:
+                        if (c_chap, c_less) not in l_map:
+                            l_map[(c_chap, c_less)] = less_clean
+                        db_lesson_keys.add((subj_val, grade_val, c_chap, c_less))
+                else:
+                    db_lesson_keys.add((subj_val, grade_val, c_chap, get_canonical_key("Bài chung")))
+                    db_lesson_keys.add((subj_val, grade_val, c_chap, ""))
+
+    return chapter_maps, lesson_maps, db_chapter_keys, db_lesson_keys
 
 def normalize_question_payload(raw: Dict[str, Any]) -> Dict[str, Any]:
     data = dict(raw)
@@ -525,11 +664,43 @@ async def import_questions_json(
         raise HTTPException(status_code=400, detail="Danh sách câu hỏi rỗng")
     if len(payload.questions) > 500:
         raise HTTPException(status_code=400, detail="Tối đa 500 câu hỏi mỗi lần nhập")
+
+    normalized_list = []
+    pairs = set()
+    for raw in payload.questions:
+        norm = normalize_question_payload(raw)
+        normalized_list.append(norm)
+        pairs.add((norm.get("subject", "Toán"), norm.get("grade_level", 10)))
+
+    chapter_maps, lesson_maps, _, _ = await load_taxonomy_lookup_maps(db, pairs)
+
     created = 0
     errors: List[str] = []
-    for idx, raw in enumerate(payload.questions):
+    for idx, norm_data in enumerate(normalized_list):
         try:
-            norm_data = normalize_question_payload(raw)
+            subj = norm_data.get("subject", "Toán")
+            grade = norm_data.get("grade_level", 10)
+            c_map = chapter_maps.setdefault((subj, grade), {})
+            l_map = lesson_maps.setdefault((subj, grade), {})
+
+            orig_chap = norm_data.get("chapter", "Chương chung")
+            orig_less = norm_data.get("lesson", "Bài chung")
+
+            c_chap = get_canonical_key(orig_chap)
+            c_less = get_canonical_key(orig_less)
+
+            if c_chap in c_map:
+                norm_data["chapter"] = c_map[c_chap]
+            else:
+                c_map[c_chap] = orig_chap
+                norm_data["chapter"] = orig_chap
+
+            if (c_chap, c_less) in l_map:
+                norm_data["lesson"] = l_map[(c_chap, c_less)]
+            else:
+                l_map[(c_chap, c_less)] = orig_less
+                norm_data["lesson"] = orig_less
+
             q_in = QuestionCreate(**norm_data)
             code = await generate_question_code(db, q_in.subject, q_in.grade_level, q_in.question_type)
             db.add(Question(**q_in.model_dump(), code=code, created_by_id=current_user.id))
@@ -547,6 +718,64 @@ async def import_questions_json(
     if errors:
         msg += f" ({len(errors)} lỗi)"
     return {"message": msg, "created": created, "total": len(payload.questions), "errors": errors[:20]}
+
+@router.post("/import-json/preview", summary="Xem trước ánh xạ danh mục khi nhập JSON")
+async def preview_import_questions_json(
+    payload: QuestionImportRequest,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_teacher)
+):
+    if not payload.questions:
+        return []
+
+    normalized_list = []
+    pairs = set()
+    for raw in payload.questions:
+        norm = normalize_question_payload(raw)
+        normalized_list.append(norm)
+        pairs.add((norm.get("subject", "Toán"), norm.get("grade_level", 10)))
+
+    chapter_maps, lesson_maps, db_chapter_keys, db_lesson_keys = await load_taxonomy_lookup_maps(db, pairs)
+
+    preview_items = []
+    for norm_data in normalized_list:
+        subj = norm_data.get("subject", "Toán")
+        grade = norm_data.get("grade_level", 10)
+        c_map = chapter_maps.setdefault((subj, grade), {})
+        l_map = lesson_maps.setdefault((subj, grade), {})
+
+        orig_chap = norm_data.get("chapter", "Chương chung")
+        orig_less = norm_data.get("lesson", "Bài chung")
+
+        c_chap = get_canonical_key(orig_chap)
+        c_less = get_canonical_key(orig_less)
+
+        chap_in_db = (subj, grade, c_chap) in db_chapter_keys
+        if c_chap in c_map:
+            mapped_chap = c_map[c_chap]
+        else:
+            c_map[c_chap] = orig_chap
+            mapped_chap = orig_chap
+
+        less_in_db = (subj, grade, c_chap, c_less) in db_lesson_keys
+        if (c_chap, c_less) in l_map:
+            mapped_less = l_map[(c_chap, c_less)]
+        else:
+            l_map[(c_chap, c_less)] = orig_less
+            mapped_less = orig_less
+
+        is_matched = chap_in_db and less_in_db
+        status_val = "MATCHED" if is_matched else "NEW"
+
+        preview_items.append({
+            "original_chapter": orig_chap,
+            "mapped_chapter": mapped_chap,
+            "original_lesson": orig_less,
+            "mapped_lesson": mapped_less,
+            "status": status_val
+        })
+
+    return preview_items
 
 @router.put("/{question_id}", response_model=QuestionResponse)
 async def update_question(question_id: int, q_in: QuestionUpdate, db: AsyncSession = Depends(get_db), current_user: User = Depends(get_current_teacher)):

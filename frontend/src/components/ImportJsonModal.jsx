@@ -2,7 +2,8 @@ import React, { useState, useMemo, useEffect } from 'react';
 import { 
   Sparkles, Copy, Check, AlertCircle, CheckCircle2, Trash2, 
   ArrowLeft, RefreshCw, Eye, FileCode2, Info, ArrowRight, 
-  ChevronDown, ChevronUp, Zap, Clipboard, Wand2, BookOpen, Layers
+  ChevronDown, ChevronUp, Zap, Clipboard, Wand2, BookOpen, Layers,
+  FolderTree, FolderPlus, FolderCheck, Sliders
 } from 'lucide-react';
 import { Modal } from './Modal';
 import { MathRenderer } from './MathRenderer';
@@ -30,8 +31,52 @@ const DEFAULT_SUBJECTS = [
 
 const DEFAULT_GRADES = [6, 7, 8, 9, 10, 11, 12];
 
-// MASTER PROMPT DYNAMICALLY GENERATED FROM CHOSEN SUBJECT & GRADE
-export function generateMasterFilePrompt(subject = 'Toán', grade = 10) {
+/**
+ * Unicode NFC normalize and canonicalize category/chapter/lesson name.
+ * Keeps raw numbers from "Ôn tập chương 1", strips leading prefixes like "Chương 1:".
+ */
+export function getCanonicalKey(name) {
+  if (!name || typeof name !== 'string') return '';
+  let s = name.normalize('NFC').trim().toLowerCase();
+  s = s.replace(/\s+/g, ' ');
+  const prefixRegex = /^(?:chương|phần|chuyên đề|bài)\s*(?:[0-9]+|[ivxlcdm]+)\s*[:.\-–—]\s*/i;
+  const stripped = s.replace(prefixRegex, '');
+  const cleaned = stripped.replace(/^[:.\-–—\s]+|[:.\-–—\s]+$/g, '');
+  return cleaned.length > 0 ? cleaned : s;
+}
+
+/**
+ * Extract grade node from taxonomy treeData.
+ * Supports keys like "Khối 10", "Lớp 10", "10", etc.
+ */
+export function getGradeNodeFromTree(taxonomyTree, subject, grade) {
+  if (!taxonomyTree || typeof taxonomyTree !== 'object') return null;
+  const subjNode = taxonomyTree[subject];
+  if (!subjNode || typeof subjNode !== 'object') return null;
+
+  if (grade === 'AUTO') {
+    return null;
+  }
+
+  const targetGradeNum = Number(grade);
+  if (subjNode[`Khối ${grade}`]) return subjNode[`Khối ${grade}`];
+  if (subjNode[`Lớp ${grade}`]) return subjNode[`Lớp ${grade}`];
+  if (subjNode[String(grade)]) return subjNode[String(grade)];
+
+  for (const [key, val] of Object.entries(subjNode)) {
+    const num = parseInt(key.replace(/[^0-9]/g, ''), 10);
+    if (num === targetGradeNum) {
+      return val;
+    }
+  }
+
+  return null;
+}
+
+/**
+ * MASTER PROMPT DYNAMICALLY GENERATED FROM CHOSEN SUBJECT, GRADE & TAXONOMY TREE
+ */
+export function generateMasterFilePrompt(subject = 'Toán', grade = 10, taxonomyTree = null) {
   const isAutoSubj = subject === 'AUTO';
   const isAutoGrade = grade === 'AUTO';
 
@@ -42,6 +87,39 @@ export function generateMasterFilePrompt(subject = 'Toán', grade = 10) {
   const gradeLine = isAutoGrade
     ? '- Khối lớp: Tự nhận diện khối lớp theo nội dung tệp đính kèm'
     : `- Khối lớp mục tiêu: Lớp ${grade} (Gán "grade_level": ${grade} cho toàn bộ các câu hỏi)`;
+
+  // Extract 2-level structure: Chương -> [Danh sách Bài]
+  let taxonomySection = '';
+  if (!isAutoSubj && !isAutoGrade) {
+    const gradeNode = getGradeNodeFromTree(taxonomyTree, subject, grade);
+    if (gradeNode && typeof gradeNode === 'object') {
+      const chapters = Object.keys(gradeNode).filter(ch => ch && ch !== 'null' && ch !== 'none');
+      if (chapters.length > 0) {
+        const lines = [];
+        chapters.forEach((ch, idx) => {
+          const lessons = Object.keys(gradeNode[ch] || {}).filter(l => l && l !== 'null' && l !== 'none');
+          lines.push(`- Chương ${idx + 1}: "${ch}"`);
+          if (lessons.length > 0) {
+            lessons.forEach(l => {
+              lines.push(`    + Bài học: "${l}"`);
+            });
+          }
+        });
+        taxonomySection = `\nDANH SÁCH CẤU TRÚC THƯ MỤC HIỆN CÓ CỦA ${subject.toUpperCase()} - LỚP ${grade}:\n${lines.join('\n')}\n`;
+      }
+    }
+  }
+
+  const taxonomyInstructions = taxonomySection
+    ? `${taxonomySection}
+QUY TẮC ĐẶT TÊN CHƯƠNG & BÀI HỌC (BẮT BUỘC):
+- Ưu tiên sử dụng chính xác tên Chương ('chapter') và Bài học ('lesson') trong danh sách trên nếu nội dung câu hỏi thuộc mục đó.
+- CHỈ tạo tên mới (theo đúng quy chuẩn đặt tên tương tự danh sách trên) nếu nội dung câu hỏi hoàn toàn chưa có trong danh sách.
+- Không tự ý cắt bỏ tiền tố ('Chương 1:', 'Bài 1:').`
+    : `QUY TẮC ĐẶT TÊN CHƯƠNG & BÀI HỌC (BẮT BUỘC):
+- Ưu tiên sử dụng chính xác tên Chương ('chapter') và Bài học ('lesson') theo sách giáo khoa nếu nội dung câu hỏi thuộc mục đó.
+- CHỈ tạo tên mới (theo đúng quy chuẩn đặt tên tương tự danh sách trên) nếu nội dung câu hỏi hoàn toàn chưa có trong danh sách.
+- Không tự ý cắt bỏ tiền tố ('Chương 1:', 'Bài 1:').`;
 
   return `Bạn là một trợ lý chuyên nghiệp về khảo thí và trích xuất dữ liệu đề thi.
 Tôi đã đính kèm / tải lên một tệp tài liệu (Word, PDF, Hình ảnh, Text hoặc Đề cương câu hỏi).
@@ -85,10 +163,12 @@ CÁC TRƯỜNG THUỘC TÍNH DÙNG CHUNG CHO MỖI CÂU HỎI:
 - "difficulty": Mức độ nhận thức: "NHAN_BIET", "THONG_HIEU", "VAN_DUNG", hoặc "VAN_DUNG_CAO".
 - "subject": "${isAutoSubj ? 'Tên môn học nhận diện từ đề' : subject}".
 - "grade_level": ${isAutoGrade ? 10 : grade}.
-- "chapter": "Tên chương hoặc chủ đề kiến thức lớn (ví dụ: 'Mệnh đề và tập hợp')".
-- "lesson": "Tên bài học cụ thể (ví dụ: 'Bài 1: Mệnh đề', nếu không có ghi 'Bài chung')".
-- "topic": "Dạng bài học hoặc chuyên đề nhỏ (ví dụ: 'Dạng 1: Nhận biết mệnh đề', nếu không có ghi 'Dạng chung')".
+- "chapter": "Tên chương hoặc chủ đề kiến thức lớn (tuân thủ quy tắc bên dưới)".
+- "lesson": "Tên bài học cụ thể (tuân thủ quy tắc bên dưới)".
+- "topic": "Dạng bài học hoặc chuyên đề nhỏ (ví dụ: 'Dạng 1: Tọa độ đỉnh parabol', nếu không có ghi 'Dạng chung')".
 - "explanation": Lời giải thích chi tiết từng bước bằng công thức LaTeX.
+
+${taxonomyInstructions}
 
 ĐỊNH DẠNG ĐẦU RA (CỰC KỲ QUAN TRỌNG):
 - CHỈ TRẢ VỀ DUY NHẤT MỘT MẢNG JSON HỢP LỆ: Bắt đầu bằng [ và kết thúc bằng ].
@@ -330,6 +410,10 @@ export function normalizeQuestionList(rawList, defaultCategory = null, fallbackS
     const q = { ...item };
     const qNum = idx + 1;
 
+    // Preserve original chapter & lesson from raw input for mapping preview
+    q._originalChapter = item.chapter || '';
+    q._originalLesson = item.lesson || '';
+
     // Type
     const qType = (q.question_type || (Array.isArray(q.sub_questions) ? 'TRUE_FALSE' : 'MULTIPLE_CHOICE')).toUpperCase();
     q.question_type = qType;
@@ -392,6 +476,33 @@ export function normalizeQuestionList(rawList, defaultCategory = null, fallbackS
   return { normalized, warnings };
 }
 
+/**
+ * Apply override rules to questions based on storageMode & overrideLevel.
+ */
+export function applyOverridesToQuestion(q, storageMode, overrideLevel, overrideChapter, overrideLesson) {
+  const updated = { ...q };
+  const baseChap = q._originalChapter !== undefined ? q._originalChapter : (q.chapter || '');
+  const baseLess = q._originalLesson !== undefined ? q._originalLesson : (q.lesson || '');
+
+  if (storageMode === 'override') {
+    if (overrideChapter && overrideChapter.trim()) {
+      updated.chapter = overrideChapter.trim();
+    } else {
+      updated.chapter = baseChap || 'Chương chung';
+    }
+
+    if (overrideLevel === 'all' && overrideLesson && overrideLesson.trim()) {
+      updated.lesson = overrideLesson.trim();
+    } else {
+      updated.lesson = baseLess || 'Bài chung';
+    }
+  } else {
+    updated.chapter = baseChap || 'Chương chung';
+    updated.lesson = baseLess || 'Bài chung';
+  }
+  return updated;
+}
+
 export function ImportJsonModal({ 
   isOpen, 
   onClose, 
@@ -430,15 +541,40 @@ export function ImportJsonModal({
   const [selectedSubject, setSelectedSubject] = useState(selectedCategory?.subject || 'Toán');
   const [selectedGrade, setSelectedGrade] = useState(selectedCategory?.grade_level ? Number(selectedCategory.grade_level) : 10);
 
+  // Storage override states
+  const [storageMode, setStorageMode] = useState('auto'); // 'auto' | 'override'
+  const [overrideLevel, setOverrideLevel] = useState('chapter'); // 'chapter' | 'all'
+  const [overrideChapter, setOverrideChapter] = useState(selectedCategory?.chapter || '');
+  const [overrideLesson, setOverrideLesson] = useState(selectedCategory?.lesson || '');
+
   useEffect(() => {
     if (selectedCategory?.subject) setSelectedSubject(selectedCategory.subject);
     if (selectedCategory?.grade_level) setSelectedGrade(Number(selectedCategory.grade_level));
+    if (selectedCategory?.chapter) setOverrideChapter(selectedCategory.chapter);
+    if (selectedCategory?.lesson) setOverrideLesson(selectedCategory.lesson);
   }, [selectedCategory]);
 
-  // Master Prompt text generated dynamically
+  // Available chapters & lessons for the currently selected subject and grade
+  const currentGradeNode = useMemo(() => {
+    return getGradeNodeFromTree(treeData, selectedSubject, selectedGrade);
+  }, [treeData, selectedSubject, selectedGrade]);
+
+  const availableChapters = useMemo(() => {
+    if (!currentGradeNode || typeof currentGradeNode !== 'object') return [];
+    return Object.keys(currentGradeNode).filter(ch => ch && ch !== 'null' && ch !== 'none');
+  }, [currentGradeNode]);
+
+  const availableLessons = useMemo(() => {
+    if (!currentGradeNode || !overrideChapter) return [];
+    const lessonsObj = currentGradeNode[overrideChapter];
+    if (!lessonsObj || typeof lessonsObj !== 'object') return [];
+    return Object.keys(lessonsObj).filter(l => l && l !== 'null' && l !== 'none');
+  }, [currentGradeNode, overrideChapter]);
+
+  // Master Prompt text generated dynamically with 2-level structure included
   const currentMasterPrompt = useMemo(() => {
-    return generateMasterFilePrompt(selectedSubject, selectedGrade);
-  }, [selectedSubject, selectedGrade]);
+    return generateMasterFilePrompt(selectedSubject, selectedGrade, treeData);
+  }, [selectedSubject, selectedGrade, treeData]);
 
   // Raw JSON input
   const [jsonInput, setJsonInput] = useState('');
@@ -448,6 +584,92 @@ export function ImportJsonModal({
   // Parsed questions
   const [parsedQuestions, setParsedQuestions] = useState([]);
   const [parseWarnings, setParseWarnings] = useState([]);
+
+  // Compute Preview Mapping table (Unique JSON (Chương, Bài) -> Target (Chương, Bài))
+  const previewMapping = useMemo(() => {
+    if (!parsedQuestions || parsedQuestions.length === 0) return [];
+
+    const existingChapters = currentGradeNode ? Object.keys(currentGradeNode) : [];
+    const chapterCanonMap = new Map();
+    const lessonCanonMap = new Map();
+
+    existingChapters.forEach(chap => {
+      chapterCanonMap.set(getCanonicalKey(chap), chap);
+      const lessons = Object.keys(currentGradeNode[chap] || {});
+      lessons.forEach(les => {
+        lessonCanonMap.set(`${getCanonicalKey(chap)}||${getCanonicalKey(les)}`, les);
+      });
+    });
+
+    const map = new Map();
+
+    parsedQuestions.forEach(q => {
+      const rawChap = (q._originalChapter !== undefined ? q._originalChapter : (q.chapter || '')).trim();
+      const rawLess = (q._originalLesson !== undefined ? q._originalLesson : (q.lesson || '')).trim();
+      const origChapDisplay = rawChap || '(Trống trong JSON)';
+      const origLessDisplay = rawLess || '(Trống trong JSON)';
+
+      const pairKey = `${rawChap}||${rawLess}`;
+
+      if (!map.has(pairKey)) {
+        let targetChap = rawChap || 'Chương chung';
+        let targetLess = rawLess || 'Bài chung';
+        let status = 'NEW'; // 'MATCHED' | 'NEW' | 'OVERRIDE'
+
+        if (storageMode === 'override') {
+          const hasChapOverride = Boolean(overrideChapter && overrideChapter.trim());
+          const hasLessOverride = overrideLevel === 'all' && Boolean(overrideLesson && overrideLesson.trim());
+          if (hasChapOverride || hasLessOverride) {
+            status = 'OVERRIDE';
+            if (hasChapOverride) targetChap = overrideChapter.trim();
+            if (hasLessOverride) targetLess = overrideLesson.trim();
+          }
+        } else {
+          // Auto mode: Canonical check against existing tree
+          const cKey = getCanonicalKey(rawChap);
+          const lKey = `${cKey}||${getCanonicalKey(rawLess)}`;
+
+          if (chapterCanonMap.has(cKey)) {
+            targetChap = chapterCanonMap.get(cKey);
+            if (lessonCanonMap.has(lKey)) {
+              targetLess = lessonCanonMap.get(lKey);
+              status = 'MATCHED';
+            } else {
+              status = 'NEW';
+            }
+          } else {
+            status = 'NEW';
+          }
+        }
+
+        map.set(pairKey, {
+          originalChapter: origChapDisplay,
+          originalLesson: origLessDisplay,
+          targetChapter: targetChap,
+          targetLesson: targetLess,
+          status,
+          count: 0
+        });
+      }
+
+      map.get(pairKey).count += 1;
+    });
+
+    return Array.from(map.values());
+  }, [parsedQuestions, currentGradeNode, storageMode, overrideLevel, overrideChapter, overrideLesson]);
+
+  // Counts for mapping summary badges
+  const summaryCounts = useMemo(() => {
+    let matched = 0;
+    let newCount = 0;
+    let overrideCount = 0;
+    previewMapping.forEach(item => {
+      if (item.status === 'MATCHED') matched += 1;
+      else if (item.status === 'NEW') newCount += 1;
+      else if (item.status === 'OVERRIDE') overrideCount += 1;
+    });
+    return { matched, new: newCount, override: overrideCount };
+  }, [previewMapping]);
 
   if (!isOpen) return null;
 
@@ -508,7 +730,7 @@ export function ImportJsonModal({
     }
   };
 
-  // FAST DIRECT BULK IMPORT (1-Click)
+  // FAST DIRECT BULK IMPORT (1-Click) with override rules applied
   const handleFastDirectImport = async () => {
     if (!jsonInput.trim()) {
       toast.error('Vui lòng dán chuỗi JSON vào ô bên dưới.');
@@ -529,8 +751,15 @@ export function ImportJsonModal({
 
       const { normalized } = normalizeQuestionList(rawList, selectedCategory, selectedSubject, selectedGrade);
       
-      const res = await api.post('/questions/import-json', { questions: normalized });
-      toast.success(res.data?.message || `Đã nhập hàng loạt ${normalized.length} câu hỏi vào ngân hàng thành công!`);
+      // Apply storage overrides and strip temporary mapping properties
+      const questionsToSubmit = normalized.map(q => {
+        const overridden = applyOverridesToQuestion(q, storageMode, overrideLevel, overrideChapter, overrideLesson);
+        const { _originalChapter, _originalLesson, ...cleanQ } = overridden;
+        return cleanQ;
+      });
+
+      const res = await api.post('/questions/import-json', { questions: questionsToSubmit });
+      toast.success(res.data?.message || `Đã nhập hàng loạt ${questionsToSubmit.length} câu hỏi vào ngân hàng thành công!`);
       
       onClose();
       if (onSuccess) {
@@ -549,7 +778,7 @@ export function ImportJsonModal({
   };
 
   // PROCEED TO PREVIEW
-  const handleProceedToPreview = () => {
+  const handleProceedToPreview = async () => {
     try {
       setParseErrorAlert(null);
       const parsed = cleanAndParseJson(jsonInput);
@@ -562,6 +791,19 @@ export function ImportJsonModal({
       }
 
       const { normalized, warnings } = normalizeQuestionList(rawList, selectedCategory, selectedSubject, selectedGrade);
+      
+      // Optional call to dry-run preview endpoint if available
+      try {
+        const cleanPayload = normalized.map(q => {
+          const overridden = applyOverridesToQuestion(q, storageMode, overrideLevel, overrideChapter, overrideLesson);
+          const { _originalChapter, _originalLesson, ...cleanQ } = overridden;
+          return cleanQ;
+        });
+        await api.post('/questions/import-json/preview', { questions: cleanPayload });
+      } catch {
+        // Handled seamlessly via local taxonomy canonical matching
+      }
+
       setParsedQuestions(normalized);
       setParseWarnings(warnings);
       setStep('preview');
@@ -585,6 +827,7 @@ export function ImportJsonModal({
     });
   };
 
+  // FINAL IMPORT with override rules applied
   const handleFinalImport = async () => {
     if (!parsedQuestions.length) {
       toast.error('Không có câu hỏi nào để nhập.');
@@ -592,8 +835,14 @@ export function ImportJsonModal({
     }
     try {
       setIsSubmitting(true);
-      const res = await api.post('/questions/import-json', { questions: parsedQuestions });
-      toast.success(res.data?.message || `Đã nhập ${parsedQuestions.length} câu hỏi thành công!`);
+      const questionsToSubmit = parsedQuestions.map(q => {
+        const overridden = applyOverridesToQuestion(q, storageMode, overrideLevel, overrideChapter, overrideLesson);
+        const { _originalChapter, _originalLesson, ...cleanQ } = overridden;
+        return cleanQ;
+      });
+
+      const res = await api.post('/questions/import-json', { questions: questionsToSubmit });
+      toast.success(res.data?.message || `Đã nhập ${questionsToSubmit.length} câu hỏi thành công!`);
       onClose();
       if (onSuccess) {
         try {
@@ -630,7 +879,7 @@ export function ImportJsonModal({
               }`}
             >
               <FileCode2 className="w-3.5 h-3.5" />
-              <span>Bước 1: Chọn Môn / Khối &amp; Lấy Prompt</span>
+              <span>Bước 1: Chọn Môn, Cấu hình Thư mục &amp; Lấy Prompt</span>
             </button>
             <ArrowRight className="w-3.5 h-3.5 text-slate-400" />
             <button
@@ -668,7 +917,7 @@ export function ImportJsonModal({
                     <span>Cấu trúc JSON Chuẩn: Hướng dẫn định dạng tệp câu hỏi hợp lệ</span>
                   </div>
                   <p className="text-xs text-slate-600 leading-relaxed">
-                    Hệ thống sẽ đọc dữ liệu JSON, xác thực cú pháp và nhập hàng loạt câu hỏi vào đúng môn học và khối lớp bạn chỉ định.
+                    Hệ thống sẽ đối chiếu với danh mục Chương &amp; Bài học có sẵn trong ngân hàng, tự động chuẩn hóa hoặc ghi đè theo chỉ định của bạn.
                   </p>
                 </div>
 
@@ -687,10 +936,10 @@ export function ImportJsonModal({
                     type="button"
                     onClick={handleCopyPrompt}
                     className="flex-1 sm:flex-none flex items-center justify-center space-x-1.5 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold shadow-xs transition cursor-pointer"
-                    title="Bấm để sao chép cấu trúc JSON mẫu"
+                    title="Bấm để sao chép cấu trúc JSON mẫu kèm danh mục thư mục hiện có"
                   >
                     {copiedPrompt ? <Check className="w-4 h-4 text-emerald-300" /> : <Copy className="w-4 h-4" />}
-                    <span>{copiedPrompt ? 'Đã sao chép mẫu!' : 'Sao chép cấu trúc mẫu'}</span>
+                    <span>{copiedPrompt ? 'Đã sao chép prompt!' : 'Sao chép cấu trúc mẫu'}</span>
                   </button>
                 </div>
               </div>
@@ -745,7 +994,7 @@ export function ImportJsonModal({
                 </div>
                 <div className="flex items-center space-x-2 bg-white/80 p-2.5 rounded-xl border border-indigo-100">
                   <span className="w-5 h-5 rounded-full bg-indigo-600 text-white text-[11px] font-bold flex items-center justify-center shrink-0">3</span>
-                  <span>Copy JSON dán vào ô dưới &amp; bấm Nhập</span>
+                  <span>Dán JSON &amp; chọn thư mục lưu trữ</span>
                 </div>
               </div>
 
@@ -753,7 +1002,7 @@ export function ImportJsonModal({
               {showPromptDetails && (
                 <div className="pt-2">
                   <div className="text-[11px] font-bold text-slate-600 mb-1 flex items-center justify-between">
-                    <span>Nội dung mẫu JSON chuẩn (Đã gắn Môn: {selectedSubject}, Khối: {selectedGrade}):</span>
+                    <span>Nội dung prompt kèm danh mục Chương &amp; Bài ({selectedSubject} - Khối {selectedGrade}):</span>
                     <button 
                       type="button" 
                       onClick={handleCopyPrompt} 
@@ -766,6 +1015,155 @@ export function ImportJsonModal({
                   <pre className="p-3.5 bg-slate-900 text-slate-100 rounded-xl text-[11px] font-mono overflow-x-auto max-h-56 leading-relaxed whitespace-pre-wrap select-all">
                     {currentMasterPrompt}
                   </pre>
+                </div>
+              )}
+            </div>
+
+            {/* CẤU HÌNH THƯ MỤC LƯU TRỮ */}
+            <div className="p-4 bg-slate-50 border border-slate-200/90 rounded-2xl space-y-3">
+              <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-2">
+                <div className="flex items-center space-x-2 text-xs font-bold text-slate-800">
+                  <FolderTree className="w-4 h-4 text-indigo-600" />
+                  <span>Cấu hình thư mục lưu trữ câu hỏi</span>
+                </div>
+
+                {/* Switch between Auto and Override */}
+                <div className="inline-flex rounded-xl p-0.5 bg-slate-200/70 text-xs font-semibold">
+                  <button
+                    type="button"
+                    onClick={() => setStorageMode('auto')}
+                    className={`px-3 py-1 rounded-lg transition cursor-pointer ${
+                      storageMode === 'auto'
+                        ? 'bg-white text-indigo-700 shadow-xs font-bold'
+                        : 'text-slate-600 hover:text-slate-900'
+                    }`}
+                  >
+                    Tự động theo JSON
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setStorageMode('override')}
+                    className={`px-3 py-1 rounded-lg transition cursor-pointer ${
+                      storageMode === 'override'
+                        ? 'bg-purple-600 text-white shadow-xs font-bold'
+                        : 'text-slate-600 hover:text-slate-900'
+                    }`}
+                  >
+                    Ghi đè thư mục chỉ định
+                  </button>
+                </div>
+              </div>
+
+              {storageMode === 'auto' ? (
+                <div className="text-[11px] text-slate-500 flex items-center space-x-1.5 bg-white/80 p-2.5 rounded-xl border border-slate-200/60">
+                  <Info className="w-3.5 h-3.5 text-indigo-500 shrink-0" />
+                  <span>Hệ thống sẽ tự động đối chiếu tên Chương &amp; Bài học trong JSON với cây thư mục hiện có để ánh xạ thông minh, giữ nguyên tiền tố chuẩn.</span>
+                </div>
+              ) : (
+                <div className="p-3 bg-purple-50/50 rounded-xl border border-purple-200/80 space-y-3 animate-in fade-in">
+                  {/* Choose level */}
+                  <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
+                    <span className="text-xs font-bold text-purple-950 shrink-0">Cấp độ ghi đè:</span>
+                    <div className="flex flex-wrap items-center gap-4 text-xs font-medium text-slate-700">
+                      <label className="flex items-center space-x-1.5 cursor-pointer">
+                        <input
+                          type="radio"
+                          name="overrideLevel"
+                          value="chapter"
+                          checked={overrideLevel === 'chapter'}
+                          onChange={() => setOverrideLevel('chapter')}
+                          className="text-purple-600 focus:ring-purple-500"
+                        />
+                        <span>Chỉ ghi đè Chương (Giữ nguyên Bài từ JSON)</span>
+                      </label>
+                      <label className="flex items-center space-x-1.5 cursor-pointer">
+                        <input
+                          type="radio"
+                          name="overrideLevel"
+                          value="all"
+                          checked={overrideLevel === 'all'}
+                          onChange={() => setOverrideLevel('all')}
+                          className="text-purple-600 focus:ring-purple-500"
+                        />
+                        <span>Ghi đè cả Chương &amp; Bài</span>
+                      </label>
+                    </div>
+                  </div>
+
+                  {/* Dropdowns & Custom Typing */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+                    {/* Chapter Target */}
+                    <div className="space-y-1">
+                      <label className="text-[11px] font-bold text-purple-950 flex items-center justify-between">
+                        <span>Chương mục tiêu:</span>
+                        {availableChapters.length > 0 && (
+                          <span className="text-[10px] text-purple-600 font-normal">
+                            {availableChapters.length} chương trong danh mục
+                          </span>
+                        )}
+                      </label>
+                      <div className="space-y-1.5">
+                        {availableChapters.length > 0 && (
+                          <select
+                            value={availableChapters.includes(overrideChapter) ? overrideChapter : ''}
+                            onChange={(e) => {
+                              if (e.target.value) setOverrideChapter(e.target.value);
+                            }}
+                            className="w-full px-2.5 py-1.5 bg-white border border-purple-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:border-purple-600"
+                          >
+                            <option value="">-- Chọn Chương có sẵn trong cây thư mục --</option>
+                            {availableChapters.map(ch => (
+                              <option key={ch} value={ch}>{ch}</option>
+                            ))}
+                          </select>
+                        )}
+                        <input
+                          type="text"
+                          value={overrideChapter}
+                          onChange={(e) => setOverrideChapter(e.target.value)}
+                          placeholder="Nhập tên Chương (hoặc chọn từ danh sách trên)..."
+                          className="w-full px-3 py-1.5 bg-white border border-purple-200 rounded-xl text-xs text-slate-800 font-medium placeholder-slate-400 focus:outline-none focus:border-purple-600"
+                        />
+                      </div>
+                    </div>
+
+                    {/* Lesson Target - only if overrideLevel === 'all' */}
+                    {overrideLevel === 'all' && (
+                      <div className="space-y-1">
+                        <label className="text-[11px] font-bold text-purple-950 flex items-center justify-between">
+                          <span>Bài học mục tiêu:</span>
+                          {availableLessons.length > 0 && (
+                            <span className="text-[10px] text-purple-600 font-normal">
+                              {availableLessons.length} bài trong chương này
+                            </span>
+                          )}
+                        </label>
+                        <div className="space-y-1.5">
+                          {availableLessons.length > 0 && (
+                            <select
+                              value={availableLessons.includes(overrideLesson) ? overrideLesson : ''}
+                              onChange={(e) => {
+                                if (e.target.value) setOverrideLesson(e.target.value);
+                              }}
+                              className="w-full px-2.5 py-1.5 bg-white border border-purple-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:border-purple-600"
+                            >
+                              <option value="">-- Chọn Bài học có sẵn trong chương --</option>
+                              {availableLessons.map(les => (
+                                <option key={les} value={les}>{les}</option>
+                              ))}
+                            </select>
+                          )}
+                          <input
+                            type="text"
+                            value={overrideLesson}
+                            onChange={(e) => setOverrideLesson(e.target.value)}
+                            placeholder="Nhập tên Bài học (hoặc chọn từ danh sách trên)..."
+                            className="w-full px-3 py-1.5 bg-white border border-purple-200 rounded-xl text-xs text-slate-800 font-medium placeholder-slate-400 focus:outline-none focus:border-purple-600"
+                          />
+                        </div>
+                      </div>
+                    )}
+                  </div>
                 </div>
               )}
             </div>
@@ -785,7 +1183,7 @@ export function ImportJsonModal({
                   <button
                     type="button"
                     onClick={handleAutoFixBackslash}
-                    className="px-3 py-1 bg-rose-600 hover:bg-rose-700 text-white font-bold rounded-lg transition"
+                    className="px-3 py-1 bg-rose-600 hover:bg-rose-700 text-white font-bold rounded-lg transition cursor-pointer"
                   >
                     Tự động sửa lỗi ngay
                   </button>
@@ -803,7 +1201,7 @@ export function ImportJsonModal({
                   <button
                     type="button"
                     onClick={handlePasteClipboard}
-                    className="px-2.5 py-1 text-[11px] font-semibold bg-gray-100 text-gray-700 hover:bg-gray-200 border border-gray-200 rounded-lg transition flex items-center space-x-1"
+                    className="px-2.5 py-1 text-[11px] font-semibold bg-gray-100 text-gray-700 hover:bg-gray-200 border border-gray-200 rounded-lg transition flex items-center space-x-1 cursor-pointer"
                     title="Dán nhanh dữ liệu từ Clipboard"
                   >
                     <Clipboard className="w-3 h-3" />
@@ -812,7 +1210,7 @@ export function ImportJsonModal({
                   <button
                     type="button"
                     onClick={handleAutoFixBackslash}
-                    className="px-2.5 py-1 text-[11px] font-semibold bg-sky-50 text-sky-700 hover:bg-sky-100 border border-sky-200 rounded-lg transition flex items-center space-x-1"
+                    className="px-2.5 py-1 text-[11px] font-semibold bg-sky-50 text-sky-700 hover:bg-sky-100 border border-sky-200 rounded-lg transition flex items-center space-x-1 cursor-pointer"
                     title="Tự động sửa lỗi dấu gạch chéo ngược LaTeX \frac và escape JSON"
                   >
                     <Wand2 className="w-3 h-3" />
@@ -821,7 +1219,7 @@ export function ImportJsonModal({
                   <button
                     type="button"
                     onClick={handleFillSample}
-                    className="px-2.5 py-1 text-[11px] font-semibold bg-gray-50 text-gray-700 hover:bg-gray-100 border border-gray-200 rounded-lg transition"
+                    className="px-2.5 py-1 text-[11px] font-semibold bg-gray-50 text-gray-700 hover:bg-gray-100 border border-gray-200 rounded-lg transition cursor-pointer"
                     title="Nạp dữ liệu mẫu cả 4 dạng câu hỏi để thử nghiệm"
                   >
                     Nạp JSON mẫu
@@ -829,7 +1227,7 @@ export function ImportJsonModal({
                   <button
                     type="button"
                     onClick={() => { setJsonInput(''); setParseErrorAlert(null); }}
-                    className="px-2 py-1 text-[11px] text-gray-400 hover:text-rose-600 transition"
+                    className="px-2 py-1 text-[11px] text-gray-400 hover:text-rose-600 transition cursor-pointer"
                   >
                     Xóa trắng
                   </button>
@@ -841,7 +1239,7 @@ export function ImportJsonModal({
                   rows={9}
                   value={jsonInput}
                   onChange={(e) => { setJsonInput(e.target.value); setParseErrorAlert(null); }}
-                  placeholder='[\n  {\n    "content": "Cho hàm số $y = x^2 - 4x + 3$...",\n    "question_type": "MULTIPLE_CHOICE",\n    "options": ["$(2; -1)$", "$(-2; -1)$", "$(2; 1)$", "$(1; 0)$"],\n    "correct_option": 0,\n    "subject": "Toán",\n    "grade_level": 10\n  }\n]'
+                  placeholder='[\n  {\n    "content": "Cho hàm số $y = x^2 - 4x + 3$...",\n    "question_type": "MULTIPLE_CHOICE",\n    "options": ["$(2; -1)$", "$(-2; -1)$", "$(2; 1)$", "$(1; 0)$"],\n    "correct_option": 0,\n    "subject": "Toán",\n    "grade_level": 10,\n    "chapter": "Hàm số bậc hai",\n    "lesson": "Bài 1: Khái niệm hàm số"\n  }\n]'
                   className="w-full p-3 font-mono text-xs text-slate-800 bg-slate-50/80 border border-slate-200 rounded-2xl focus:outline-none focus:border-indigo-600 focus:ring-2 focus:ring-indigo-500/20 focus:bg-white transition"
                 />
                 {jsonInput && (
@@ -901,6 +1299,125 @@ export function ImportJsonModal({
         {/* ======================================================== */}
         {step === 'preview' && (
           <div className="space-y-4">
+            {/* Quick Storage Configuration & Switcher in Preview Step */}
+            <div className="p-3 bg-slate-50 border border-slate-200 rounded-2xl flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+              <div className="flex items-center space-x-2 text-xs">
+                <FolderTree className="w-4 h-4 text-indigo-600 shrink-0" />
+                <span className="font-bold text-slate-700">Chế độ lưu trữ:</span>
+                <span className={`px-2 py-0.5 rounded-lg text-[11px] font-bold border ${
+                  storageMode === 'override' 
+                    ? 'bg-purple-50 text-purple-700 border-purple-200' 
+                    : 'bg-indigo-50 text-indigo-700 border-indigo-200'
+                }`}>
+                  {storageMode === 'override' 
+                    ? `Ghi đè: ${overrideChapter || '(Chương mặc định)'}${overrideLevel === 'all' ? ' ↳ ' + (overrideLesson || '(Bài mặc định)') : ''}` 
+                    : 'Tự động theo JSON (Chuẩn hóa tên Chương/Bài)'}
+                </span>
+              </div>
+
+              <div className="flex items-center space-x-2 text-xs">
+                <button
+                  type="button"
+                  onClick={() => setStorageMode(storageMode === 'auto' ? 'override' : 'auto')}
+                  className="px-3 py-1 bg-white border border-slate-200 hover:bg-slate-100 rounded-xl text-slate-700 font-semibold transition cursor-pointer flex items-center space-x-1"
+                >
+                  <Sliders className="w-3 h-3 text-slate-500" />
+                  <span>{storageMode === 'auto' ? 'Đổi sang Ghi đè' : 'Đổi sang Tự động'}</span>
+                </button>
+              </div>
+            </div>
+
+            {/* BẢNG XEM TRƯỚC ÁNH XẠ (PREVIEW MAPPING TABLE) */}
+            <div className="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-2xs">
+              <div className="p-3.5 bg-slate-50 border-b border-slate-200/80 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
+                <div className="flex items-center space-x-2">
+                  <FolderTree className="w-4 h-4 text-indigo-600 shrink-0" />
+                  <div>
+                    <h4 className="text-xs font-extrabold text-slate-800">
+                      Bảng Xem trước Ánh xạ Thư mục (Preview Mapping)
+                    </h4>
+                    <p className="text-[11px] text-slate-500">
+                      Chi tiết cách hệ thống phân loại {parsedQuestions.length} câu hỏi theo {previewMapping.length} nhóm Chương &amp; Bài
+                    </p>
+                  </div>
+                </div>
+
+                {/* Badges Counter Summary */}
+                <div className="flex flex-wrap items-center gap-1.5 text-[10px] font-bold">
+                  {summaryCounts.matched > 0 && (
+                    <span className="px-2 py-0.5 rounded-lg bg-emerald-50 text-emerald-700 border border-emerald-200">
+                      {summaryCounts.matched} Khớp thư mục cũ
+                    </span>
+                  )}
+                  {summaryCounts.new > 0 && (
+                    <span className="px-2 py-0.5 rounded-lg bg-blue-50 text-blue-700 border border-blue-200">
+                      {summaryCounts.new} Tạo thư mục mới
+                    </span>
+                  )}
+                  {summaryCounts.override > 0 && (
+                    <span className="px-2 py-0.5 rounded-lg bg-purple-50 text-purple-700 border border-purple-200">
+                      {summaryCounts.override} Ghi đè chỉ định
+                    </span>
+                  )}
+                </div>
+              </div>
+
+              <div className="overflow-x-auto max-h-56 overflow-y-auto">
+                <table className="w-full text-left border-collapse text-xs">
+                  <thead className="bg-slate-50/70 text-[11px] font-bold text-slate-600 sticky top-0 border-b border-slate-200">
+                    <tr>
+                      <th className="py-2 px-3">Thư mục nguồn trong JSON</th>
+                      <th className="py-2 px-2 text-center w-8"></th>
+                      <th className="py-2 px-3">Thư mục đích hệ thống</th>
+                      <th className="py-2 px-3 text-center">Trạng thái ánh xạ</th>
+                      <th className="py-2 px-3 text-right">Số lượng</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {previewMapping.map((item, idx) => (
+                      <tr key={idx} className="hover:bg-slate-50/80 transition-colors">
+                        <td className="py-2.5 px-3">
+                          <div className="font-semibold text-slate-700">{item.originalChapter}</div>
+                          <div className="text-[11px] text-slate-500 font-normal">↳ {item.originalLesson}</div>
+                        </td>
+                        <td className="py-2.5 px-2 text-center text-slate-400">
+                          <ArrowRight className="w-3.5 h-3.5 inline-block text-slate-400" />
+                        </td>
+                        <td className="py-2.5 px-3">
+                          <div className="font-bold text-indigo-950">{item.targetChapter}</div>
+                          <div className="text-[11px] text-indigo-700 font-medium">↳ {item.targetLesson}</div>
+                        </td>
+                        <td className="py-2.5 px-3 text-center">
+                          {item.status === 'MATCHED' && (
+                            <span className="inline-flex items-center space-x-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                              <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+                              <span>Khớp thư mục cũ</span>
+                            </span>
+                          )}
+                          {item.status === 'NEW' && (
+                            <span className="inline-flex items-center space-x-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-blue-50 text-blue-700 border border-blue-200">
+                              <FolderPlus className="w-3 h-3 text-blue-600" />
+                              <span>Tạo thư mục mới</span>
+                            </span>
+                          )}
+                          {item.status === 'OVERRIDE' && (
+                            <span className="inline-flex items-center space-x-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-purple-50 text-purple-700 border border-purple-200">
+                              <FolderCheck className="w-3 h-3 text-purple-600" />
+                              <span>Ghi đè chỉ định</span>
+                            </span>
+                          )}
+                        </td>
+                        <td className="py-2.5 px-3 text-right">
+                          <span className="font-bold text-slate-800 tabular-nums">{item.count}</span>
+                          <span className="text-[11px] text-slate-400 ml-1">câu</span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
             {/* Warning summary if any */}
             {parseWarnings.length > 0 && (
               <div className="p-3 bg-amber-50 border border-amber-200 rounded-2xl text-xs text-amber-900 space-y-1">
@@ -917,10 +1434,11 @@ export function ImportJsonModal({
             )}
 
             {/* Questions List */}
-            <div className="space-y-3 max-h-[55vh] overflow-y-auto pr-1">
+            <div className="space-y-3 max-h-[48vh] overflow-y-auto pr-1">
               {parsedQuestions.map((q, qIndex) => {
-                const typeInfo = QUESTION_TYPE_LABELS[q.question_type] || QUESTION_TYPE_LABELS.MULTIPLE_CHOICE;
-                const diffInfo = DIFFICULTY_LABELS[q.difficulty] || DIFFICULTY_LABELS.THONG_HIEU;
+                const effectiveQ = applyOverridesToQuestion(q, storageMode, overrideLevel, overrideChapter, overrideLesson);
+                const typeInfo = QUESTION_TYPE_LABELS[effectiveQ.question_type] || QUESTION_TYPE_LABELS.MULTIPLE_CHOICE;
+                const diffInfo = DIFFICULTY_LABELS[effectiveQ.difficulty] || DIFFICULTY_LABELS.THONG_HIEU;
 
                 return (
                   <div 
@@ -929,7 +1447,7 @@ export function ImportJsonModal({
                   >
                     {/* Header info */}
                     <div className="flex flex-wrap justify-between items-center gap-2">
-                      <div className="flex items-center space-x-2">
+                      <div className="flex flex-wrap items-center gap-1.5">
                         <span className="w-6 h-6 rounded-lg bg-indigo-50 text-indigo-700 text-xs font-bold flex items-center justify-center tabular-nums">
                           {qIndex + 1}
                         </span>
@@ -939,16 +1457,18 @@ export function ImportJsonModal({
                         <span className={`px-2 py-0.5 rounded-lg text-[10px] font-bold border ${diffInfo.bg}`}>
                           {diffInfo.label}
                         </span>
-                        {q.subject && (
+                        {effectiveQ.subject && (
                           <span className="text-[11px] text-slate-600 font-medium bg-slate-50 px-2 py-0.5 rounded-md border border-slate-200">
-                            {q.subject} {q.grade_level ? `- Lớp ${q.grade_level}` : ''}
+                            {effectiveQ.subject} {effectiveQ.grade_level ? `- Lớp ${effectiveQ.grade_level}` : ''}
                           </span>
                         )}
-                        {q.chapter && (
-                          <span className="text-[11px] text-slate-400">
-                            • {q.chapter}
-                          </span>
-                        )}
+                        <span className={`text-[11px] px-2 py-0.5 rounded-md border font-medium ${
+                          storageMode === 'override'
+                            ? 'bg-purple-50 text-purple-700 border-purple-200'
+                            : 'bg-slate-50 text-slate-600 border-slate-200'
+                        }`}>
+                          {effectiveQ.chapter} {effectiveQ.lesson ? `↳ ${effectiveQ.lesson}` : ''}
+                        </span>
                       </div>
 
                       <button
@@ -963,14 +1483,14 @@ export function ImportJsonModal({
 
                     {/* Question Content */}
                     <div className="text-xs text-slate-800 leading-relaxed font-medium">
-                      <MathRenderer content={q.content} />
+                      <MathRenderer content={effectiveQ.content} />
                     </div>
 
                     {/* Choices for MULTIPLE_CHOICE */}
-                    {q.question_type === 'MULTIPLE_CHOICE' && Array.isArray(q.options) && (
+                    {effectiveQ.question_type === 'MULTIPLE_CHOICE' && Array.isArray(effectiveQ.options) && (
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">
-                        {q.options.map((opt, optIndex) => {
-                          const isCorrect = q.correct_option === optIndex;
+                        {effectiveQ.options.map((opt, optIndex) => {
+                          const isCorrect = effectiveQ.correct_option === optIndex;
                           const letter = String.fromCharCode(65 + optIndex);
                           return (
                             <button
@@ -1001,9 +1521,9 @@ export function ImportJsonModal({
                     )}
 
                     {/* Sub-questions for TRUE_FALSE */}
-                    {q.question_type === 'TRUE_FALSE' && Array.isArray(q.sub_questions) && (
+                    {effectiveQ.question_type === 'TRUE_FALSE' && Array.isArray(effectiveQ.sub_questions) && (
                       <div className="space-y-1.5 pt-1">
-                        {q.sub_questions.map((sub, sIdx) => {
+                        {effectiveQ.sub_questions.map((sub, sIdx) => {
                           const letter = String.fromCharCode(97 + sIdx); // a, b, c, d
                           return (
                             <div 
@@ -1030,20 +1550,20 @@ export function ImportJsonModal({
                     )}
 
                     {/* SHORT_ANSWER info */}
-                    {q.question_type === 'SHORT_ANSWER' && (
+                    {effectiveQ.question_type === 'SHORT_ANSWER' && (
                       <div className="p-2.5 bg-amber-50/60 border border-amber-200/60 rounded-xl text-xs flex items-center space-x-2">
                         <span className="font-semibold text-amber-800">Đáp án chính xác:</span>
                         <code className="bg-amber-100 px-2 py-0.5 rounded text-amber-900 font-bold font-mono">
-                          {q.correct_answer || '(Chưa có)'}
+                          {effectiveQ.correct_answer || '(Chưa có)'}
                         </code>
                       </div>
                     )}
 
                     {/* Explanation */}
-                    {q.explanation && (
+                    {effectiveQ.explanation && (
                       <div className="p-2.5 bg-indigo-50/40 border border-indigo-100 rounded-xl text-[11px] text-slate-600">
                         <span className="font-semibold text-indigo-700 mr-1">Lời giải:</span>
-                        <MathRenderer content={q.explanation} />
+                        <MathRenderer content={effectiveQ.explanation} />
                       </div>
                     )}
                   </div>
@@ -1056,7 +1576,7 @@ export function ImportJsonModal({
               <button
                 type="button"
                 onClick={() => setStep('input')}
-                className="flex items-center space-x-1.5 px-4 py-2 border border-gray-200 rounded-xl text-xs font-semibold text-gray-600 hover:bg-gray-50 transition"
+                className="flex items-center space-x-1.5 px-4 py-2 border border-gray-200 rounded-xl text-xs font-semibold text-gray-600 hover:bg-gray-50 transition cursor-pointer"
               >
                 <ArrowLeft className="w-3.5 h-3.5" />
                 <span>Quay lại dán JSON</span>
@@ -1070,7 +1590,7 @@ export function ImportJsonModal({
                   type="button"
                   disabled={isSubmitting || !parsedQuestions.length}
                   onClick={handleFinalImport}
-                  className="flex items-center space-x-1.5 px-6 py-2.5 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white rounded-xl text-xs font-bold shadow-xs transition"
+                  className="flex items-center space-x-1.5 px-6 py-2.5 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white rounded-xl text-xs font-bold shadow-xs transition cursor-pointer"
                 >
                   {isSubmitting ? (
                     <>
