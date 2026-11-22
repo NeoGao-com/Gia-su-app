@@ -964,6 +964,7 @@ async def get_classroom_gradebook(
     grades_map = {}
     for sub in submissions:
         grades_map[(sub.user_id, sub.exam_id)] = {
+            "submission_id": sub.id,
             "score": sub.score,
             "status": sub.grading_status,
             "submitted_at": sub.submitted_at

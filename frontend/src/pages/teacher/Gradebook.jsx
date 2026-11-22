@@ -1,7 +1,8 @@
-import React, { useEffect, useState, useMemo } from 'react';
+import React, { useEffect, useState, useMemo, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { Navbar } from '../../components/Navbar';
 import { Sidebar } from '../../components/Sidebar';
+import { SubmissionReviewModal } from '../../components/SubmissionReviewModal';
 import api from '../../api/axios';
 import {
   Users,
@@ -13,6 +14,7 @@ import {
   Target,
   BarChart3,
   ExternalLink,
+  Edit3,
 } from 'lucide-react';
 import { useToast } from '../../context/ToastContext';
 
@@ -23,6 +25,7 @@ export function Gradebook() {
   const [gradebookData, setGradebookData] = useState(null);
   const [loading, setLoading] = useState(false);
   const [summaryCopied, setSummaryCopied] = useState(false);
+  const [selectedSubmissionId, setSelectedSubmissionId] = useState(null);
 
   useEffect(() => {
     api.get('/classrooms?limit=100')
@@ -40,7 +43,7 @@ export function Gradebook() {
       .catch(() => setClassrooms([]));
   }, []);
 
-  useEffect(() => {
+  const fetchGradebook = useCallback(() => {
     if (!selectedClassroomId) return;
     setLoading(true);
     let cancelled = false;
@@ -63,6 +66,10 @@ export function Gradebook() {
       cancelled = true;
     };
   }, [selectedClassroomId]);
+
+  useEffect(() => {
+    fetchGradebook();
+  }, [fetchGradebook]);
 
   const assignments = useMemo(() => gradebookData?.assignments || [], [gradebookData]);
   const entries = useMemo(() => gradebookData?.gradebook || [], [gradebookData]);
@@ -420,21 +427,50 @@ export function Gradebook() {
                                 {examScore !== undefined &&
                                 examScore !== null &&
                                 examScore.score !== undefined ? (
-                                  <Link
-                                    to={`/teacher/analytics?classroomId=${selectedClassroomId}&examId=${a.exam_id}&studentId=${entry.student_id}`}
-                                    className={`inline-block font-extrabold px-2.5 py-1 rounded-xl text-xs tabular-nums border hover:scale-105 transition-transform ${
-                                      Number(examScore.score) >= 8.0
-                                        ? 'bg-emerald-50 text-emerald-700 border-emerald-200/80'
-                                        : Number(examScore.score) >= 6.5
-                                          ? 'bg-blue-50 text-blue-700 border-blue-200/80'
-                                          : Number(examScore.score) >= 5.0
-                                            ? 'bg-amber-50 text-amber-700 border-amber-200/80'
-                                            : 'bg-rose-50 text-rose-700 border-rose-200/80'
-                                    }`}
-                                    title="Xem phân tích bài thi của học sinh này"
-                                  >
-                                    {examScore.score}
-                                  </Link>
+                                  <div className="inline-flex items-center space-x-1">
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        if (examScore.submission_id) {
+                                          setSelectedSubmissionId(examScore.submission_id);
+                                        } else {
+                                          toast.error('Không tìm thấy mã bài làm này');
+                                        }
+                                      }}
+                                      className={`inline-flex items-center space-x-1 font-extrabold px-2.5 py-1 rounded-xl text-xs tabular-nums border hover:scale-105 transition-transform cursor-pointer shadow-2xs ${
+                                        examScore.status === 'PENDING_ESSAY'
+                                          ? 'bg-amber-100 text-amber-900 border-amber-300 ring-2 ring-amber-400/50'
+                                          : Number(examScore.score) >= 8.0
+                                            ? 'bg-emerald-50 text-emerald-700 border-emerald-200/80'
+                                            : Number(examScore.score) >= 6.5
+                                              ? 'bg-blue-50 text-blue-700 border-blue-200/80'
+                                              : Number(examScore.score) >= 5.0
+                                                ? 'bg-amber-50 text-amber-700 border-amber-200/80'
+                                                : 'bg-rose-50 text-rose-700 border-rose-200/80'
+                                      }`}
+                                      title={
+                                        examScore.status === 'PENDING_ESSAY'
+                                          ? 'Bài thi có câu tự luận chờ chấm - Bấm để chấm điểm ngay'
+                                          : 'Bấm để xem chi tiết bài làm, chống gian lận & chấm điểm'
+                                      }
+                                    >
+                                      {examScore.status === 'PENDING_ESSAY' && (
+                                        <Edit3 className="w-3 h-3 text-amber-600 shrink-0" />
+                                      )}
+                                      <span>
+                                        {examScore.status === 'PENDING_ESSAY'
+                                          ? `${examScore.score} (Chờ chấm)`
+                                          : examScore.score}
+                                      </span>
+                                    </button>
+                                    <Link
+                                      to={`/teacher/analytics?classroomId=${selectedClassroomId}&examId=${a.exam_id}&studentId=${entry.student_id}`}
+                                      className="p-1 text-slate-300 hover:text-indigo-600 transition"
+                                      title="Xem phân tích bài thi của học sinh này"
+                                    >
+                                      <TrendingUp className="w-3.5 h-3.5" />
+                                    </Link>
+                                  </div>
                                 ) : (
                                   <span className="text-slate-300 text-xs font-medium">
                                     Chưa nộp
@@ -456,6 +492,14 @@ export function Gradebook() {
           )}
         </main>
       </div>
+
+      {/* Submission Review & Grading Modal */}
+      <SubmissionReviewModal
+        isOpen={Boolean(selectedSubmissionId)}
+        onClose={() => setSelectedSubmissionId(null)}
+        submissionId={selectedSubmissionId}
+        onGraded={fetchGradebook}
+      />
     </div>
   );
 }

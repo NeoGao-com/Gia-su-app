@@ -108,6 +108,7 @@ class ExamSubmissionRequest(BaseModel):
     exam_id: int
     answers: Dict[Any, Any] # Allow string or int keys (question_id as key)
     time_spent: Optional[int] = 0
+    tab_switches: Optional[int] = 0
 
 class ExamSubmissionResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)

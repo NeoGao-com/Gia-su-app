@@ -4,9 +4,10 @@ import api, { resolveImageUrl } from '../../api/axios';
 import { 
   Clock, AlertCircle, Bookmark, ChevronLeft, ChevronRight, 
   CheckCircle2, Cloud, Send, Flag, Sparkles, X, Check,
-  Layers, LayoutGrid
+  Layers, LayoutGrid, Award, ArrowRight
 } from 'lucide-react';
 import { MathRenderer } from '../../components/MathRenderer';
+import { SubmissionReviewModal } from '../../components/SubmissionReviewModal';
 import { useToast } from '../../context/ToastContext';
 
 export function TakeExam() {
@@ -29,6 +30,8 @@ export function TakeExam() {
   const [serverAnswers, setServerAnswers] = useState({});
   const [paletteDrawerOpen, setPaletteDrawerOpen] = useState(false);
   const [paletteTab, setPaletteTab] = useState('ALL'); // 'ALL' | 'ANSWERED' | 'UNANSWERED' | 'BOOKMARKED'
+  const [submissionResult, setSubmissionResult] = useState(null);
+  const [showReviewModal, setShowReviewModal] = useState(false);
 
   useEffect(() => {
     if (!examId) return;
@@ -101,18 +104,26 @@ export function TakeExam() {
     }
 
     try {
-      await api.post(`/student/submissions/${submissionId}/submit`, {
+      const res = await api.post(`/student/submissions/${submissionId}/submit`, {
         exam_id: parseInt(examId),
         answers: latestAnswersRef.current || answers,
-        time_spent: exam ? (exam.duration_minutes * 60 - timeLeft) : 0
+        time_spent: exam ? (exam.duration_minutes * 60 - timeLeft) : 0,
+        tab_switches: tabSwitchesRef.current || tabSwitches
       });
       toast.success('Nộp bài thi thành công!');
-      navigate('/student/history');
+      setSubmissionResult({
+        submissionId: submissionId,
+        score: res.data?.score,
+        grading_status: res.data?.grading_status,
+        time_spent: res.data?.time_spent || (exam ? (exam.duration_minutes * 60 - timeLeft) : 0),
+        tab_switches: res.data?.tab_switches ?? (tabSwitchesRef.current || tabSwitches),
+        showAnswers: exam?.show_answers_after_submit ?? true
+      });
     } catch (err) {
       toast.error(err.response?.data?.detail || 'Nộp bài thất bại. Vui lòng thử lại.');
       setSubmitting(false);
     }
-  }, [submitting, submissionId, examId, answers, exam, timeLeft, questions.length, navigate, confirm, toast]);
+  }, [submitting, submissionId, examId, answers, exam, timeLeft, questions.length, navigate, confirm, toast, tabSwitches]);
 
   const versionRef = useRef(version);
   useEffect(() => {
@@ -855,6 +866,93 @@ export function TakeExam() {
             </div>
           </div>
         </div>
+      )}
+
+      {/* Post-submission Result Modal */}
+      {submissionResult && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/80 backdrop-blur-xs animate-in fade-in duration-200">
+          <div className="bg-white rounded-3xl p-6 sm:p-8 max-w-lg w-full text-center space-y-6 shadow-2xl border border-slate-100">
+            <div className="w-16 h-16 bg-emerald-100 text-emerald-600 rounded-2xl flex items-center justify-center mx-auto shadow-inner">
+              <CheckCircle2 className="w-9 h-9" />
+            </div>
+
+            <div className="space-y-1.5">
+              <h2 className="text-2xl font-black text-slate-800">
+                Nộp bài thi thành công!
+              </h2>
+              <p className="text-sm font-medium text-slate-500">
+                {exam?.title || 'Bài kiểm tra'}
+              </p>
+            </div>
+
+            {/* Score & Status Display */}
+            <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200/80 space-y-2">
+              {submissionResult.grading_status === 'GRADED' ? (
+                <div>
+                  <span className="text-xs font-bold text-slate-400 uppercase tracking-wider block mb-1">
+                    Điểm số đạt được
+                  </span>
+                  <div className="text-4xl font-black text-indigo-600 flex items-baseline justify-center space-x-1">
+                    <span>{submissionResult.score ?? 0}</span>
+                    <span className="text-sm font-semibold text-slate-400">/ 10</span>
+                  </div>
+                </div>
+              ) : (
+                <div className="space-y-1">
+                  <span className="inline-block px-3 py-1 bg-amber-100 text-amber-800 rounded-full font-bold text-xs uppercase">
+                    Chờ chấm tự luận
+                  </span>
+                  <p className="text-xs text-slate-600">
+                    Bài thi có phần tự luận và đang chờ giáo viên chấm điểm. Điểm trắc nghiệm sơ bộ: <strong className="text-indigo-600 font-bold">{submissionResult.score ?? 0}/10</strong>.
+                  </p>
+                </div>
+              )}
+
+              <div className="flex justify-center items-center gap-4 text-xs text-slate-500 pt-2 border-t border-slate-200/60 font-medium">
+                <span>Thời gian: {Math.floor((submissionResult.time_spent || 0) / 60)}p {(submissionResult.time_spent || 0) % 60}s</span>
+                <span>• Chuyển tab: {submissionResult.tab_switches || 0} lần</span>
+              </div>
+            </div>
+
+            {/* Actions */}
+            <div className="space-y-2.5 pt-1">
+              <button
+                type="button"
+                onClick={() => setShowReviewModal(true)}
+                className="w-full py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-2xl text-sm font-bold shadow-md shadow-indigo-200 transition cursor-pointer flex items-center justify-center space-x-2"
+              >
+                <Sparkles className="w-4 h-4" />
+                <span>Xem lại bài làm &amp; Lời giải chi tiết</span>
+              </button>
+
+              <div className="grid grid-cols-2 gap-2 pt-1">
+                <button
+                  type="button"
+                  onClick={() => navigate('/student/history')}
+                  className="py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition cursor-pointer"
+                >
+                  Lịch sử làm bài
+                </button>
+                <button
+                  type="button"
+                  onClick={() => navigate('/student/assignments')}
+                  className="py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition cursor-pointer"
+                >
+                  Danh sách bài thi
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Submission Review Modal when clicked */}
+      {submissionResult && (
+        <SubmissionReviewModal
+          isOpen={showReviewModal}
+          onClose={() => setShowReviewModal(false)}
+          submissionId={submissionResult.submissionId}
+        />
       )}
     </div>
   );

@@ -472,6 +472,8 @@ async def submit_student_exam(
     n_essay = len([q for q in questions if q.question_type == "ESSAY"])
     submission.score = calculate_total_score(n_obj, score, n_essay, [submission.essay_score] if submission.essay_score else [])
     submission.answers = request.answers
+    if request.tab_switches is not None and request.tab_switches > (submission.tab_switches or 0):
+        submission.tab_switches = request.tab_switches
     submission.graded_answers = graded_answers
     submission.time_spent = request.time_spent
     submission.grading_status = grading_status
@@ -541,8 +543,23 @@ async def get_submission_details(
 ):
     result = await db.execute(select(ExamSubmission).filter(ExamSubmission.id == submission_id))
     submission = result.scalars().first()
-    if not submission or submission.user_id != current_user.id:
-         raise HTTPException(status_code=404, detail="Không tìm thấy bài nộp")
+    if not submission:
+        raise HTTPException(status_code=404, detail="Không tìm thấy bài nộp")
+
+    if submission.user_id != current_user.id:
+        if current_user.role == "ADMIN":
+            pass
+        elif current_user.role in ("TEACHER", "teacher"):
+            from app.routers.exam import check_grading_authorization
+            await check_grading_authorization(db, submission, current_user)
+        else:
+            raise HTTPException(status_code=404, detail="Không tìm thấy bài nộp")
+
+    student_name = None
+    if current_user.role in ("TEACHER", "teacher", "ADMIN", "admin"):
+        student_user = await db.get(User, submission.user_id)
+        if student_user:
+            student_name = student_user.full_name or student_user.email
 
     exam_result = await db.execute(select(Exam).filter(Exam.id == submission.exam_id))
     exam = exam_result.scalars().first()
@@ -627,7 +644,8 @@ async def get_submission_details(
         "submission": submission,
         "exam_title": exam.title if exam else "Bài kiểm tra",
         "show_answers": show_answers,
-        "questions": processed_questions
+        "questions": processed_questions,
+        "student_name": student_name
     }
 
 

@@ -736,17 +736,42 @@ async def grade_essay_submission(
     submission.grading_status = "GRADED"
     submission.status = "GRADED"
 
-    # Update graded_answers for essay question if available
-    if submission.graded_answers and isinstance(submission.graded_answers, dict):
-        ga = dict(submission.graded_answers)
+    # Update graded_answers for essay question
+    ga = dict(submission.graded_answers or {})
+    target_q_id = str(payload.get("question_id")) if (payload and payload.get("question_id")) else None
+
+    if target_q_id:
+        if target_q_id not in ga or not isinstance(ga[target_q_id], dict):
+            ga[target_q_id] = {"question_type": "ESSAY"}
+        ga[target_q_id]["points_awarded"] = actual_score
+        ga[target_q_id]["points"] = actual_score
+        ga[target_q_id]["is_correct"] = actual_score >= 5.0
+        if feedback_text is not None:
+            ga[target_q_id]["feedback"] = feedback_text
+    else:
+        has_updated = False
         for q_id, g_item in ga.items():
             if isinstance(g_item, dict) and g_item.get("question_type") == "ESSAY":
                 g_item["points_awarded"] = actual_score
+                g_item["points"] = actual_score
                 g_item["is_correct"] = actual_score >= 5.0
-                if feedback_text:
+                if feedback_text is not None:
                     g_item["feedback"] = feedback_text
-        submission.graded_answers = ga
-        flag_modified(submission, "graded_answers")
+                has_updated = True
+        if not has_updated:
+            essay_q_ids = []
+            if submission.question_snapshot and isinstance(submission.question_snapshot, list):
+                essay_q_ids = [str(q.get("id")) for q in submission.question_snapshot if isinstance(q, dict) and q.get("question_type") == "ESSAY"]
+            for eqid in essay_q_ids:
+                ga[eqid] = {
+                    "question_type": "ESSAY",
+                    "points_awarded": actual_score,
+                    "points": actual_score,
+                    "is_correct": actual_score >= 5.0,
+                    "feedback": feedback_text or ""
+                }
+    submission.graded_answers = ga
+    flag_modified(submission, "graded_answers")
 
     await db.commit()
     await db.refresh(submission)

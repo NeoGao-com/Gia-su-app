@@ -1,7 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { 
   Award, Clock, CheckCircle2, XCircle, AlertCircle, 
-  Filter, Sparkles, RefreshCw, Wand2, ThumbsUp, AlertTriangle, Lightbulb
+  Filter, Sparkles, RefreshCw, Wand2, ThumbsUp, AlertTriangle, Lightbulb,
+  Edit3, Save, ShieldAlert, UserCheck
 } from 'lucide-react';
 import { Modal } from './Modal';
 import { MathRenderer } from './MathRenderer';
@@ -22,25 +23,46 @@ const DIFFICULTY_LABELS = {
   VAN_DUNG_CAO: { label: 'Vận dụng cao', bg: 'bg-rose-50 text-rose-600 border-rose-100' },
 };
 
-export function SubmissionReviewModal({ isOpen, onClose, submissionId }) {
+export function SubmissionReviewModal({ isOpen, onClose, submissionId, onGraded }) {
   const { toast } = useToast();
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [filterType, setFilterType] = useState('all'); // 'all' | 'correct' | 'incorrect'
-  const [gradingId, setGradingId] = useState(null);
+  const [gradingInputs, setGradingInputs] = useState({});
+  const [savingEssay, setSavingEssay] = useState({});
+
+  const currentUser = (() => {
+    try {
+      const userStr = localStorage.getItem('user');
+      return userStr ? JSON.parse(userStr) : null;
+    } catch {
+      return null;
+    }
+  })();
+  const isTeacher = currentUser?.role === 'TEACHER' || currentUser?.role === 'teacher' || currentUser?.role === 'ADMIN' || currentUser?.role === 'admin';
 
   const isModalOpen = isOpen !== undefined ? Boolean(isOpen) : Boolean(submissionId);
 
-  useEffect(() => {
-    if (!isModalOpen || !submissionId) {
-      setData(null);
-      return;
-    }
-
+  const loadData = useCallback(() => {
+    if (!submissionId) return;
     setLoading(true);
     api.get(`/student/submissions/${submissionId}`)
       .then(res => {
         setData(res.data);
+        const sub = res.data?.submission;
+        const ga = sub?.graded_answers || {};
+        const initGrades = {};
+        (res.data?.questions || []).forEach(q => {
+          if (q.question_type === 'ESSAY') {
+            const qId = String(q.id);
+            const gInfo = ga[qId] || ga[q.id];
+            initGrades[qId] = {
+              score: gInfo?.points_awarded ?? gInfo?.points ?? (sub?.essay_score !== null && sub?.essay_score !== undefined ? sub.essay_score : ''),
+              feedback: gInfo?.feedback || ''
+            };
+          }
+        });
+        setGradingInputs(initGrades);
       })
       .catch(err => {
         console.error('Failed to load submission review:', err);
@@ -48,7 +70,42 @@ export function SubmissionReviewModal({ isOpen, onClose, submissionId }) {
       .finally(() => {
         setLoading(false);
       });
-  }, [isModalOpen, submissionId]);
+  }, [submissionId]);
+
+  useEffect(() => {
+    if (isModalOpen && submissionId) {
+      loadData();
+    } else {
+      setData(null);
+    }
+  }, [isModalOpen, submissionId, loadData]);
+
+  const handleSaveEssay = async (questionId) => {
+    const qIdStr = String(questionId);
+    const currentGrade = gradingInputs[qIdStr] || {};
+    const scoreNum = parseFloat(currentGrade.score);
+
+    if (isNaN(scoreNum) || scoreNum < 0 || scoreNum > 10) {
+      toast.error('Vui lòng nhập điểm tự luận hợp lệ từ 0 đến 10');
+      return;
+    }
+
+    setSavingEssay(prev => ({ ...prev, [qIdStr]: true }));
+    try {
+      await api.put(`/exams/submissions/${submissionId}/grade`, {
+        essay_score: scoreNum,
+        feedback: currentGrade.feedback || '',
+        question_id: questionId
+      });
+      toast.success('Lưu kết quả chấm tự luận thành công!');
+      loadData();
+      if (onGraded) onGraded();
+    } catch (err) {
+      toast.error(err.response?.data?.detail || 'Không thể lưu điểm chấm. Vui lòng thử lại.');
+    } finally {
+      setSavingEssay(prev => ({ ...prev, [qIdStr]: false }));
+    }
+  };
 
   if (!isModalOpen) return null;
 
@@ -121,8 +178,8 @@ export function SubmissionReviewModal({ isOpen, onClose, submissionId }) {
         <div className="space-y-5">
           {/* Top Score Banner */}
           <div className="bg-slate-900 text-white p-5 rounded-2xl border border-slate-800 shadow-xs flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-            <div className="space-y-1">
-              <div className="flex items-center space-x-2">
+            <div className="space-y-1.5">
+              <div className="flex flex-wrap items-center gap-2">
                 <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Kết quả tổng thể</span>
                 <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold uppercase ${
                   submission.grading_status === 'GRADED'
@@ -131,8 +188,34 @@ export function SubmissionReviewModal({ isOpen, onClose, submissionId }) {
                 }`}>
                   {submission.grading_status === 'GRADED' ? 'Đã chấm điểm' : 'Chờ chấm tự luận'}
                 </span>
+                {/* Anti-cheat tab switch visibility */}
+                {submission.tab_switches !== undefined && submission.tab_switches !== null && (
+                  submission.tab_switches > 0 ? (
+                    <span 
+                      className="inline-flex items-center space-x-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/40"
+                      title="Phát hiện học sinh đã chuyển tab hoặc đổi ứng dụng trong lúc thi"
+                    >
+                      <AlertTriangle className="w-3 h-3 text-amber-400 shrink-0" />
+                      <span>Chuyển tab: {submission.tab_switches} lần</span>
+                    </span>
+                  ) : (
+                    <span 
+                      className="inline-flex items-center space-x-1 px-2.5 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-500/15 text-emerald-300 border border-emerald-500/30"
+                      title="Học sinh nghiêm túc, không chuyển tab trong suốt bài thi"
+                    >
+                      <CheckCircle2 className="w-3 h-3 text-emerald-400 shrink-0" />
+                      <span>Không chuyển tab</span>
+                    </span>
+                  )
+                )}
               </div>
-              <h2 className="text-lg font-bold text-white">{data.exam_title}</h2>
+              <h2 className="text-lg font-bold text-white leading-snug">{data.exam_title}</h2>
+              {data.student_name && (
+                <div className="text-xs text-indigo-300 font-medium flex items-center space-x-1.5">
+                  <UserCheck className="w-3.5 h-3.5 text-indigo-400" />
+                  <span>Học sinh: <strong className="text-white font-bold">{data.student_name}</strong></span>
+                </div>
+              )}
               <div className="flex flex-wrap items-center gap-3 text-xs text-slate-400 pt-0.5">
                 {submission.submitted_at && (
                   <span className="flex items-center space-x-1 tabular-nums">
@@ -140,7 +223,7 @@ export function SubmissionReviewModal({ isOpen, onClose, submissionId }) {
                     <span>Nộp lúc: {new Date(submission.submitted_at).toLocaleString('vi-VN')}</span>
                   </span>
                 )}
-                {submission.time_spent && (
+                {submission.time_spent !== undefined && submission.time_spent !== null && (
                   <span className="tabular-nums">• Thời gian: {Math.floor(submission.time_spent / 60)}p {submission.time_spent % 60}s</span>
                 )}
                 {submission.attempt_number && (
@@ -454,9 +537,9 @@ export function SubmissionReviewModal({ isOpen, onClose, submissionId }) {
                     <div className="space-y-3 pt-1 text-xs">
                       {/* Student submission text */}
                       <div className="p-3 bg-gray-50 border border-gray-200 rounded-xl">
-                        <span className="font-bold text-gray-700 block mb-1">Nội dung bài làm:</span>
+                        <span className="font-bold text-gray-700 block mb-1">Nội dung bài làm của học sinh:</span>
                         <div className="whitespace-pre-wrap text-gray-800 font-mono text-[11px] leading-relaxed">
-                          {q.userAns || '(Không có nội dung bài làm)'}
+                          {q.userAns || '(Học sinh không có nội dung bài làm)'}
                         </div>
                       </div>
 
@@ -470,8 +553,92 @@ export function SubmissionReviewModal({ isOpen, onClose, submissionId }) {
                         </div>
                       )}
 
-                      {/* Teacher Grading Card if exists */}
-                      {q.gradInfo && (
+                      {/* Interactive Teacher Grading Form if teacher */}
+                      {isTeacher && (
+                        <div className="p-4 bg-gradient-to-br from-indigo-50/90 via-white to-sky-50/90 border-2 border-indigo-300 rounded-2xl space-y-3 shadow-xs">
+                          <div className="flex items-center justify-between">
+                            <span className="font-bold text-indigo-900 flex items-center space-x-1.5 text-xs">
+                              <Edit3 className="w-4 h-4 text-indigo-600" />
+                              <span>Giáo viên chấm điểm tự luận</span>
+                            </span>
+                            <span className="text-[11px] font-semibold text-slate-500">
+                              Thang điểm chuẩn: 0.0 - 10.0
+                            </span>
+                          </div>
+
+                          <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
+                            <div className="sm:col-span-1">
+                              <label className="block text-[11px] font-bold text-slate-700 mb-1">
+                                Điểm số (0 - 10):
+                              </label>
+                              <input
+                                type="number"
+                                min="0"
+                                max="10"
+                                step="0.25"
+                                placeholder="VD: 8.5"
+                                value={gradingInputs[String(q.id)]?.score ?? ''}
+                                onChange={(e) => {
+                                  const val = e.target.value;
+                                  setGradingInputs(prev => ({
+                                    ...prev,
+                                    [String(q.id)]: {
+                                      ...prev[String(q.id)],
+                                      score: val
+                                    }
+                                  }));
+                                }}
+                                className="w-full px-3 py-2 bg-white border border-slate-300 rounded-xl text-xs font-bold text-slate-800 focus:outline-hidden focus:ring-2 focus:ring-indigo-500"
+                              />
+                            </div>
+                            <div className="sm:col-span-3">
+                              <label className="block text-[11px] font-bold text-slate-700 mb-1">
+                                Nhận xét &amp; Góp ý sư phạm:
+                              </label>
+                              <textarea
+                                rows="2"
+                                placeholder="Ghi nhận xét ưu điểm, thiếu sót hoặc hướng dẫn cải thiện cho học sinh..."
+                                value={gradingInputs[String(q.id)]?.feedback ?? ''}
+                                onChange={(e) => {
+                                  const val = e.target.value;
+                                  setGradingInputs(prev => ({
+                                    ...prev,
+                                    [String(q.id)]: {
+                                      ...prev[String(q.id)],
+                                      feedback: val
+                                    }
+                                  }));
+                                }}
+                                className="w-full px-3 py-1.5 bg-white border border-slate-300 rounded-xl text-xs text-slate-800 focus:outline-hidden focus:ring-2 focus:ring-indigo-500 leading-relaxed"
+                              />
+                            </div>
+                          </div>
+
+                          <div className="flex justify-end pt-1">
+                            <button
+                              type="button"
+                              disabled={savingEssay[String(q.id)]}
+                              onClick={() => handleSaveEssay(q.id)}
+                              className="inline-flex items-center space-x-1.5 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white rounded-xl text-xs font-bold shadow-xs transition cursor-pointer"
+                            >
+                              {savingEssay[String(q.id)] ? (
+                                <>
+                                  <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                                  <span>Đang lưu...</span>
+                                </>
+                              ) : (
+                                <>
+                                  <Save className="w-3.5 h-3.5" />
+                                  <span>Lưu kết quả chấm</span>
+                                </>
+                              )}
+                            </button>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Display Graded Feedback for Student View */}
+                      {!isTeacher && q.gradInfo && (
                         <div className="p-3.5 bg-gradient-to-br from-indigo-50/90 via-sky-50/70 to-blue-50/80 border border-indigo-200/90 rounded-2xl space-y-2.5 shadow-2xs">
                           <div className="flex items-center justify-between">
                             <span className="font-bold text-indigo-900 flex items-center space-x-1.5">
