@@ -312,12 +312,45 @@ async def move_category(
             for c in other_cats
         }
 
+        # Build existing lesson canonical map for target chapter if merging at chapter level
+        existing_target_lessons: Dict[str, str] = {}
+        if payload.target.chapter is not None and payload.target.lesson is None:
+            target_ch_name = payload.target.chapter
+            target_s = payload.target.subject if payload.target.subject is not None else payload.source.subject
+            target_g = payload.target.grade_level if payload.target.grade_level is not None else payload.source.grade_level
+
+            for c in other_cats:
+                if c.chapter == target_ch_name and c.lesson:
+                    c_k = get_canonical_key(c.lesson)
+                    if c_k and c_k not in existing_target_lessons:
+                        existing_target_lessons[c_k] = c.lesson
+
+            q_less_stmt = select(Question.lesson).filter(
+                Question.chapter == target_ch_name,
+                (Question.status != "EXAM_CLONE") | (Question.status.is_(None))
+            )
+            if target_s: q_less_stmt = q_less_stmt.filter(Question.subject == target_s)
+            if target_g is not None: q_less_stmt = q_less_stmt.filter(Question.grade_level == target_g)
+            q_less_res = await db.execute(q_less_stmt)
+            for (l_val,) in q_less_res.all():
+                if l_val:
+                    c_k = get_canonical_key(l_val)
+                    if c_k and c_k not in existing_target_lessons:
+                        existing_target_lessons[c_k] = l_val
+
         for cat in cats:
             target_subject = payload.target.subject if payload.target.subject is not None else cat.subject
             target_grade = payload.target.grade_level if payload.target.grade_level is not None else cat.grade_level
             target_chapter = payload.target.chapter if payload.target.chapter is not None else cat.chapter
             target_lesson = payload.target.lesson if payload.target.lesson is not None else cat.lesson
             target_topic = payload.target.topic if payload.target.topic is not None else cat.topic
+
+            if payload.target.chapter is not None and payload.target.lesson is None and target_lesson:
+                c_k = get_canonical_key(target_lesson)
+                if c_k in existing_target_lessons:
+                    target_lesson = existing_target_lessons[c_k]
+                else:
+                    existing_target_lessons[c_k] = target_lesson
 
             target_key = (target_subject, target_grade, target_chapter, target_lesson, target_topic)
 
@@ -358,7 +391,12 @@ async def move_category(
             if payload.target.subject is not None: q.subject = payload.target.subject
             if payload.target.grade_level is not None: q.grade_level = payload.target.grade_level
             if payload.target.chapter is not None: q.chapter = payload.target.chapter
-            if payload.target.lesson is not None: q.lesson = payload.target.lesson
+            if payload.target.lesson is not None:
+                q.lesson = payload.target.lesson
+            elif q.lesson and payload.target.chapter is not None and existing_target_lessons:
+                c_k = get_canonical_key(q.lesson)
+                if c_k in existing_target_lessons:
+                    q.lesson = existing_target_lessons[c_k]
             if payload.target.topic is not None: q.topic = payload.target.topic
 
         await db.commit()
@@ -418,17 +456,17 @@ def get_canonical_key(name: str) -> str:
     Chuẩn hóa thông minh tên Chương / Bài học thành canonical key:
     - Unicode NFC normalize (unicodedata.normalize('NFC', name)) và strip().lower().
     - Collapse whitespace: re.sub(r'\s+', ' ', s).
-    - Strip leading prefix using safe regex: r'^(?:chương|phần|chuyên đề|bài)\s*(?:[0-9]+|[ivxlcdm]+)\s*[:.\-–—]\s*'
-    - Strip leading/trailing punctuation ':.-–—'.
+    - Strip leading prefix using safe regex: r'^(?:chương|phần|chuyên đề|chủ đề|bài)\s*(?:[0-9]+|[ivxlcdm]+)?\s*[:.\-–—]\s*'
+    - Strip leading/trailing punctuation ' :.-–—,;'.
     - If core is empty, return s. Do NOT strip numbers from "Ôn tập chương 1" or "Bài tập cuối chương 2".
     """
     if not name or not str(name).strip():
         return ""
     s = unicodedata.normalize('NFC', str(name)).strip().lower()
     s = re.sub(r'\s+', ' ', s)
-    prefix_pattern = r'^(?:chương|phần|chuyên đề|bài)\s*(?:[0-9]+|[ivxlcdm]+)\s*[:.\-–—]\s*'
+    prefix_pattern = r'^(?:chương|phần|chuyên đề|chủ đề|bài)\s*(?:[0-9]+|[ivxlcdm]+)?\s*[:.\-–—]\s*'
     core = re.sub(prefix_pattern, '', s)
-    core = core.strip(" :.-–—")
+    core = core.strip(" :.-–—,;")
     return core if core else s
 
 async def load_taxonomy_lookup_maps(
@@ -686,19 +724,23 @@ async def import_questions_json(
             orig_chap = norm_data.get("chapter", "Chương chung")
             orig_less = norm_data.get("lesson", "Bài chung")
 
+            # 1. Resolve chapter FIRST (supports partial override + canonical match)
             c_chap = get_canonical_key(orig_chap)
-            c_less = get_canonical_key(orig_less)
-
             if c_chap in c_map:
-                norm_data["chapter"] = c_map[c_chap]
+                mapped_chap = c_map[c_chap]
             else:
                 c_map[c_chap] = orig_chap
-                norm_data["chapter"] = orig_chap
+                mapped_chap = orig_chap
+            norm_data["chapter"] = mapped_chap
 
-            if (c_chap, c_less) in l_map:
-                norm_data["lesson"] = l_map[(c_chap, c_less)]
+            # 2. Use RESOLVED chapter's canonical key to lookup lesson
+            c_resolved_chap = get_canonical_key(mapped_chap)
+            c_less = get_canonical_key(orig_less)
+
+            if (c_resolved_chap, c_less) in l_map:
+                norm_data["lesson"] = l_map[(c_resolved_chap, c_less)]
             else:
-                l_map[(c_chap, c_less)] = orig_less
+                l_map[(c_resolved_chap, c_less)] = orig_less
                 norm_data["lesson"] = orig_less
 
             q_in = QuestionCreate(**norm_data)
@@ -747,9 +789,8 @@ async def preview_import_questions_json(
         orig_chap = norm_data.get("chapter", "Chương chung")
         orig_less = norm_data.get("lesson", "Bài chung")
 
+        # 1. Resolve chapter FIRST (supports partial override + canonical match)
         c_chap = get_canonical_key(orig_chap)
-        c_less = get_canonical_key(orig_less)
-
         chap_in_db = (subj, grade, c_chap) in db_chapter_keys
         if c_chap in c_map:
             mapped_chap = c_map[c_chap]
@@ -757,11 +798,15 @@ async def preview_import_questions_json(
             c_map[c_chap] = orig_chap
             mapped_chap = orig_chap
 
-        less_in_db = (subj, grade, c_chap, c_less) in db_lesson_keys
-        if (c_chap, c_less) in l_map:
-            mapped_less = l_map[(c_chap, c_less)]
+        # 2. Use RESOLVED chapter's canonical key to lookup lesson
+        c_resolved_chap = get_canonical_key(mapped_chap)
+        c_less = get_canonical_key(orig_less)
+
+        less_in_db = (subj, grade, c_resolved_chap, c_less) in db_lesson_keys
+        if (c_resolved_chap, c_less) in l_map:
+            mapped_less = l_map[(c_resolved_chap, c_less)]
         else:
-            l_map[(c_chap, c_less)] = orig_less
+            l_map[(c_resolved_chap, c_less)] = orig_less
             mapped_less = orig_less
 
         is_matched = chap_in_db and less_in_db

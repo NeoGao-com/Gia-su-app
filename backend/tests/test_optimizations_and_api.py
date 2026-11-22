@@ -422,6 +422,15 @@ def test_get_canonical_key():
     assert get_canonical_key("Bài 1: Mệnh đề") == "mệnh đề"
     assert get_canonical_key("Bài 01. Mệnh đề") == "mệnh đề"
 
+    # 1b. Support 'chủ đề' (GDPT 2018) & trailing punctuation stripping
+    assert get_canonical_key("Chủ đề 1: Đạo hàm") == "đạo hàm"
+    assert get_canonical_key("Chủ đề 02 - Tích phân") == "tích phân"
+    assert get_canonical_key("Chủ đề: Nguyên hàm.") == "nguyên hàm"
+    assert get_canonical_key("Chương 1: Mệnh đề và tập hợp.") == "mệnh đề và tập hợp"
+    assert get_canonical_key("Bài 1: Mệnh đề -") == "mệnh đề"
+    assert get_canonical_key("Chủ đề 1: Hàm số;") == "hàm số"
+    assert get_canonical_key("Chuyên đề 2: Tọa độ,") == "tọa độ"
+
     # 2. Bare names match prefixed names
     assert get_canonical_key("Mệnh đề và tập hợp") == "mệnh đề và tập hợp"
     assert get_canonical_key("mệnh đề và tập hợp") == get_canonical_key("Chương 1: Mệnh đề và tập hợp")
@@ -624,6 +633,173 @@ async def test_smart_taxonomy_normalization_and_preview_logic(tmp_path):
         actions = [a.action for a in audits]
         assert "MOVE" in actions
         assert "MOVE_DEDUPLICATE" in actions
+
+
+@pytest.mark.asyncio
+async def test_reverse_direction_and_soft_delete_and_merge_children(tmp_path):
+    from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
+    from sqlalchemy.orm import sessionmaker
+    from app.database import Base
+    from app.models.question import Question, QuestionCategory, CategoryAuditLog
+    from app.models.user import User
+    from app.routers.questions import (
+        preview_import_questions_json,
+        import_questions_json,
+        QuestionImportRequest,
+        move_category,
+        CategoryMoveRequest,
+        CategoryDeleteRequest
+    )
+
+    db_file = tmp_path / "test_reverse_and_merge.db"
+    engine = create_async_engine(f"sqlite+aiosqlite:///{db_file.as_posix()}", echo=False)
+    async with engine.begin() as conn:
+        await conn.run_sync(Base.metadata.create_all)
+
+    async_session = sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
+
+    async with async_session() as session:
+        teacher = User(id=101, email="teacher101@test.com", hashed_password="pw", role="TEACHER")
+        session.add(teacher)
+
+        # 1. DB has full prefixed name: "Chương 1: Mệnh đề và tập hợp" and "Bài 1: Mệnh đề"
+        cat_db = QuestionCategory(
+            subject="Toán",
+            grade_level=10,
+            chapter="Chương 1: Mệnh đề và tập hợp",
+            lesson="Bài 1: Mệnh đề",
+            topic="Dạng 1"
+        )
+        # Soft-deleted category that must NOT be mapped to
+        cat_deleted = QuestionCategory(
+            subject="Toán",
+            grade_level=10,
+            chapter="Chương Cũ Bị Xóa",
+            lesson="Bài Cũ Bị Xóa",
+            is_deleted=True
+        )
+        session.add_all([cat_db, cat_deleted])
+        await session.commit()
+
+        # 1a. Test reverse direction: JSON gives bare names or roman numeral variants
+        # -> MUST preserve the full original DB name "Chương 1: Mệnh đề và tập hợp"
+        rev_payload = QuestionImportRequest(questions=[
+            {
+                "content": "Câu trắc nghiệm đảo chiều 1",
+                "subject": "Toán",
+                "grade_level": 10,
+                "chapter": "Mệnh đề và tập hợp",
+                "lesson": "Bài 1. Mệnh đề",
+                "options": ["A", "B"],
+                "correct_option": 0
+            },
+            {
+                "content": "Câu trắc nghiệm đảo chiều 2",
+                "subject": "Toán",
+                "grade_level": 10,
+                "chapter": "Chương I - Mệnh đề và tập hợp",
+                "lesson": "Mệnh đề",
+                "options": ["A", "B"],
+                "correct_option": 1
+            },
+            {
+                "content": "Câu trắc nghiệm thử soft-delete",
+                "subject": "Toán",
+                "grade_level": 10,
+                "chapter": "Chương Cũ Bị Xóa",
+                "lesson": "Bài Cũ Bị Xóa",
+                "options": ["A", "B"],
+                "correct_option": 0
+            }
+        ])
+
+        prev_res = await preview_import_questions_json(rev_payload, session, teacher)
+        assert len(prev_res) == 3
+
+        # Item 1: bare chapter "Mệnh đề và tập hợp" maps back to DB's "Chương 1: Mệnh đề và tập hợp"
+        assert prev_res[0]["original_chapter"] == "Mệnh đề và tập hợp"
+        assert prev_res[0]["mapped_chapter"] == "Chương 1: Mệnh đề và tập hợp"
+        assert prev_res[0]["original_lesson"] == "Bài 1. Mệnh đề"
+        assert prev_res[0]["mapped_lesson"] == "Bài 1: Mệnh đề"
+        assert prev_res[0]["status"] == "MATCHED"
+
+        # Item 2: roman variant "Chương I - Mệnh đề và tập hợp" also maps back to DB's "Chương 1: Mệnh đề và tập hợp"
+        assert prev_res[1]["mapped_chapter"] == "Chương 1: Mệnh đề và tập hợp"
+        assert prev_res[1]["mapped_lesson"] == "Bài 1: Mệnh đề"
+        assert prev_res[1]["status"] == "MATCHED"
+
+        # Item 3: Soft-deleted category is NOT mapped (status is NEW, not MATCHED)
+        assert prev_res[2]["status"] == "NEW"
+
+        # 2. Test Partial Override (Chỉ ghi đè Chương):
+        # Question in JSON has chapter="Chương Lung Tung", lesson="Bài 1. Mệnh đề"
+        # Overridden chapter is "Mệnh đề và tập hợp" (which canonically matches "Chương 1: Mệnh đề và tập hợp")
+        partial_override_payload = QuestionImportRequest(questions=[
+            {
+                "content": "Câu partial override",
+                "subject": "Toán",
+                "grade_level": 10,
+                "chapter": "Mệnh đề và tập hợp",  # Overridden chapter
+                "lesson": "Bài 1. Mệnh đề",        # Original lesson from JSON
+                "options": ["A", "B"],
+                "correct_option": 0
+            }
+        ])
+        partial_prev = await preview_import_questions_json(partial_override_payload, session, teacher)
+        assert partial_prev[0]["mapped_chapter"] == "Chương 1: Mệnh đề và tập hợp"
+        assert partial_prev[0]["mapped_lesson"] == "Bài 1: Mệnh đề"
+        assert partial_prev[0]["status"] == "MATCHED"
+
+        # 3. Test Chapter -> Chapter merge with child lesson canonical deduplication
+        # Target Chapter B has lesson "Bài 1: Mệnh đề"
+        # Source Chapter A has lesson "Bài 01. Mệnh đề"
+        cat_ch_b = QuestionCategory(
+            subject="Toán",
+            grade_level=10,
+            chapter="Chương B",
+            lesson="Bài 1: Mệnh đề",
+            topic="Dạng chung"
+        )
+        cat_ch_a = QuestionCategory(
+            subject="Toán",
+            grade_level=10,
+            chapter="Chương A",
+            lesson="Bài 01. Mệnh đề",
+            topic="Dạng chung"
+        )
+        session.add_all([cat_ch_b, cat_ch_a])
+        await session.commit()
+
+        # Seed question in Chapter A
+        q_in_a = Question(
+            code="TEST_Q_IN_A",
+            content="Nội dung câu ở Chương A",
+            subject="Toán",
+            grade_level=10,
+            chapter="Chương A",
+            lesson="Bài 01. Mệnh đề",
+            topic="Dạng chung",
+            options=["A", "B"],
+            correct_option=0
+        )
+        session.add(q_in_a)
+        await session.commit()
+
+        # Merge Chapter A into Chapter B (chapter-level merge: source.lesson is None, target.lesson is None)
+        merge_ch_req = CategoryMoveRequest(
+            source=CategoryDeleteRequest(subject="Toán", grade_level=10, chapter="Chương A"),
+            target=CategoryDeleteRequest(subject="Toán", grade_level=10, chapter="Chương B")
+        )
+        await move_category(merge_ch_req, session, teacher)
+
+        # Verify child category in Chapter A was deduplicated into Chapter B's lesson
+        await session.refresh(cat_ch_a)
+        assert cat_ch_a.is_deleted is True
+
+        # Verify question in Chapter A has its chapter changed to Chapter B AND lesson canonicalized to Chapter B's lesson
+        await session.refresh(q_in_a)
+        assert q_in_a.chapter == "Chương B"
+        assert q_in_a.lesson == "Bài 1: Mệnh đề"
 
 
 

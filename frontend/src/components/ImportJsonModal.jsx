@@ -39,9 +39,9 @@ export function getCanonicalKey(name) {
   if (!name || typeof name !== 'string') return '';
   let s = name.normalize('NFC').trim().toLowerCase();
   s = s.replace(/\s+/g, ' ');
-  const prefixRegex = /^(?:chương|phần|chuyên đề|bài)\s*(?:[0-9]+|[ivxlcdm]+)\s*[:.\-–—]\s*/i;
+  const prefixRegex = /^(?:chương|phần|chuyên đề|chủ đề|bài)\s*(?:[0-9]+|[ivxlcdm]+)?\s*[:.\-–—]\s*/i;
   const stripped = s.replace(prefixRegex, '');
-  const cleaned = stripped.replace(/^[:.\-–—\s]+|[:.\-–—\s]+$/g, '');
+  const cleaned = stripped.replace(/^[:.\-–—,;\s]+|[:.\-–—,;\s]+$/g, '');
   return cleaned.length > 0 ? cleaned : s;
 }
 
@@ -621,8 +621,20 @@ export function ImportJsonModal({
           const hasLessOverride = overrideLevel === 'all' && Boolean(overrideLesson && overrideLesson.trim());
           if (hasChapOverride || hasLessOverride) {
             status = 'OVERRIDE';
-            if (hasChapOverride) targetChap = overrideChapter.trim();
-            if (hasLessOverride) targetLess = overrideLesson.trim();
+            if (hasChapOverride) {
+              const cOverKey = getCanonicalKey(overrideChapter.trim());
+              targetChap = chapterCanonMap.has(cOverKey) ? chapterCanonMap.get(cOverKey) : overrideChapter.trim();
+            }
+            if (hasLessOverride) {
+              targetLess = overrideLesson.trim();
+            } else {
+              // Partial override (Chỉ ghi đè Chương): lookup lesson in resolved chapter!
+              const cResolvedChap = getCanonicalKey(targetChap);
+              const lKey = `${cResolvedChap}||${getCanonicalKey(rawLess)}`;
+              if (lessonCanonMap.has(lKey)) {
+                targetLess = lessonCanonMap.get(lKey);
+              }
+            }
           }
         } else {
           // Auto mode: Canonical check against existing tree
