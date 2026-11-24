@@ -16,6 +16,7 @@ export function TakeExam() {
   const navigate = useNavigate();
   const { toast, confirm } = useToast();
 
+  // --- All State Declarations ---
   const [exam, setExam] = useState(null);
   const [submissionId, setSubmissionId] = useState(null);
   const [version, setVersion] = useState(1);
@@ -32,7 +33,41 @@ export function TakeExam() {
   const [paletteTab, setPaletteTab] = useState('ALL'); // 'ALL' | 'ANSWERED' | 'UNANSWERED' | 'BOOKMARKED'
   const [submissionResult, setSubmissionResult] = useState(null);
   const [showReviewModal, setShowReviewModal] = useState(false);
+  const [tabSwitches, setTabSwitches] = useState(0);
 
+  // --- All Ref Declarations (Declared upfront to prevent TDZ) ---
+  const versionRef = useRef(version);
+  const tabSwitchesRef = useRef(tabSwitches);
+  const latestAnswersRef = useRef(answers);
+  const saveTimeoutRef = useRef(null);
+  const isSavingRef = useRef(false);
+  const pendingSaveRef = useRef(false);
+  const timerTriggered = useRef(false);
+
+  // --- Sync Effects for Refs & Window Events ---
+  useEffect(() => {
+    versionRef.current = version;
+  }, [version]);
+
+  useEffect(() => {
+    tabSwitchesRef.current = tabSwitches;
+  }, [tabSwitches]);
+
+  useEffect(() => {
+    latestAnswersRef.current = answers;
+  }, [answers]);
+
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.hidden) {
+        setTabSwitches(prev => prev + 1);
+      }
+    };
+    window.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => window.removeEventListener('visibilitychange', handleVisibilityChange);
+  }, []);
+
+  // --- Initialize Exam ---
   useEffect(() => {
     if (!examId) return;
     const initExam = async () => {
@@ -125,36 +160,6 @@ export function TakeExam() {
     }
   }, [submitting, submissionId, examId, answers, exam, timeLeft, questions.length, navigate, confirm, toast, tabSwitches]);
 
-  const versionRef = useRef(version);
-  useEffect(() => {
-    versionRef.current = version;
-  }, [version]);
-
-  const [tabSwitches, setTabSwitches] = useState(0);
-  const tabSwitchesRef = useRef(tabSwitches);
-  useEffect(() => {
-    tabSwitchesRef.current = tabSwitches;
-  }, [tabSwitches]);
-
-  useEffect(() => {
-    const handleVisibilityChange = () => {
-      if (document.hidden) {
-        setTabSwitches(prev => prev + 1);
-      }
-    };
-    window.addEventListener('visibilitychange', handleVisibilityChange);
-    return () => window.removeEventListener('visibilitychange', handleVisibilityChange);
-  }, []);
-
-  const latestAnswersRef = useRef(answers);
-  useEffect(() => {
-    latestAnswersRef.current = answers;
-  }, [answers]);
-
-  const saveTimeoutRef = useRef(null);
-  const isSavingRef = useRef(false);
-  const pendingSaveRef = useRef(false);
-
   const executeSave = useCallback(async () => {
     if (!submissionId || submitting) return;
     if (isSavingRef.current) {
@@ -229,7 +234,6 @@ export function TakeExam() {
     setBookmarked(prev => ({ ...prev, [qId]: !prev[qId] }));
   }, []);
 
-  const timerTriggered = useRef(false);
 
   useEffect(() => {
     if (!loading && exam && submissionId && timeLeft <= 0 && !submitting && !timerTriggered.current) {
