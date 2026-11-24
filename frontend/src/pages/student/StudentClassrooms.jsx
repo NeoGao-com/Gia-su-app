@@ -6,11 +6,12 @@ import {
   Users, KeyRound, BookOpen, Clock, Calendar, CheckCircle2, 
   Search, ArrowRight, ShieldCheck, Copy, Check, Sparkles, GraduationCap,
   PhoneCall, Phone, MessageCircle, Mail, ExternalLink, Headphones, X, Info,
-  Video
+  Video, FolderDown
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useToast } from '../../context/ToastContext';
 import { ClassroomDiscussionsModal } from '../../components/ClassroomDiscussionsModal';
+import { ClassroomMaterialsModal } from '../../components/ClassroomMaterialsModal';
 
 export function StudentClassrooms() {
   const { toast } = useToast();
@@ -24,6 +25,8 @@ export function StudentClassrooms() {
   const [copiedContact, setCopiedContact] = useState(null);
   const [isDiscussionModalOpen, setIsDiscussionModalOpen] = useState(false);
   const [discussionModalClass, setDiscussionModalClass] = useState(null);
+  const [isMaterialsModalOpen, setIsMaterialsModalOpen] = useState(false);
+  const [materialsModalClass, setMaterialsModalClass] = useState(null);
 
   const cleanPhone = (phone) => (phone || '').replace(/[^0-9]/g, '');
 
@@ -349,6 +352,19 @@ export function StudentClassrooms() {
                         <span>Kênh Hỏi đáp &amp; Thảo luận</span>
                       </button>
 
+                      {/* Nút mở Kho Tài liệu & Đề cương lớp */}
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setMaterialsModalClass(c);
+                          setIsMaterialsModalOpen(true);
+                        }}
+                        className="w-full mb-2 py-2 px-3 rounded-xl bg-gradient-to-r from-teal-50 via-emerald-50 to-cyan-50 hover:from-teal-100 hover:to-emerald-100 text-teal-800 font-bold text-xs flex items-center justify-center space-x-1.5 transition border border-teal-200/80 cursor-pointer shadow-2xs group-hover:border-teal-300"
+                      >
+                        <FolderDown className="w-3.5 h-3.5 text-teal-600" />
+                        <span>Kho Tài liệu &amp; Đề cương lớp</span>
+                      </button>
+
                       {/* Nút mở Modal liên hệ Thầy/Cô chi tiết */}
                       <button
                         type="button"
@@ -595,6 +611,18 @@ export function StudentClassrooms() {
         }}
         classroomId={discussionModalClass?.id}
         classroomName={discussionModalClass?.name}
+        isTeacher={false}
+      />
+
+      {/* Classroom Materials & Documents Modal */}
+      <ClassroomMaterialsModal
+        isOpen={isMaterialsModalOpen}
+        onClose={() => {
+          setIsMaterialsModalOpen(false);
+          setMaterialsModalClass(null);
+        }}
+        classroomId={materialsModalClass?.id}
+        classroomName={materialsModalClass?.name}
         isTeacher={false}
       />
     </div>

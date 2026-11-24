@@ -6,11 +6,12 @@ import {
   Plus, Trash2, UserPlus, CheckSquare, Square, Search,
   Copy, Check, Users, UserMinus, Edit3, Phone, School,
   Calendar, HeartHandshake, KeyRound, Pencil, GraduationCap, FileText,
-  MessageCircle, Video, ExternalLink
+  MessageCircle, Video, ExternalLink, FolderDown
 } from 'lucide-react';
 import { Modal } from '../../components/Modal';
 import { EditAssignmentModal } from '../../components/EditAssignmentModal';
 import { ClassroomDiscussionsModal } from '../../components/ClassroomDiscussionsModal';
+import { ClassroomMaterialsModal } from '../../components/ClassroomMaterialsModal';
 import { StudentAssignmentProgressModal } from '../../components/StudentAssignmentProgressModal';
 import { useToast } from '../../context/ToastContext';
 
@@ -23,6 +24,8 @@ export function ClassroomManagement() {
   const [allStudents, setAllStudents] = useState([]);
   const [isDiscussionModalOpen, setIsDiscussionModalOpen] = useState(false);
   const [discussionModalClass, setDiscussionModalClass] = useState(null);
+  const [isMaterialsModalOpen, setIsMaterialsModalOpen] = useState(false);
+  const [materialsModalClass, setMaterialsModalClass] = useState(null);
 
   // Student progress modal state
   const [selectedStudentForProgress, setSelectedStudentForProgress] = useState(null);
@@ -668,6 +671,18 @@ export function ClassroomManagement() {
                         >
                           <MessageCircle className="w-4 h-4" />
                           <span>Kênh Hỏi đáp</span>
+                        </button>
+
+                        <button
+                          onClick={() => {
+                            setMaterialsModalClass(selectedClass);
+                            setIsMaterialsModalOpen(true);
+                          }}
+                          className="flex items-center space-x-1.5 px-3.5 py-2.5 bg-gradient-to-r from-teal-600 to-emerald-600 hover:from-teal-700 hover:to-emerald-700 text-white rounded-xl font-bold text-xs shadow-2xs transition active:scale-95 cursor-pointer"
+                          title="Kho tài liệu, đề cương ôn tập, bài giảng cho học sinh tải về"
+                        >
+                          <FolderDown className="w-4 h-4" />
+                          <span>Kho Tài Liệu Lớp</span>
                         </button>
 
                         {/* Prominent Invite Code with Copy */}
@@ -1738,6 +1753,17 @@ export function ClassroomManagement() {
             }}
             classroomId={discussionModalClass?.id}
             classroomName={discussionModalClass?.name}
+            isTeacher={true}
+          />
+
+          <ClassroomMaterialsModal
+            isOpen={isMaterialsModalOpen}
+            onClose={() => {
+              setIsMaterialsModalOpen(false);
+              setMaterialsModalClass(null);
+            }}
+            classroomId={materialsModalClass?.id}
+            classroomName={materialsModalClass?.name}
             isTeacher={true}
           />
 

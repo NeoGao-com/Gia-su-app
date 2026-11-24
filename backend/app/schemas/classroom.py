@@ -151,3 +151,27 @@ class StudentAssignmentsProgressResponse(BaseModel):
     classroom_name: str
     student: UserResponse
     assignments: List[StudentClassAssignmentProgress]
+
+
+class MaterialAuthor(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    id: int
+    full_name: Optional[str] = None
+    email: Optional[str] = None
+    role: Optional[str] = None
+
+
+class MaterialResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    id: int
+    classroom_id: int
+    title: str
+    description: Optional[str] = None
+    file_url: str
+    file_name: str
+    file_size: int = 0
+    file_type: Optional[str] = "other"
+    download_count: int = 0
+    created_at: Optional[datetime] = None
+    uploader: Optional[MaterialAuthor] = None
+

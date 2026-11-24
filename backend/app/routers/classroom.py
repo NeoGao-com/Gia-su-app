@@ -1,19 +1,24 @@
 import logging
 import random
-from fastapi import APIRouter, Depends, HTTPException, status, Query, Request, Body
+import os
+import uuid
+import re
+from fastapi import APIRouter, Depends, HTTPException, status, Query, Request, Body, UploadFile, File, Form
+from fastapi.responses import FileResponse, RedirectResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from sqlalchemy import func, or_, and_
 from sqlalchemy.orm import selectinload, joinedload
 from typing import List, Optional
 from app.database import get_db, redis_client
-from app.models.classroom import Classroom, Assignment, ClassroomStudent, ClassroomExam, ClassroomPost, ClassroomComment
+from app.models.classroom import Classroom, Assignment, ClassroomStudent, ClassroomExam, ClassroomPost, ClassroomComment, ClassroomMaterial
 from app.models.question import Question
 from app.schemas.classroom import (
     ClassroomCreate, ClassroomUpdate, ClassroomResponse,
     AssignmentCreate, JoinClassroomRequest, GradebookResponse,
     PostCreate, PostResponse, CommentCreate, CommentResponse, DiscussionAuthor,
-    StudentSubmissionItem, StudentClassAssignmentProgress, StudentAssignmentsProgressResponse
+    StudentSubmissionItem, StudentClassAssignmentProgress, StudentAssignmentsProgressResponse,
+    MaterialResponse, MaterialAuthor
 )
 from app.schemas.assignment import (
     AssignmentResponse, AssignmentCreateBody,
@@ -24,6 +29,7 @@ from app.core.rate_limiter import parse_rate_limit
 from app.core.config import settings
 from app.models.user import User
 from app.models.exam import Exam, ExamSubmission
+from app.services.storage import StorageService
 
 import json
 
@@ -1326,6 +1332,9 @@ async def verify_classroom_access(db: AsyncSession, classroom_id: int, current_u
     if not classroom or classroom.is_deleted:
         raise HTTPException(status_code=404, detail="Không tìm thấy lớp học")
 
+    if current_user.role == "ADMIN":
+        return classroom
+
     if current_user.role == "TEACHER":
         if classroom.instructor_id != current_user.id:
             raise HTTPException(status_code=403, detail="Chỉ giáo viên phụ trách lớp mới có quyền thực hiện thao tác này")
@@ -1619,4 +1628,204 @@ async def delete_classroom_comment(
     await db.delete(comment)
     await db.commit()
     return {"success": True, "message": "Đã xóa bình luận thành công"}
+
+
+# =========================================================================
+# KHO TÀI LIỆU & HỌC LIỆU LỚP HỌC (CLASSROOM MATERIALS & DOCUMENTS)
+# =========================================================================
+
+@router.get("/{classroom_id}/materials", response_model=List[MaterialResponse], summary="Lấy danh sách tài liệu học tập của lớp")
+async def get_classroom_materials(
+    classroom_id: int,
+    search: Optional[str] = Query(None, description="Từ khóa tìm kiếm theo tên, mô tả hoặc tên file"),
+    file_type: Optional[str] = Query(None, description="Lọc theo loại file: pdf, word, powerpoint, excel, archive, image, text, other"),
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    await verify_classroom_access(db, classroom_id, current_user)
+
+    query = select(ClassroomMaterial).options(selectinload(ClassroomMaterial.uploader)).filter(
+        ClassroomMaterial.classroom_id == classroom_id
+    )
+
+    if search and search.strip():
+        term = f"%{search.strip()}%"
+        query = query.filter(
+            or_(
+                ClassroomMaterial.title.ilike(term),
+                ClassroomMaterial.description.ilike(term),
+                ClassroomMaterial.file_name.ilike(term)
+            )
+        )
+
+    if file_type and file_type != "all":
+        query = query.filter(ClassroomMaterial.file_type == file_type)
+
+    query = query.order_by(ClassroomMaterial.created_at.desc())
+    res = await db.execute(query)
+    materials = res.scalars().all()
+    return materials
+
+
+@router.post("/{classroom_id}/materials", response_model=MaterialResponse, summary="Giáo viên tải lên tài liệu mới cho lớp")
+async def upload_classroom_material(
+    classroom_id: int,
+    file: UploadFile = File(...),
+    title: str = Form(...),
+    description: Optional[str] = Form(None),
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    classroom = await db.get(Classroom, classroom_id)
+    if not classroom or classroom.is_deleted:
+        raise HTTPException(status_code=404, detail="Không tìm thấy lớp học")
+
+    # Only classroom instructor or admin can upload materials
+    if current_user.role != "ADMIN" and (current_user.role != "TEACHER" or classroom.instructor_id != current_user.id):
+        raise HTTPException(status_code=403, detail="Chỉ giáo viên phụ trách lớp mới có quyền tải lên tài liệu")
+
+    title_str = title.strip()
+    if not title_str:
+        raise HTTPException(status_code=400, detail="Vui lòng nhập tiêu đề tài liệu")
+
+    contents = await file.read()
+    file_size = len(contents)
+    max_size = 50 * 1024 * 1024  # 50MB
+    if file_size > max_size:
+        raise HTTPException(status_code=413, detail="Tệp tin quá lớn (Tối đa 50MB)")
+
+    if file_size == 0:
+        raise HTTPException(status_code=400, detail="Tệp tin không được để rỗng")
+
+    # Determine file_type from extension
+    orig_name = file.filename or "tai_lieu"
+    ext = os.path.splitext(orig_name)[1].lower()
+
+    if ext in ['.pdf']:
+        file_type = "pdf"
+    elif ext in ['.doc', '.docx']:
+        file_type = "word"
+    elif ext in ['.ppt', '.pptx']:
+        file_type = "powerpoint"
+    elif ext in ['.xls', '.xlsx', '.csv']:
+        file_type = "excel"
+    elif ext in ['.zip', '.rar', '.7z', '.tar', '.gz']:
+        file_type = "archive"
+    elif ext in ['.png', '.jpg', '.jpeg', '.webp', '.gif', '.svg']:
+        file_type = "image"
+    elif ext in ['.txt', '.md']:
+        file_type = "text"
+    else:
+        file_type = "other"
+
+    clean_base = re.sub(r'[^a-zA-Z0-9_\.-]', '_', os.path.splitext(orig_name)[0])[:30]
+    unique_filename = f"mat_{uuid.uuid4().hex[:10]}_{clean_base}{ext}"
+
+    content_type = file.content_type or "application/octet-stream"
+    supabase_url = StorageService.upload_file(contents, unique_filename, content_type)
+    if supabase_url:
+        file_url = supabase_url
+    else:
+        os.makedirs(settings.UPLOAD_DIR, exist_ok=True)
+        local_path = os.path.join(settings.UPLOAD_DIR, unique_filename)
+        with open(local_path, "wb") as f:
+            f.write(contents)
+        file_url = f"/api/uploads/{unique_filename}"
+
+    material = ClassroomMaterial(
+        classroom_id=classroom_id,
+        uploaded_by=current_user.id,
+        title=title_str,
+        description=description.strip() if description and description.strip() else None,
+        file_url=file_url,
+        file_name=orig_name,
+        file_size=file_size,
+        file_type=file_type,
+        download_count=0
+    )
+    db.add(material)
+    await db.commit()
+    await db.refresh(material)
+
+    res = await db.execute(
+        select(ClassroomMaterial).options(selectinload(ClassroomMaterial.uploader)).filter(ClassroomMaterial.id == material.id)
+    )
+    return res.scalars().first()
+
+
+@router.delete("/{classroom_id}/materials/{material_id}", summary="Xóa tài liệu học tập của lớp")
+async def delete_classroom_material(
+    classroom_id: int,
+    material_id: int,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    classroom = await db.get(Classroom, classroom_id)
+    if not classroom or classroom.is_deleted:
+        raise HTTPException(status_code=404, detail="Không tìm thấy lớp học")
+
+    res = await db.execute(
+        select(ClassroomMaterial).filter(
+            ClassroomMaterial.id == material_id,
+            ClassroomMaterial.classroom_id == classroom_id
+        )
+    )
+    material = res.scalars().first()
+    if not material:
+        raise HTTPException(status_code=404, detail="Không tìm thấy tài liệu")
+
+    is_instructor = bool(classroom.instructor_id == current_user.id)
+    if current_user.role != "ADMIN" and not is_instructor and material.uploaded_by != current_user.id:
+        raise HTTPException(status_code=403, detail="Bạn không có quyền xóa tài liệu này")
+
+    # Remove local file if present
+    if material.file_url and "/api/uploads/" in material.file_url:
+        filename = material.file_url.split("/api/uploads/")[-1]
+        filepath = os.path.join(settings.UPLOAD_DIR, filename)
+        if os.path.exists(filepath):
+            try:
+                os.remove(filepath)
+            except Exception:
+                pass
+
+    await db.delete(material)
+    await db.commit()
+    return {"success": True, "message": "Đã xóa tài liệu thành công"}
+
+
+@router.get("/materials/{material_id}/download", summary="Tải xuống tài liệu học tập")
+async def download_classroom_material(
+    material_id: int,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    res = await db.execute(
+        select(ClassroomMaterial).filter(ClassroomMaterial.id == material_id)
+    )
+    material = res.scalars().first()
+    if not material:
+        raise HTTPException(status_code=404, detail="Không tìm thấy tài liệu")
+
+    await verify_classroom_access(db, material.classroom_id, current_user)
+
+    material.download_count = (material.download_count or 0) + 1
+    await db.commit()
+
+    if material.file_url and material.file_url.startswith("http"):
+        return RedirectResponse(url=material.file_url)
+
+    if material.file_url and "/api/uploads/" in material.file_url:
+        filename = material.file_url.split("/api/uploads/")[-1]
+        filepath = os.path.join(settings.UPLOAD_DIR, filename)
+        if os.path.exists(filepath):
+            from urllib.parse import quote
+            safe_filename = quote(material.file_name)
+            return FileResponse(
+                filepath,
+                filename=material.file_name,
+                headers={"Content-Disposition": f"attachment; filename*=UTF-8''{safe_filename}"}
+            )
+
+    raise HTTPException(status_code=404, detail="Tệp tin không tồn tại trên hệ thống lưu trữ")
+
 

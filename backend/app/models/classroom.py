@@ -51,6 +51,7 @@ class Classroom(Base):
     exams = relationship("Exam", secondary="classroom_exams", back_populates="classrooms", overlaps="exams")
     assignments = relationship("Assignment", back_populates="classroom", cascade="all, delete-orphan")
     posts = relationship("ClassroomPost", back_populates="classroom", cascade="all, delete-orphan")
+    materials = relationship("ClassroomMaterial", back_populates="classroom", cascade="all, delete-orphan", order_by="ClassroomMaterial.created_at.desc()")
 
 class Assignment(Base):
     __tablename__ = "assignments"
@@ -99,3 +100,21 @@ class ClassroomComment(Base):
 
     post = relationship("ClassroomPost", back_populates="comments")
     user = relationship("User", backref="classroom_comments")
+
+class ClassroomMaterial(Base):
+    __tablename__ = "classroom_materials"
+
+    id = Column(Integer, primary_key=True, index=True)
+    classroom_id = Column(Integer, ForeignKey("classrooms.id", ondelete="CASCADE"), nullable=False, index=True)
+    uploaded_by = Column(Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True, index=True)
+    title = Column(String(255), nullable=False)
+    description = Column(String, nullable=True)
+    file_url = Column(String, nullable=False)
+    file_name = Column(String(255), nullable=False)
+    file_size = Column(Integer, default=0)
+    file_type = Column(String(50), nullable=True) # pdf, word, powerpoint, excel, archive, image, other
+    download_count = Column(Integer, default=0)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+    classroom = relationship("Classroom", back_populates="materials")
+    uploader = relationship("User", backref="uploaded_materials")
