@@ -10,6 +10,18 @@ import { MathRenderer } from '../../components/MathRenderer';
 import { SubmissionReviewModal } from '../../components/SubmissionReviewModal';
 import { useToast } from '../../context/ToastContext';
 
+const parseServerDate = (dateStr) => {
+  if (!dateStr) return null;
+  let str = String(dateStr).trim();
+  if (!str) return null;
+  // If no timezone indicator (no 'Z' and no offset like +07:00), treat as UTC
+  if (!str.endsWith('Z') && !/[+-]\d{2}:?\d{2}$/.test(str)) {
+    str = (str.includes('T') ? str : str.replace(' ', 'T')) + 'Z';
+  }
+  const d = new Date(str);
+  return isNaN(d.getTime()) ? null : d;
+};
+
 export function TakeExam() {
   const params = useParams();
   const examId = params.examId || params.id;
@@ -24,6 +36,7 @@ export function TakeExam() {
   const [bookmarked, setBookmarked] = useState({});
   const [currentIndex, setCurrentIndex] = useState(0);
   const [timeLeft, setTimeLeft] = useState(0);
+  const [timerReady, setTimerReady] = useState(false);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [saveStatus, setSaveStatus] = useState('saved'); // 'saving' | 'saved'
@@ -83,14 +96,16 @@ export function TakeExam() {
         setExam(detailRes.data);
 
         const durationSec = (detailRes.data.duration_minutes || 45) * 60;
+        let remain = durationSec;
         if (startRes.data.started_at) {
-          const started = new Date(startRes.data.started_at).getTime();
-          const elapsedSec = Math.floor((Date.now() - started) / 1000);
-          const remainSec = Math.max(0, durationSec - elapsedSec);
-          setTimeLeft(remainSec);
-        } else {
-          setTimeLeft(durationSec);
+          const parsedStarted = parseServerDate(startRes.data.started_at);
+          if (parsedStarted) {
+            const elapsedSec = Math.floor((Date.now() - parsedStarted.getTime()) / 1000);
+            remain = Math.max(0, durationSec - Math.max(0, elapsedSec));
+          }
         }
+        setTimeLeft(remain);
+        setTimerReady(true);
       } catch (err) {
         toast.error(err.response?.data?.detail || 'Không thể bắt đầu bài thi');
         navigate('/exams');
@@ -236,15 +251,15 @@ export function TakeExam() {
 
 
   useEffect(() => {
-    if (!loading && exam && submissionId && timeLeft <= 0 && !submitting && !timerTriggered.current) {
+    if (!loading && timerReady && exam && submissionId && timeLeft <= 0 && !submitting && !timerTriggered.current) {
       timerTriggered.current = true;
       toast.warning('Thời gian làm bài đã hết! Hệ thống đang tự động nộp bài...');
       handleSubmit(true);
     }
-  }, [loading, exam, submissionId, timeLeft, submitting, handleSubmit, toast]);
+  }, [loading, timerReady, exam, submissionId, timeLeft, submitting, handleSubmit, toast]);
 
   useEffect(() => {
-    if (timeLeft <= 0 || loading) return;
+    if (!timerReady || timeLeft <= 0 || loading) return;
     const timer = setInterval(() => {
       setTimeLeft(prev => {
         if (prev <= 1) {
@@ -260,7 +275,7 @@ export function TakeExam() {
       });
     }, 1000);
     return () => clearInterval(timer);
-  }, [timeLeft, loading, handleSubmit, toast]);
+  }, [timerReady, timeLeft, loading, handleSubmit, toast]);
 
   if (loading || !exam) {
     return (

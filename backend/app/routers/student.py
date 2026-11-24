@@ -6,7 +6,7 @@ from sqlalchemy.orm import selectinload
 from sqlalchemy import func, or_
 from typing import List, Any, Optional, Dict
 from pydantic import BaseModel
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 import json
 from app.database import get_db, redis_client
 from app.models.exam import Exam, ExamSubmission, exam_questions
@@ -66,14 +66,62 @@ async def start_exam(
                 if not ce_res.scalars().first():
                     raise HTTPException(status_code=404, detail="Không tìm thấy bài thi")
 
-    # 1) Nếu đã có phiên IN_PROGRESS (chưa nộp) thì trả về để tiếp tục làm bài.
+    # 1) Nếu đã có phiên IN_PROGRESS (chưa nộp) thì kiểm tra xem thời gian đã hết chưa
     sub_res = await db.execute(
         select(ExamSubmission)
         .filter(ExamSubmission.exam_id == exam_id, ExamSubmission.user_id == current_user.id, ExamSubmission.status == "IN_PROGRESS")
     )
     existing_sub = sub_res.scalars().first()
     if existing_sub:
-        return existing_sub
+        now = datetime.now(timezone.utc)
+        started_at = existing_sub.started_at
+        if started_at:
+            if started_at.tzinfo is None:
+                started_at = started_at.replace(tzinfo=timezone.utc)
+            duration_sec = (exam.duration_minutes or 45) * 60
+            elapsed_sec = (now - started_at).total_seconds()
+            if elapsed_sec < duration_sec:
+                return existing_sub
+            else:
+                # Phiên này đã quá thời gian làm bài -> chốt nộp tự động
+                try:
+                    q_res = await db.execute(
+                        select(Question).join(exam_questions, Question.id == exam_questions.c.question_id).filter(exam_questions.c.exam_id == exam_id)
+                    )
+                    questions = q_res.scalars().all()
+                    snapshot = []
+                    for q in questions:
+                        snapshot.append({
+                            "id": q.id, "content": q.content, "question_type": q.question_type,
+                            "options": q.options, "blanks": q.blanks, "sub_questions": q.sub_questions,
+                            "subject": q.subject, "difficulty": q.difficulty, "image_url": q.image_url,
+                            "latex_code": q.latex_code, "sample_solution": q.sample_solution,
+                            "explanation": getattr(q, 'explanation', None),
+                            "correct_answer": getattr(q, 'correct_answer', None),
+                            "correct_answers": getattr(q, 'correct_answers', None),
+                            "correct_option": getattr(q, 'correct_option', None)
+                        })
+                    existing_sub.question_snapshot = snapshot
+                    grader = GradingService()
+                    score, correct_count, graded_answers = grader.grade(questions, existing_sub.answers or {})
+                    has_essay = any(q.question_type == "ESSAY" for q in questions)
+                    existing_sub.auto_score = score
+                    n_obj = len([q for q in questions if q.question_type != "ESSAY"])
+                    n_essay = len([q for q in questions if q.question_type == "ESSAY"])
+                    existing_sub.score = calculate_total_score(n_obj, score, n_essay, [])
+                    existing_sub.graded_answers = graded_answers
+                    existing_sub.time_spent = duration_sec
+                    existing_sub.grading_status = "PENDING_ESSAY" if has_essay else "GRADED"
+                    existing_sub.status = "SUBMITTED" if has_essay else "GRADED"
+                    existing_sub.submitted_at = now
+                    await db.commit()
+                    await invalidate_student_exams_cache(current_user.id)
+                except Exception:
+                    existing_sub.status = "SUBMITTED"
+                    existing_sub.submitted_at = now
+                    await db.commit()
+        else:
+            return existing_sub
 
     # 2) Đếm số lần đã làm trước đó (các submission đã kết thúc)
     count_res = await db.execute(

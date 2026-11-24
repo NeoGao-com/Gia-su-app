@@ -1,6 +1,6 @@
-from pydantic import BaseModel, field_validator, model_validator, Field, ConfigDict
+from pydantic import BaseModel, field_validator, field_serializer, model_validator, Field, ConfigDict
 from typing import Optional, List, Dict, Any
-from datetime import datetime
+from datetime import datetime, timezone
 
 class ExamBase(BaseModel):
     title: str
@@ -126,6 +126,14 @@ class ExamSubmissionResponse(BaseModel):
     attempt_number: Optional[int] = 1
     version: Optional[int] = 1
     tab_switches: Optional[int] = 0
+
+    @field_serializer("started_at", "submitted_at", "last_saved_at")
+    def serialize_dt(self, dt: Optional[datetime], _info):
+        if dt is None:
+            return None
+        if dt.tzinfo is None:
+            dt = dt.replace(tzinfo=timezone.utc)
+        return dt.isoformat()
 
 class ExamSubmissionSaveRequest(BaseModel):
     answers: Dict[str, Any]
